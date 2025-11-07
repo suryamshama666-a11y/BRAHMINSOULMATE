@@ -24,10 +24,13 @@
   - Implement profiles service with CRUD operations
 
 
+
   - Implement storage service for file uploads
   - Add TypeScript interfaces for all API responses
   - Set up React Query configuration
   - _Requirements: 1.1, 1.4_
+
+
 
 - [ ] 3. Enhance authentication flow
   - Implement JWT token refresh logic
