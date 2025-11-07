@@ -5,6 +5,7 @@
 - [x] 1. Set up Supabase database schema and relationships
 
 
+
   - Create enhanced profiles table with gotra, subcaste, horoscope fields
   - Create matches table with compatibility scores
   - Create interests table for interest management
@@ -13,6 +14,8 @@
   - Create success_stories table
   - Create user_analytics table
   - Add necessary indexes for performance
+
+
   - _Requirements: 1.1, 1.2, 1.3_
 
 - [ ] 2. Implement API service layer structure
