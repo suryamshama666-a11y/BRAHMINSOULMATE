@@ -75,13 +75,13 @@ const NavbarLinks = () => {
             variant="ghost"
             size="sm"
             className={`
-              flex items-center space-x-2 px-3 py-2 rounded-md transition-colors
+              flex items-center space-x-1 px-3 py-2 rounded-md transition-colors
               text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20
               focus:outline-none focus:ring-1 focus:ring-[#FF4500]
             `}
           >
-            <span className="hidden lg:block">More</span>
-            <ChevronDown className="h-4 w-4" />
+            <span>More</span>
+            <ChevronDown className="h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent

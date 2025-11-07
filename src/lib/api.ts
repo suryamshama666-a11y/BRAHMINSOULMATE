@@ -93,9 +93,8 @@ class API {
       console.error('Error fetching profiles:', error);
       if (error.message === 'Request timeout') {
         console.warn('Profile request timed out, returning empty array');
-      } else {
-        toast.error('Failed to load profiles');
       }
+      // Don't show toast error - let the calling component handle it
       return [];
     }
   }

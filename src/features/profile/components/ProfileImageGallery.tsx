@@ -13,6 +13,7 @@ type ProfileImageGalleryProps = {
 
 export default function ProfileImageGallery({ profile }: ProfileImageGalleryProps) {
   const [showPhotoAlbum, setShowPhotoAlbum] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
 
   // Convert profile images to Photo objects
   const photos = profile.images.map((url, index) => ({
@@ -71,9 +72,12 @@ export default function ProfileImageGallery({ profile }: ProfileImageGalleryProp
               {/* Quick action button */}
               <Button
                 size="icon"
-                className="absolute bottom-4 right-4 bg-red-500 hover:bg-red-600 shadow-lg"
+                className="absolute bottom-4 right-4 bg-white hover:bg-gray-50 shadow-lg transition-all border-2 border-red-500"
+                onClick={() => setIsLiked(!isLiked)}
               >
-                <Heart className="h-4 w-4" />
+                <Heart className={`h-4 w-4 transition-all ${
+                  isLiked ? 'fill-red-500 text-red-500' : 'fill-white text-red-500'
+                }`} />
               </Button>
             </div>
           </div>

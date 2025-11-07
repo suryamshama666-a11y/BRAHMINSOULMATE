@@ -55,37 +55,43 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   };
 
   return (
-    <Card className={`relative overflow-hidden ${plan.isPopular ? 'ring-2 ring-red-500' : ''} ${isCurrentPlan ? 'ring-2 ring-green-500' : ''}`}>
+    <Card className={`relative overflow-hidden border-2 transition-all hover:shadow-lg flex flex-col h-full ${
+      plan.isPopular 
+        ? 'border-red-500 shadow-lg' 
+        : isCurrentPlan 
+        ? 'border-green-500' 
+        : 'border-gray-200'
+    }`}>
       {plan.isPopular && (
-        <div className="absolute top-0 left-0 right-0 bg-primary text-white text-center py-2 text-sm font-medium">
+        <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-red-600 to-amber-600 text-white text-center py-2 text-sm font-semibold">
           Most Popular
         </div>
       )}
       
-      <CardHeader className={`bg-orange-50 ${plan.isPopular ? 'pt-12' : ''}`}>
-        <div className="flex items-center justify-between">
+      <CardHeader className={`bg-white border-b border-gray-100 ${plan.isPopular ? 'pt-12' : 'pt-6'}`}>
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             {getIcon()}
-            <CardTitle className="text-xl">{plan.name}</CardTitle>
+            <CardTitle className="text-xl font-bold">{plan.name}</CardTitle>
           </div>
           {isCurrentPlan && (
             <Badge className="bg-green-500 text-white">Current</Badge>
           )}
         </div>
-        <div className="mt-4">
+        <div>
           <div className="flex items-baseline">
-            <span className="text-3xl font-bold">₹{plan.price}</span>
-            <span className="text-gray-600 ml-2">/{plan.duration}</span>
+            <span className="text-3xl font-bold text-gray-900">₹{plan.price}</span>
+            <span className="text-gray-500 ml-2 text-sm">/{plan.duration}</span>
           </div>
         </div>
       </CardHeader>
       
-      <CardContent className="p-6">
-        <ul className="space-y-3 mb-6">
+      <CardContent className="p-6 bg-white flex-1 flex flex-col">
+        <ul className="space-y-3 mb-6 flex-1">
           {plan.features.map((feature, index) => (
-            <li key={index} className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-              <span className="text-sm">{feature}</span>
+            <li key={index} className="flex items-start gap-2">
+              <Check className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
+              <span className="text-sm text-gray-700">{feature}</span>
             </li>
           ))}
         </ul>
@@ -93,15 +99,14 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
         <Button
           onClick={() => onSelect(plan.id)}
           disabled={isCurrentPlan}
-          className={`w-full ${
+          variant="outline"
+          className={`w-full border-2 transition-all ${
             isCurrentPlan 
-              ? 'bg-gray-300 text-gray-600 cursor-not-allowed' 
-              : plan.type === 'vip'
-              ? 'bg-primary hover:bg-primary-dark'
-              : plan.type === 'basic'
-              ? 'bg-gray-500 hover:bg-gray-600'
-              : 'bg-primary hover:bg-primary-dark'
-          } text-white`}
+              ? 'bg-gray-100 text-gray-500 border-gray-300 cursor-not-allowed' 
+              : plan.isPopular
+              ? 'border-red-500 text-red-600 hover:bg-red-50 font-semibold'
+              : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+          }`}
         >
           {isCurrentPlan ? 'Current Plan' : 'Choose Plan'}
         </Button>

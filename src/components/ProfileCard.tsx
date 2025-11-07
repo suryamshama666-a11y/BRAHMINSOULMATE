@@ -353,8 +353,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                         View
                       </Button>
                     </Link>
-                    <Button size="sm" className={`flex-1 text-xs ${styles.buttonColor}`}>
-                      <MessageCircle className="h-3 w-3 mr-1" />
+                    <Button size="sm" className={`flex-1 text-xs ${styles.buttonColor} text-white`}>
+                      <MessageCircle className="h-3 w-3 mr-1 text-white" />
                       {variant === 'online' ? 'Chat' : variant === 'new' ? 'Hello' : 'Message'}
                     </Button>
                   </div>

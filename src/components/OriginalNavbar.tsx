@@ -56,7 +56,7 @@ export default function OriginalNavbar() {
 
   return (
     <nav className="sticky top-0 z-50 bg-gradient-to-b from-white to-[#FFF1E6] border-b border-[#FF4500]/10">
-      <div className="container mx-auto px-4 sm:px-6">
+      <div className="max-w-full mx-auto px-4 sm:px-6">
         <div className="flex justify-between items-center h-16">
           {/* Logo Section */}
           <div className="flex-shrink-0">
@@ -71,30 +71,66 @@ export default function OriginalNavbar() {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
-            {mainLinks.map(({ path, label, icon: Icon }) => {
-              const isActive = location.pathname === path;
-              
-              return (
-                <Link key={path} to={path}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`
-                      flex items-center space-x-2 px-3 py-2 rounded-md transition-colors
-                      focus:outline-none focus:ring-1 focus:ring-[#FF4500]
-                      ${isActive 
-                        ? 'bg-[#FFF1E6] text-[#FF4500] hover:bg-[#FFE4D6] border border-[#FF4500]/20' 
-                        : 'text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20'
-                      }
-                    `}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span className="hidden lg:block">{label}</span>
-                  </Button>
-                </Link>
-              );
-            })}
+          <div className="hidden md:flex items-center space-x-2 flex-1 justify-center">
+            <Link to="/dashboard">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-colors focus:outline-none focus:ring-1 focus:ring-[#FF4500] ${
+                  location.pathname === '/dashboard'
+                    ? 'bg-[#FFF1E6] text-[#FF4500] hover:bg-[#FFE4D6] border border-[#FF4500]/20'
+                    : 'text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20'
+                }`}
+              >
+                <Home className="h-4 w-4" />
+                <span className="hidden lg:block">Home</span>
+              </Button>
+            </Link>
+
+            <Link to="/search">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-colors focus:outline-none focus:ring-1 focus:ring-[#FF4500] ${
+                  location.pathname === '/search'
+                    ? 'bg-[#FFF1E6] text-[#FF4500] hover:bg-[#FFE4D6] border border-[#FF4500]/20'
+                    : 'text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20'
+                }`}
+              >
+                <Search className="h-4 w-4" />
+                <span className="hidden lg:block">Search</span>
+              </Button>
+            </Link>
+
+            <Link to="/matches">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-colors focus:outline-none focus:ring-1 focus:ring-[#FF4500] ${
+                  location.pathname === '/matches'
+                    ? 'bg-[#FFF1E6] text-[#FF4500] hover:bg-[#FFE4D6] border border-[#FF4500]/20'
+                    : 'text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20'
+                }`}
+              >
+                <Heart className="h-4 w-4" />
+                <span className="hidden lg:block">Matches</span>
+              </Button>
+            </Link>
+
+            <Link to="/messages">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-colors focus:outline-none focus:ring-1 focus:ring-[#FF4500] ${
+                  location.pathname === '/messages'
+                    ? 'bg-[#FFF1E6] text-[#FF4500] hover:bg-[#FFE4D6] border border-[#FF4500]/20'
+                    : 'text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20'
+                }`}
+              >
+                <MessageCircle className="h-4 w-4" />
+                <span className="hidden lg:block">Messages</span>
+              </Button>
+            </Link>
 
             {/* Connections Dropdown */}
             <DropdownMenu>
@@ -102,19 +138,19 @@ export default function OriginalNavbar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="flex items-center space-x-2 px-3 py-2 rounded-md transition-colors text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20 focus:outline-none focus:ring-1 focus:ring-[#FF4500]"
+                  className="flex items-center space-x-1 px-3 py-2 rounded-md transition-colors text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20 focus:outline-none focus:ring-1 focus:ring-[#FF4500]"
                 >
                   <Users className="h-4 w-4" />
-                  <span className="hidden lg:block">Connections</span>
-                  <ChevronDown className="h-4 w-4" />
+                  <span>Connections</span>
+                  <ChevronDown className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                align="end"
-                className="w-56 bg-white rounded-lg shadow-lg border-2 border-gray-200 z-50"
+                align="start"
+                className="w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-[9999]"
               >
                 {connectionsLinks.map(({ path, label, icon: Icon }) => (
-                  <DropdownMenuItem key={path} className="focus:bg-[#FFF1E6] focus:text-[#FF4500]">
+                  <DropdownMenuItem key={path} className="focus:bg-[#FFF1E6] focus:text-[#FF4500] cursor-pointer">
                     <Link
                       to={path}
                       className="flex items-center space-x-2 px-2 py-1.5 w-full text-neutral-800 hover:text-[#FF4500]"
@@ -133,18 +169,18 @@ export default function OriginalNavbar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="flex items-center space-x-2 px-3 py-2 rounded-md transition-colors text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20 focus:outline-none focus:ring-1 focus:ring-[#FF4500]"
+                  className="flex items-center space-x-1 px-3 py-2 rounded-md transition-colors text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20 focus:outline-none focus:ring-1 focus:ring-[#FF4500]"
                 >
-                  <span className="hidden lg:block">More</span>
-                  <ChevronDown className="h-4 w-4" />
+                  <span>More</span>
+                  <ChevronDown className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                align="end"
-                className="w-56 bg-white rounded-lg shadow-lg border-2 border-gray-200 z-50"
+                align="start"
+                className="w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-[9999]"
               >
                 {moreLinks.map(({ path, label, icon: Icon }) => (
-                  <DropdownMenuItem key={path} className="focus:bg-[#FFF1E6] focus:text-[#FF4500]">
+                  <DropdownMenuItem key={path} className="focus:bg-[#FFF1E6] focus:text-[#FF4500] cursor-pointer">
                     <Link
                       to={path}
                       className="flex items-center space-x-2 px-2 py-1.5 w-full text-neutral-800 hover:text-[#FF4500]"

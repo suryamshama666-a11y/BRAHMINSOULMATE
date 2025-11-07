@@ -71,7 +71,7 @@ export default function Events() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {events.map((event, index) => (
-            <Card key={index} className="hover:shadow-lg transition-shadow">
+            <Card key={index} className="hover:shadow-lg transition-shadow flex flex-col h-full">
               <CardHeader>
                 <div className="flex items-center justify-between mb-2">
                   <span className="px-3 py-1 bg-[#FFF1E6] text-[#FF4500] rounded-full text-sm">
@@ -84,8 +84,8 @@ export default function Events() {
                 </div>
                 <CardTitle className="text-xl font-serif">{event.title}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
+              <CardContent className="flex-1 flex flex-col">
+                <div className="space-y-3 flex-1">
                   <div className="flex items-start">
                     <Calendar className="h-5 w-5 text-[#FF4500] mr-2 mt-0.5" />
                     <div>

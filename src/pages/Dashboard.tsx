@@ -38,32 +38,32 @@ const Dashboard = () => {
             id: '1',
             gender: 'female',
             height: 165,
-            religion: 'Hindu',
-            caste: 'Brahmin',
+            gotra: 'Bharadwaja',
+            subcaste: 'Iyer',
             subscription_type: 'premium'
           },
           {
             id: '2',
             gender: 'male',
             height: 175,
-            religion: 'Hindu',
-            caste: 'Brahmin',
+            gotra: 'Kashyapa',
+            subcaste: 'Iyengar',
             subscription_type: 'free'
           },
           {
             id: '3',
             gender: 'female',
             height: 160,
-            religion: 'Hindu',
-            caste: 'Brahmin',
+            gotra: 'Atri',
+            subcaste: 'Deshastha',
             subscription_type: 'premium'
           },
           {
             id: '4',
             gender: 'male',
             height: 180,
-            religion: 'Hindu',
-            caste: 'Brahmin',
+            gotra: 'Vasishtha',
+            subcaste: 'Kanyakubja',
             subscription_type: 'free'
           }
         ];
@@ -74,22 +74,33 @@ const Dashboard = () => {
             id: '5',
             gender: 'female',
             height: 162,
-            caste: 'Brahmin',
+            gotra: 'Gautama',
+            subcaste: 'Madhwa',
             subscription_type: 'premium'
           },
           {
             id: '6',
             gender: 'male',
             height: 178,
-            caste: 'Brahmin',
+            gotra: 'Jamadagni',
+            subcaste: 'Smartha',
             subscription_type: 'premium'
           },
           {
             id: '7',
             gender: 'female',
             height: 158,
-            caste: 'Brahmin',
+            gotra: 'Vishwamitra',
+            subcaste: 'Kokanastha',
             subscription_type: 'free'
+          },
+          {
+            id: '8',
+            gender: 'male',
+            height: 172,
+            gotra: 'Angirasa',
+            subcaste: 'Gaur',
+            subscription_type: 'premium'
           }
         ];
 
@@ -193,10 +204,15 @@ const Dashboard = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {Array.from({ length: 6 }, (_, index) => {
                   const gender = Math.random() > 0.5 ? 'male' : 'female';
+                  const profileId = `online-${index + 1}`;
                   return (
-                    <div key={index} className="text-center">
-                      <div className="relative inline-block">
-                        <Avatar className="h-16 w-16 border-2 border-green-500">
+                    <Link 
+                      key={index} 
+                      to={`/profile/${profileId}`}
+                      className="text-center group cursor-pointer"
+                    >
+                      <div className="relative inline-block transition-transform group-hover:scale-110 duration-200">
+                        <Avatar className="h-16 w-16 border-2 border-green-500 group-hover:border-green-600 transition-colors">
                           <AvatarImage 
                             src={`https://randomuser.me/api/portraits/${gender}/${Math.floor(Math.random() * 50) + 1}.jpg`}
                             alt={`Online user ${index + 1}`}
@@ -204,7 +220,7 @@ const Dashboard = () => {
                           <AvatarFallback>{gender === 'male' ? 'M' : 'F'}</AvatarFallback>
                         </Avatar>
                         <div 
-                          className="absolute h-3 w-3 bg-green-500 border-2 border-white rounded-full"
+                          className="absolute h-3 w-3 bg-green-500 border-2 border-white rounded-full animate-pulse"
                           style={{
                             top: '75%',
                             right: '8%',
@@ -212,9 +228,9 @@ const Dashboard = () => {
                           }}
                         ></div>
                       </div>
-                      <p className="text-sm font-medium mt-2">{gender === 'male' ? 'Male' : 'Female'}</p>
+                      <p className="text-sm font-medium mt-2 group-hover:text-green-600 transition-colors">{gender === 'male' ? 'Male' : 'Female'}</p>
                       <p className="text-xs text-gray-500">{Math.floor(Math.random() * 10) + 20} yrs</p>
-                    </div>
+                    </Link>
                   );
                 })}
               </div>
@@ -266,11 +282,11 @@ const Dashboard = () => {
                         </h4>
                       </Link>
                       <p className="text-sm text-gray-600">
-                        {member.height}cm • {member.religion}
+                        {member.height}cm • {member.subcaste}
                       </p>
                       <div className="flex items-center mt-1 space-x-2">
                         <Badge variant="secondary" className="text-xs">
-                          {member.caste}
+                          {member.gotra} Gotra
                         </Badge>
                         <Badge variant={member.subscription_type === 'premium' ? 'default' : 'outline'} className="text-xs">
                           {member.subscription_type}
@@ -278,12 +294,28 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <div className="flex space-x-2">
-                      <button className="text-[#FF4500] hover:text-[#FF6B32] focus:outline-none transition-colors">
-                        <Heart className="h-5 w-5" />
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          const heart = e.currentTarget.querySelector('svg');
+                          if (heart) {
+                            heart.classList.toggle('fill-[#FF4500]');
+                          }
+                          // Add to favorites logic here
+                          console.log('Added to favorites:', member.id);
+                        }}
+                        className="text-[#FF4500] hover:text-[#FF6B32] focus:outline-none transition-colors"
+                        title="Add to favorites"
+                      >
+                        <Heart className="h-5 w-5 transition-all" />
                       </button>
-                      <button className="text-[#FF4500] hover:text-[#FF6B32] focus:outline-none transition-colors">
+                      <Link 
+                        to={`/messages?partner=${member.id}`}
+                        className="text-[#FF4500] hover:text-[#FF6B32] focus:outline-none transition-colors"
+                        title="Send message"
+                      >
                         <MessageCircle className="h-5 w-5" />
-                      </button>
+                      </Link>
                     </div>
                   </div>
                 ))}
@@ -325,8 +357,11 @@ const Dashboard = () => {
                           {match.gender === 'male' ? 'Male' : 'Female'} Match
                         </h4>
                       </Link>
-                      <p className="text-sm text-gray-600">{match.height}cm • {match.caste}</p>
+                      <p className="text-sm text-gray-600">{match.height}cm • {match.subcaste}</p>
                       <div className="flex items-center mt-1 space-x-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {match.gotra} Gotra
+                        </Badge>
                         <Badge variant="outline" className="text-xs">
                           {Math.floor(Math.random() * 20) + 80}% Match
                         </Badge>
@@ -335,11 +370,34 @@ const Dashboard = () => {
                         </Badge>
                       </div>
                     </div>
-                    <Link to={`/profile/${match.id}`}>
-                      <Button variant="default" size="sm" className="rounded-full">
-                        Connect
-                      </Button>
-                    </Link>
+                    <div className="flex items-center space-x-2">
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          const heart = e.currentTarget.querySelector('svg');
+                          if (heart) {
+                            heart.classList.toggle('fill-[#FF4500]');
+                          }
+                          console.log('Added to favorites:', match.id);
+                        }}
+                        className="text-[#FF4500] hover:text-[#FF6B32] focus:outline-none transition-colors"
+                        title="Add to favorites"
+                      >
+                        <Heart className="h-5 w-5 transition-all" />
+                      </button>
+                      <Link 
+                        to={`/messages?partner=${match.id}`}
+                        className="text-[#FF4500] hover:text-[#FF6B32] focus:outline-none transition-colors"
+                        title="Send message"
+                      >
+                        <MessageCircle className="h-5 w-5" />
+                      </Link>
+                      <Link to={`/profile/${match.id}`}>
+                        <Button variant="default" size="sm" className="rounded-full">
+                          Connect
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 ))}
                 {matches.length === 0 && (

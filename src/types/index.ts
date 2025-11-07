@@ -13,6 +13,8 @@ export interface UserProfile {
   gender: 'male' | 'female' | 'other';
   images: string[];
   bio: string;
+  phone?: string;
+  email?: string;
   location: {
     city: string;
     state: string;

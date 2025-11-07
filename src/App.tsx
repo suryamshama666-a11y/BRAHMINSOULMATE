@@ -93,7 +93,7 @@ const NavbarSwitcher: React.FC = () => {
   const path = location.pathname;
   const publicPrefixes = [
     '/', '/login', '/register', '/signup', '/forgot-password', '/reset-password',
-    '/about', '/how-it-works', '/free-vs-paid', '/success-stories', '/help', '/account', '/auth'
+    '/about', '/how-it-works', '/free-vs-paid', '/success-stories', '/help', '/auth'
   ];
   const isPublic = publicPrefixes.some((p) => (p === '/' ? path === '/' : path.startsWith(p)));
   if (isPublic) return <SimpleNavbar />;
