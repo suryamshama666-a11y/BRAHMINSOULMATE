@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+jobs:
+  backend-build-and-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install backend deps
+        run: npm ci
+        working-directory: backend
+
+      - name: Build backend (tsc)
+        run: npm run build
+        working-directory: backend
+
+      - name: Start backend server
+        run: |
+          nohup node dist/server.js > server.log 2>&1 &
+          echo $! > backend.pid
+        working-directory: backend
+
+      - name: Wait for /health
+        run: |
+          for i in {1..60}; do
+            if curl -sf http://localhost:3001/health > /dev/null; then
+              echo "Backend is up"; exit 0;
+            fi
+            sleep 1
+          done
+          echo "Backend did not start in time"; cat backend/server.log || true; exit 1
+
+      - name: Smoke check
+        run: node scripts/smoke-backend.js
+        env:
+          SMOKE_BASE: http://localhost:3001
+
+      - name: Show backend logs on failure
+        if: failure()
+        run: |
+          echo "==== server.log ===="
+          cat backend/server.log || true
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+

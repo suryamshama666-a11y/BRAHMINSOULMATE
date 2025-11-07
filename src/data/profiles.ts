@@ -1,0 +1,59 @@
+import { Profile } from '@/types/profile';
+import { profiles as profileData } from './profileData';
+
+// Export proper types from types/profile
+export type { 
+  ProfileGender, 
+  ProfileMaritalStatus, 
+  BrahminSubcaste, 
+  Gotra, 
+  IshtaDevata,
+  Rashi 
+} from '@/types/profile';
+
+// Direct export of profiles data
+export const profiles = profileData || [];
+
+// Simple function to get all profiles with proper error handling
+export const getAllProfiles = (): Profile[] => {
+  try {
+    if (!profileData || !Array.isArray(profileData)) {
+      console.warn('Profile data is not available or not an array');
+      return [];
+    }
+    return profileData;
+  } catch (error) {
+    console.error('Error loading profile data:', error);
+    return [];
+  }
+};
+
+// Function to get profile by ID with proper error handling
+export const getProfileById = (id: string): Profile | undefined => {
+  try {
+    if (!profileData || !Array.isArray(profileData)) {
+      console.warn('Profile data is not available or not an array');
+      return undefined;
+    }
+    return profileData.find(profile => profile.id === id);
+  } catch (error) {
+    console.error(`Error finding profile with ID ${id}:`, error);
+    return undefined;
+  }
+};
+
+// Function to get filtered profiles with error handling
+export const getFilteredProfiles = (filter: any): Profile[] => {
+  try {
+    const allProfiles = getAllProfiles();
+    if (!filter || Object.keys(filter).length === 0) {
+      return allProfiles;
+    }
+    
+    // Apply filters here (simplified example)
+    return allProfiles;
+  } catch (error) {
+    console.error('Error filtering profiles:', error);
+    return [];
+  }
+};
