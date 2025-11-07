@@ -2,7 +2,9 @@
 
 ## Phase 1: Backend Foundation
 
-- [ ] 1. Set up Supabase database schema and relationships
+- [x] 1. Set up Supabase database schema and relationships
+
+
   - Create enhanced profiles table with gotra, subcaste, horoscope fields
   - Create matches table with compatibility scores
   - Create interests table for interest management
