@@ -387,13 +387,17 @@ export default function Search() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6">
-                {profiles.map((profile) => (
-                  <ProfileCard
-                    key={profile.id}
-                    profile={profile}
-                    showActions
-                  />
+              <div className="space-y-4">
+                {profiles.map((profile, index) => (
+                  <div key={profile.id}>
+                    <ProfileCard
+                      profile={profile}
+                      showActions
+                    />
+                    {index < profiles.length - 1 && (
+                      <div className="h-px bg-gradient-to-r from-transparent via-amber-300 to-transparent mt-4" />
+                    )}
+                  </div>
                 ))}
               </div>
             )}
