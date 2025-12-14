@@ -44,8 +44,7 @@ export default function Search() {
       caste: 'Brahmin',
       gotra: 'Bharadwaja',
       subscription_type: 'premium',
-      profile_picture: 'https://randomuser.me/api/portraits/women/1.jpg',
-      about: 'I am a software engineer who loves traveling and reading. Looking for a partner who shares similar interests and values family traditions.'
+      profile_picture: 'https://randomuser.me/api/portraits/women/1.jpg'
     },
     {
       id: '2',
@@ -60,8 +59,7 @@ export default function Search() {
       caste: 'Brahmin',
       gotra: 'Kashyapa',
       subscription_type: 'premium',
-      profile_picture: 'https://randomuser.me/api/portraits/women/2.jpg',
-      about: 'Data Scientist by profession, artist by heart. I enjoy painting and classical music. Seeking a compatible match from a good family.'
+      profile_picture: 'https://randomuser.me/api/portraits/women/2.jpg'
     },
     {
       id: '3',
