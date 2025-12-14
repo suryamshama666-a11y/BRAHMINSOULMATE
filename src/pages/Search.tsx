@@ -21,7 +21,7 @@ export default function Search() {
   // Filter state
   const [ageRange, setAgeRange] = useState([21, 35]);
   const [heightRange, setHeightRange] = useState([150, 190]);
-  const [maritalStatus, setMaritalStatus] = useState('');
+  const [maritalStatus, setMaritalStatus] = useState('any');
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [withPhotosOnly, setWithPhotosOnly] = useState(false);
 
@@ -197,7 +197,7 @@ export default function Search() {
       filtered = filtered.filter(p => p.height >= heightRange[0] && p.height <= heightRange[1]);
       
       // Apply marital status filter
-      if (maritalStatus) {
+      if (maritalStatus && maritalStatus !== 'any') {
         // In real app, would filter by marital status
       }
       
@@ -223,7 +223,7 @@ export default function Search() {
   const resetFilters = () => {
     setAgeRange([21, 35]);
     setHeightRange([150, 190]);
-    setMaritalStatus('');
+    setMaritalStatus('any');
     setVerifiedOnly(false);
     setWithPhotosOnly(false);
     setProfiles(mockProfiles);
