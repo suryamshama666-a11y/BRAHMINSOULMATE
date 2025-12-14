@@ -173,11 +173,11 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
       </div>
 
       <CardContent className="p-0">
-        {/* Vertical Layout */}
-        <div className="flex flex-col">
+        {/* Horizontal Layout */}
+        <div className="flex flex-row">
           {/* Profile Picture */}
-          <div className="relative">
-            <div className="w-full h-48 overflow-hidden bg-gray-100">
+          <div className="relative flex-shrink-0">
+            <div className="w-32 h-full min-h-[200px] overflow-hidden bg-gray-100">
               <img
                 src={`https://randomuser.me/api/portraits/${profile.gender === 'male' ? 'men' : 'women'}/${Math.floor(Math.random() * 50) + 1}.jpg`}
                 alt={profile.name}
@@ -194,7 +194,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           </div>
 
           {/* Profile Details */}
-          <div className="p-3">
+          <div className="flex-1 p-3">
             {/* Header */}
             <div className="mb-2">
               <h3 className="font-semibold text-base text-gray-900 leading-tight truncate">
