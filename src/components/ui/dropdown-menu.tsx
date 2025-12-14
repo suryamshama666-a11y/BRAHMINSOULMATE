@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, createContext, useContext, ReactNode } from 'react';
+import React, { useState, useRef, useEffect, createContext, useContext, ReactNode, cloneElement, isValidElement } from 'react';
 
 // Context for dropdown state
 interface DropdownContextType {
@@ -46,6 +46,20 @@ export const DropdownMenuTrigger: React.FC<DropdownMenuTriggerProps> = ({
     e.stopPropagation();
     setIsOpen(!isOpen);
   };
+
+  if (asChild && isValidElement(children)) {
+    return cloneElement(children as React.ReactElement<any>, {
+      onClick: (e: React.MouseEvent) => {
+        handleClick(e);
+        if ((children as React.ReactElement<any>).props.onClick) {
+          (children as React.ReactElement<any>).props.onClick(e);
+        }
+      },
+      ref: triggerRef,
+      'aria-expanded': isOpen,
+      'aria-haspopup': true,
+    });
+  }
 
   return (
     <button

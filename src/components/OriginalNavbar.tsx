@@ -22,7 +22,6 @@ export default function OriginalNavbar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Get user display properties safely
   const userDisplayName = isAuthenticated ? (profile?.name || user?.email?.split('@')[0] || 'User') : 'User';
   const userImageUrl = isAuthenticated ? (profile?.profilePicture || '/placeholder.svg') : '/placeholder.svg';
   const userInitial = userDisplayName ? userDisplayName.charAt(0).toUpperCase() : 'U';
@@ -135,15 +134,15 @@ export default function OriginalNavbar() {
             {/* Connections Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center space-x-1 px-3 py-2 rounded-md transition-colors text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20 focus:outline-none focus:ring-1 focus:ring-[#FF4500]"
+                <div
+                  role="button"
+                  tabIndex={0}
+                  className="flex items-center space-x-1 px-3 py-2 rounded-md transition-colors text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20 focus:outline-none focus:ring-1 focus:ring-[#FF4500] cursor-pointer text-sm font-medium"
                 >
                   <Users className="h-4 w-4" />
                   <span>Connections</span>
                   <ChevronDown className="h-3 w-3" />
-                </Button>
+                </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="start"
@@ -166,14 +165,14 @@ export default function OriginalNavbar() {
             {/* More Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center space-x-1 px-3 py-2 rounded-md transition-colors text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20 focus:outline-none focus:ring-1 focus:ring-[#FF4500]"
+                <div
+                  role="button"
+                  tabIndex={0}
+                  className="flex items-center space-x-1 px-3 py-2 rounded-md transition-colors text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20 focus:outline-none focus:ring-1 focus:ring-[#FF4500] cursor-pointer text-sm font-medium"
                 >
                   <span>More</span>
                   <ChevronDown className="h-3 w-3" />
-                </Button>
+                </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="start"

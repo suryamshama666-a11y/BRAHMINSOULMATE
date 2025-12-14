@@ -1,76 +1,373 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Heart, Users, Video, Star } from 'lucide-react';
+import { Heart, Users, Video, Star, Shield, Sparkles, ArrowRight, CheckCircle2, Quote, ChevronRight } from 'lucide-react';
+
+const FloatingHeart = ({ delay, size, left }: { delay: number; size: number; left: string }) => (
+  <div
+    className="absolute pointer-events-none animate-float-up opacity-0"
+    style={{
+      left,
+      bottom: '10%',
+      animationDelay: `${delay}s`,
+      animationDuration: '8s',
+    }}
+  >
+    <Heart className={`text-rose-400/30`} style={{ width: size, height: size }} fill="currentColor" />
+  </div>
+);
 
 const Landing = () => {
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-red-50 via-amber-50 to-red-100">
-            <div className="container mx-auto px-4 py-16">
-                {/* Hero Section */}
-                <div className="text-center mb-16">
-                    <h1 className="text-5xl font-serif font-bold text-red-800 mb-6">
-                        Brahmin Soulmate Connect
-                    </h1>
-                    <p className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
-                        Find your perfect life partner within the Brahmin community.
-                        Connect with like-minded individuals who share your values and traditions.
-                    </p>
-                    <div className="flex justify-center space-x-4">
-                        <Link to="/register">
-                            <Button className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 text-lg">
-                                Join Now
-                            </Button>
-                        </Link>
-                        <Link to="/login">
-                            <Button variant="outline" className="border-red-600 text-red-600 hover:bg-red-50 px-8 py-3 text-lg">
-                                Sign In
-                            </Button>
-                        </Link>
-                    </div>
-                </div>
+  const [scrollY, setScrollY] = useState(0);
 
-                {/* Features */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-                    <div className="text-center p-6 bg-white rounded-lg shadow-lg">
-                        <Heart className="h-12 w-12 text-red-600 mx-auto mb-4" />
-                        <h3 className="text-xl font-semibold mb-2">Find Matches</h3>
-                        <p className="text-gray-600">Discover compatible profiles based on your preferences</p>
-                    </div>
-                    <div className="text-center p-6 bg-white rounded-lg shadow-lg">
-                        <Users className="h-12 w-12 text-amber-600 mx-auto mb-4" />
-                        <h3 className="text-xl font-semibold mb-2">Community</h3>
-                        <p className="text-gray-600">Join a trusted community of Brahmin families</p>
-                    </div>
-                    <div className="text-center p-6 bg-white rounded-lg shadow-lg">
-                        <Video className="h-12 w-12 text-red-600 mx-auto mb-4" />
-                        <h3 className="text-xl font-semibold mb-2">Video Dates</h3>
-                        <p className="text-gray-600">Meet virtually before meeting in person</p>
-                    </div>
-                    <div className="text-center p-6 bg-white rounded-lg shadow-lg">
-                        <Star className="h-12 w-12 text-amber-600 mx-auto mb-4" />
-                        <h3 className="text-xl font-semibold mb-2">Success Stories</h3>
-                        <p className="text-gray-600">Join thousands of successful matches</p>
-                    </div>
-                </div>
+  useEffect(() => {
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-                {/* CTA Section */}
-                <div className="text-center bg-white rounded-lg shadow-lg p-8">
-                    <h2 className="text-3xl font-serif font-bold text-red-800 mb-4">
-                        Ready to Find Your Soulmate?
-                    </h2>
-                    <p className="text-gray-700 mb-6">
-                        Join thousands of Brahmin singles who have found their perfect match
-                    </p>
-                    <Link to="/register">
-                        <Button className="bg-red-600 hover:bg-red-700 text-white px-12 py-4 text-lg">
-                            Get Started Today
-                        </Button>
-                    </Link>
-                </div>
-            </div>
+  const features = [
+    { icon: Heart, title: 'Smart Matching', desc: 'AI-powered compatibility based on values, traditions & preferences', color: 'from-rose-500 to-pink-600' },
+    { icon: Users, title: 'Verified Profiles', desc: 'Trusted community with authentic, verified Brahmin families', color: 'from-amber-500 to-orange-600' },
+    { icon: Video, title: 'Virtual Dates', desc: 'Meet safely through HD video calls before meeting in person', color: 'from-violet-500 to-purple-600' },
+    { icon: Shield, title: 'Privacy First', desc: 'Your data is encrypted and never shared without consent', color: 'from-emerald-500 to-teal-600' },
+  ];
+
+  const stats = [
+    { value: '50K+', label: 'Active Members' },
+    { value: '12K+', label: 'Happy Couples' },
+    { value: '98%', label: 'Satisfaction Rate' },
+    { value: '4.9★', label: 'App Rating' },
+  ];
+
+  const testimonials = [
+    { name: 'Priya & Arjun', location: 'Chennai', quote: 'Found my soulmate within 3 months. The matching algorithm understood exactly what I was looking for.', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop' },
+    { name: 'Sneha & Vikram', location: 'Bangalore', quote: 'The video date feature helped us connect deeply before meeting. We knew we were meant for each other.', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop' },
+    { name: 'Ananya & Rohan', location: 'Mumbai', quote: 'Finally, a platform that respects our traditions while embracing modern matchmaking.', image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop' },
+  ];
+
+  return (
+    <div className="min-h-screen overflow-hidden">
+      {/* Hero Section */}
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        {/* Animated Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-rose-50 to-amber-50">
+          <div className="absolute inset-0 opacity-30" style={{
+            backgroundImage: `radial-gradient(circle at 20% 50%, rgba(251, 146, 60, 0.15) 0%, transparent 50%),
+                             radial-gradient(circle at 80% 20%, rgba(244, 63, 94, 0.12) 0%, transparent 40%),
+                             radial-gradient(circle at 40% 80%, rgba(251, 191, 36, 0.1) 0%, transparent 45%)`
+          }} />
+          {/* Decorative Pattern */}
+          <div className="absolute inset-0 opacity-[0.03]" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23b45309' fill-rule='evenodd'%3E%3Cpath d='M40 0L20 40L40 80L60 40z'/%3E%3C/g%3E%3C/svg%3E")`,
+            backgroundSize: '80px 80px'
+          }} />
         </div>
-    );
+
+        {/* Floating Hearts */}
+        <div className="absolute inset-0 overflow-hidden">
+          <FloatingHeart delay={0} size={24} left="10%" />
+          <FloatingHeart delay={2} size={18} left="25%" />
+          <FloatingHeart delay={4} size={28} left="45%" />
+          <FloatingHeart delay={1} size={20} left="65%" />
+          <FloatingHeart delay={3} size={22} left="85%" />
+        </div>
+
+        <div className="relative z-10 container mx-auto px-4 py-20">
+          <div className="max-w-4xl mx-auto text-center">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-lg mb-8 animate-pop">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <span className="text-sm font-medium text-amber-700">Trusted by 50,000+ Families</span>
+            </div>
+
+            {/* Main Heading */}
+            <h1 className="font-display text-5xl md:text-7xl font-bold mb-6 leading-tight">
+              <span className="bg-gradient-to-r from-amber-600 via-rose-600 to-orange-600 bg-clip-text text-transparent">
+                Find Your Perfect
+              </span>
+              <br />
+              <span className="text-gray-800">Life Partner</span>
+            </h1>
+
+            {/* Subtitle */}
+            <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed font-light">
+              Connect with like-minded Brahmin singles who share your{' '}
+              <span className="text-amber-600 font-medium">values</span>,{' '}
+              <span className="text-rose-600 font-medium">traditions</span>, and{' '}
+              <span className="text-orange-600 font-medium">dreams</span>.
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-12">
+              <Link to="/register">
+                <Button className="group bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white px-8 py-6 text-lg rounded-full shadow-xl shadow-rose-500/25 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                  Start Your Journey
+                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+              <Link to="/login">
+                <Button variant="outline" className="px-8 py-6 text-lg rounded-full border-2 border-gray-300 hover:border-rose-400 hover:text-rose-600 transition-all duration-300">
+                  Sign In
+                </Button>
+              </Link>
+            </div>
+
+            {/* Trust Indicators */}
+            <div className="flex flex-wrap justify-center items-center gap-6 text-sm text-gray-500">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+                <span>100% Verified Profiles</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-blue-500" />
+                <span>Privacy Protected</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Heart className="w-5 h-5 text-rose-500" />
+                <span>12,000+ Success Stories</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Scroll Indicator */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+          <div className="w-6 h-10 border-2 border-gray-400 rounded-full flex justify-center pt-2">
+            <div className="w-1 h-3 bg-gray-400 rounded-full animate-pulse" />
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-16 bg-white border-y border-gray-100">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {stats.map((stat, index) => (
+              <div key={index} className="text-center group">
+                <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-amber-600 to-rose-600 bg-clip-text text-transparent mb-2 group-hover:scale-110 transition-transform">
+                  {stat.value}
+                </div>
+                <div className="text-gray-500 font-medium">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-24 bg-gradient-to-b from-white to-orange-50/50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-gray-800 mb-4">
+              Why Choose <span className="text-rose-600">Brahmin Soulmate</span>?
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Modern matchmaking that honors tradition
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature, index) => (
+              <div
+                key={index}
+                className="group relative bg-white rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 overflow-hidden"
+              >
+                {/* Gradient Background on Hover */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
+                
+                {/* Icon */}
+                <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-br ${feature.color} mb-6 shadow-lg`}>
+                  <feature.icon className="w-8 h-8 text-white" />
+                </div>
+
+                <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-rose-600 transition-colors">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-600 leading-relaxed">
+                  {feature.desc}
+                </p>
+
+                {/* Arrow */}
+                <div className="mt-6 flex items-center text-rose-500 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span>Learn more</span>
+                  <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-24 bg-gradient-to-br from-rose-600 via-orange-500 to-amber-500 text-white relative overflow-hidden">
+        {/* Decorative Elements */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-white rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-white rounded-full blur-3xl" />
+        </div>
+
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center mb-16">
+            <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">
+              Find Love in 3 Simple Steps
+            </h2>
+            <p className="text-xl text-white/80 max-w-2xl mx-auto">
+              Your journey to finding the perfect partner starts here
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {[
+              { step: '01', title: 'Create Profile', desc: 'Sign up and create your detailed profile with preferences' },
+              { step: '02', title: 'Get Matched', desc: 'Our AI finds compatible matches based on your criteria' },
+              { step: '03', title: 'Connect & Meet', desc: 'Start conversations and meet your potential life partner' },
+            ].map((item, index) => (
+              <div key={index} className="text-center group">
+                <div className="relative inline-block mb-6">
+                  <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-3xl font-bold group-hover:bg-white group-hover:text-rose-600 transition-all duration-300">
+                    {item.step}
+                  </div>
+                  {index < 2 && (
+                    <div className="hidden md:block absolute top-1/2 left-full w-full h-0.5 bg-white/30">
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full" />
+                    </div>
+                  )}
+                </div>
+                <h3 className="text-2xl font-bold mb-3">{item.title}</h3>
+                <p className="text-white/80">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-24 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-gray-800 mb-4">
+              Love <span className="text-rose-600">Stories</span>
+            </h2>
+            <p className="text-xl text-gray-600">
+              Real couples, real connections, real happiness
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {testimonials.map((testimonial, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition-shadow relative"
+              >
+                <Quote className="absolute top-6 right-6 w-10 h-10 text-rose-100" />
+                <div className="flex items-center gap-4 mb-6">
+                  <img
+                    src={testimonial.image}
+                    alt={testimonial.name}
+                    className="w-16 h-16 rounded-full object-cover ring-4 ring-rose-100"
+                  />
+                  <div>
+                    <div className="font-bold text-gray-800">{testimonial.name}</div>
+                    <div className="text-sm text-gray-500">{testimonial.location}</div>
+                  </div>
+                </div>
+                <p className="text-gray-600 italic leading-relaxed">"{testimonial.quote}"</p>
+                <div className="flex gap-1 mt-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-24 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center bg-gradient-to-br from-orange-50 via-rose-50 to-amber-50 rounded-[3rem] p-12 md:p-16 shadow-2xl relative overflow-hidden">
+            {/* Decorative */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-rose-200/50 to-orange-200/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-amber-200/50 to-rose-200/50 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+
+            <div className="relative z-10">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-rose-500 to-orange-500 rounded-full mb-8 shadow-xl animate-pulse-gentle">
+                <Heart className="w-10 h-10 text-white" fill="currentColor" />
+              </div>
+
+              <h2 className="font-display text-4xl md:text-5xl font-bold text-gray-800 mb-6">
+                Ready to Find Your <span className="text-rose-600">Soulmate</span>?
+              </h2>
+              <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
+                Join thousands of Brahmin families who have found their perfect match. Your love story is waiting to begin.
+              </p>
+              <Link to="/register">
+                <Button className="group bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white px-12 py-7 text-xl rounded-full shadow-xl shadow-rose-500/30 transition-all duration-300 hover:scale-105">
+                  Create Free Account
+                  <Sparkles className="ml-3 w-6 h-6 group-hover:rotate-12 transition-transform" />
+                </Button>
+              </Link>
+              <p className="mt-6 text-sm text-gray-500">
+                Free to join • No credit card required • Cancel anytime
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-gray-400 py-16">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-rose-500 to-orange-500 rounded-xl flex items-center justify-center">
+                  <Heart className="w-5 h-5 text-white" fill="currentColor" />
+                </div>
+                <span className="text-white font-bold text-lg">BrahminSoulmate</span>
+              </div>
+              <p className="text-sm">
+                Connecting hearts with tradition and modern values since 2020.
+              </p>
+            </div>
+            <div>
+              <h4 className="text-white font-semibold mb-4">Quick Links</h4>
+              <ul className="space-y-2 text-sm">
+                <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
+                <li><Link to="/how-it-works" className="hover:text-white transition-colors">How It Works</Link></li>
+                <li><Link to="/success-stories" className="hover:text-white transition-colors">Success Stories</Link></li>
+                <li><Link to="/plans" className="hover:text-white transition-colors">Pricing</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-white font-semibold mb-4">Support</h4>
+              <ul className="space-y-2 text-sm">
+                <li><Link to="/help" className="hover:text-white transition-colors">Help Center</Link></li>
+                <li><Link to="/help" className="hover:text-white transition-colors">Safety Tips</Link></li>
+                <li><Link to="/help" className="hover:text-white transition-colors">Contact Us</Link></li>
+                <li><Link to="/help" className="hover:text-white transition-colors">FAQs</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-white font-semibold mb-4">Legal</h4>
+              <ul className="space-y-2 text-sm">
+                <li><Link to="/help" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/help" className="hover:text-white transition-colors">Terms of Service</Link></li>
+                <li><Link to="/help" className="hover:text-white transition-colors">Cookie Policy</Link></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 pt-8 text-center text-sm">
+            <p>© {new Date().getFullYear()} Brahmin Soulmate Connect. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
 };
 
 export default Landing;
