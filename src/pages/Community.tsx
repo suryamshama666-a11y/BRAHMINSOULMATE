@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Users, Calendar, Heart, Plus, Eye, ThumbsUp, Reply } from 'lucide-react';
@@ -10,14 +10,6 @@ export default function Community() {
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  // Mock categories for now
-  const categories = [
-    { id: '1', name: 'General Discussion', description: 'General topics and discussions' },
-    { id: '2', name: 'Matrimony Tips', description: 'Tips and advice for finding your soulmate' },
-    { id: '3', name: 'Success Stories', description: 'Share your success stories' }
-  ];
 
   return (
     <>
@@ -71,11 +63,13 @@ export default function Community() {
                 </Button>
               </div>
 
-              <div className="grid gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[
                   {
                     title: "Tips for writing a great matrimony profile",
                     author: "Priya Sharma",
+                    authorId: "user-1",
+                    avatar: "/placeholder.svg",
                     replies: 12,
                     views: 234,
                     category: "Tips & Advice"
@@ -83,6 +77,8 @@ export default function Community() {
                   {
                     title: "How to approach families for matrimony",
                     author: "Rajesh Kumar",
+                    authorId: "user-2",
+                    avatar: "/placeholder.svg",
                     replies: 8,
                     views: 156,
                     category: "General Discussion"
@@ -90,31 +86,48 @@ export default function Community() {
                   {
                     title: "Success story: Found my soulmate here!",
                     author: "Anita Iyer",
+                    authorId: "user-3",
+                    avatar: "/placeholder.svg",
                     replies: 25,
                     views: 567,
                     category: "Success Stories"
                   }
                 ].map((post, index) => (
-                  <Card key={index} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-semibold text-lg">{post.title}</h3>
-                        <Badge variant="outline">{post.category}</Badge>
+                  <Card key={index} className="hover:shadow-lg transition-shadow border-2 border-gray-100">
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start mb-3">
+                        <h3 className="font-semibold text-lg flex-1 pr-2">{post.title}</h3>
+                        <Badge variant="outline" className="shrink-0">{post.category}</Badge>
                       </div>
-                      <p className="text-sm text-gray-600 mb-3">by {post.author}</p>
+                      
+                      {/* Author Info with Avatar */}
+                      <div className="flex items-center gap-2 mb-4">
+                        <img 
+                          src={post.avatar} 
+                          alt={post.author}
+                          className="w-8 h-8 rounded-full object-cover border-2 border-gray-200"
+                        />
+                        <a 
+                          href={`/profile/${post.authorId}`}
+                          className="text-sm text-red-600 hover:text-red-700 hover:underline font-medium"
+                        >
+                          {post.author}
+                        </a>
+                      </div>
+                      
                       <div className="flex items-center space-x-4 text-sm text-gray-500">
                         <div className="flex items-center">
                           <Reply className="h-4 w-4 mr-1" />
-                          {post.replies} replies
+                          {post.replies}
                         </div>
                         <div className="flex items-center">
                           <Eye className="h-4 w-4 mr-1" />
-                          {post.views} views
+                          {post.views}
                         </div>
-                        <div className="flex items-center">
+                        <button className="flex items-center hover:text-red-600 transition-colors">
                           <ThumbsUp className="h-4 w-4 mr-1" />
                           Like
-                        </div>
+                        </button>
                       </div>
                     </CardContent>
                   </Card>
@@ -133,7 +146,7 @@ export default function Community() {
                 </Button>
               </div>
 
-              <div className="grid gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[
                   {
                     title: "Brahmin Cultural Meet - Mumbai",
@@ -150,8 +163,8 @@ export default function Community() {
                     attendees: 28
                   }
                 ].map((event, index) => (
-                  <Card key={index} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
+                  <Card key={index} className="hover:shadow-lg transition-shadow border-2 border-gray-100">
+                    <CardContent className="p-6">
                       <h3 className="font-semibold text-lg mb-2">{event.title}</h3>
                       <div className="space-y-1 text-sm text-gray-600">
                         <p><Calendar className="h-4 w-4 inline mr-2" />{event.date} at {event.time}</p>
@@ -176,7 +189,7 @@ export default function Community() {
                 </Button>
               </div>
 
-              <div className="grid gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[
                   {
                     name: "Young Professionals",
@@ -189,8 +202,8 @@ export default function Community() {
                     description: "Focused on traditional matrimony approach"
                   }
                 ].map((group, index) => (
-                  <Card key={index} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
+                  <Card key={index} className="hover:shadow-lg transition-shadow border-2 border-gray-100">
+                    <CardContent className="p-6">
                       <h3 className="font-semibold text-lg mb-2">{group.name}</h3>
                       <p className="text-gray-600 mb-2">{group.description}</p>
                       <p className="text-sm text-gray-500 mb-3">{group.members} members</p>
@@ -210,29 +223,54 @@ export default function Community() {
                 {[
                   {
                     user: "Priya Sharma",
+                    userId: "user-1",
+                    avatar: "/placeholder.svg",
                     action: "posted in",
                     target: "Tips & Advice",
                     time: "2 hours ago"
                   },
                   {
                     user: "Rajesh Kumar",
+                    userId: "user-2",
+                    avatar: "/placeholder.svg",
                     action: "joined group",
                     target: "Young Professionals",
                     time: "4 hours ago"
                   },
                   {
                     user: "Anita Iyer",
+                    userId: "user-3",
+                    avatar: "/placeholder.svg",
                     action: "attending event",
                     target: "Cultural Meet - Mumbai",
                     time: "1 day ago"
                   }
                 ].map((activity, index) => (
-                  <Card key={index}>
+                  <Card key={index} className="hover:shadow-md transition-shadow">
                     <CardContent className="p-4">
-                      <p className="text-sm">
-                        <span className="font-semibold">{activity.user}</span> {activity.action} <span className="font-semibold">{activity.target}</span>
-                        <span className="text-gray-500 ml-2">{activity.time}</span>
-                      </p>
+                      <div className="flex items-center gap-3">
+                        {/* User Avatar */}
+                        <img 
+                          src={activity.avatar} 
+                          alt={activity.user}
+                          className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                        />
+                        
+                        {/* Activity Content */}
+                        <div className="flex-1">
+                          <p className="text-sm">
+                            <a 
+                              href={`/profile/${activity.userId}`}
+                              className="font-semibold text-red-600 hover:text-red-700 hover:underline"
+                            >
+                              {activity.user}
+                            </a>
+                            {' '}{activity.action}{' '}
+                            <span className="font-semibold text-gray-900">{activity.target}</span>
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}

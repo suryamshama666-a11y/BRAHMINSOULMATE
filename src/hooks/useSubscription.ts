@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useSupabaseAuth } from './useSupabaseAuth';
+import { useAuth } from '@/contexts/AuthContext';
+import { paymentsService } from '@/services/api/payments.service';
 import { toast } from 'sonner';
 
 export interface SubscriptionPlan {
@@ -21,10 +21,12 @@ export interface UserSubscription {
 }
 
 export const useSubscription = () => {
-  const { user } = useSupabaseAuth();
+  const { user } = useAuth();
   const [currentSubscription, setCurrentSubscription] = useState<UserSubscription | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Get plans from payments service
+  const plans = paymentsService.getPlans();
   const subscriptionPlans: SubscriptionPlan[] = [
     {
       id: 'free',
@@ -34,69 +36,35 @@ export const useSubscription = () => {
       type: 'free',
       features: [
         'Basic profile creation',
-        'Limited profile views',
+        'Limited profile views (10/day)',
         '5 interests per month',
         'Basic search filters',
         'Email support'
       ]
     },
-    {
-      id: 'premium',
-      name: 'Premium',
-      price: 99900, // ₹999 in paisa
-      duration: 'month',
-      type: 'premium',
-      isPopular: true,
-      features: [
-        'Unlimited profile views',
-        'Video & voice calls',
-        'Unlimited interests',
-        'Advanced search filters',
-        'Priority support',
-        'Profile verification badge'
-      ]
-    },
-    {
-      id: 'basic',
-      name: 'Basic',
-      price: 299900, // ₹2999 in paisa
-      duration: '3 months',
-      type: 'basic',
-      features: [
-        'All Premium features',
-        'Profile boost (3x visibility)',
-        'Priority messaging',
-        'V-Date priority booking',
-        'Enhanced matchmaker support',
-        'Advanced privacy controls'
-      ]
-    },
-    {
-      id: 'vip',
-      name: 'VIP',
-      price: 499900, // ₹4999 in paisa
-      duration: '6 months',
-      type: 'vip',
-      features: [
-        'All Basic features',
-        'Personal relationship manager',
-        'Exclusive premium events',
-        'Background verification assistance',
-        'Compatibility score insights',
-        'Marriage consultant sessions'
-      ]
-    }
+    ...plans.map(plan => ({
+      id: plan.id,
+      name: plan.name,
+      price: plan.price,
+      duration: plan.duration === 30 ? 'month' : plan.duration === 90 ? '3 months' : 'year',
+      type: (plan.id.includes('premium') ? 'premium' : 'basic') as 'free' | 'basic' | 'premium' | 'vip',
+      features: plan.features,
+      isPopular: plan.id === 'premium_monthly'
+    }))
   ];
 
   const fetchCurrentSubscription = useCallback(async () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase.functions.invoke('check-subscription');
+      const subscription = await paymentsService.getCurrentSubscription();
+      const hasActive = await paymentsService.hasActiveSubscription();
       
-      if (error) throw error;
-      
-      setCurrentSubscription(data);
+      setCurrentSubscription({
+        subscribed: hasActive,
+        subscription_type: subscription?.plan_id || 'free',
+        subscription_end: subscription?.end_date
+      });
     } catch (error) {
       console.error('Error fetching subscription:', error);
     }
@@ -116,24 +84,18 @@ export const useSubscription = () => {
 
     try {
       setLoading(true);
-
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: {
-          planId: plan.id,
-          planName: plan.name,
-          planPrice: plan.price,
-        }
-      });
-
-      if (error) throw error;
-
-      // Open Stripe checkout in a new tab
-      window.open(data.url, '_blank');
       
+      // Initiate Razorpay payment
+      await paymentsService.initiatePayment(planId);
+      
+      // Refresh subscription after payment
+      await fetchCurrentSubscription();
+      
+      toast.success('Subscription activated successfully!');
       return { success: true };
     } catch (error: any) {
       console.error('Error creating checkout:', error);
-      toast.error('Failed to start subscription process');
+      toast.error(error.message || 'Failed to start subscription process');
       return { success: false, error: error.message };
     } finally {
       setLoading(false);

@@ -100,7 +100,16 @@ app.get('/ready', (req, res) => {
 });
 
 // API routes
-app.use('/api/payments', authMiddleware, paymentRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/matching', matchingRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/vdates', vdateRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api', utilityRoutes);
 
 // 404 handler
 app.use('*', (_req: Request, res: Response) => {

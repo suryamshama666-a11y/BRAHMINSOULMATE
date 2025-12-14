@@ -1,241 +1,194 @@
 import express from 'express';
-import { getSupabase } from '../config/supabase';
+import { createClient } from '@supabase/supabase-js';
+import { authMiddleware } from '../middleware/auth';
 
 const router = express.Router();
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
-// Send a message
-router.post('/send', async (req, res) => {
+// Send message
+router.post('/send', authMiddleware, async (req, res) => {
   try {
-    const supabase = getSupabase();
-    if (!supabase) {
-      return res.status(503).json({ success: false, error: 'Database not configured' });
+    const senderId = req.user?.id;
+    const { receiverId, content, type = 'text' } = req.body;
+
+    // Check if users are connected
+    const { data: connection } = await supabase
+      .from('connections')
+      .select('id')
+      .or(`and(user_id_1.eq.${senderId},user_id_2.eq.${receiverId}),and(user_id_1.eq.${receiverId},user_id_2.eq.${senderId})`)
+      .eq('status', 'active')
+      .single();
+
+    if (!connection) {
+      return res.status(403).json({ success: false, error: 'Users must be connected to message' });
     }
 
-    const { receiver_id, content, message_type = 'text', media_url } = req.body;
-    const sender_id = req.user?.id || req.user?.user_id;
-
-    if (!receiver_id || !content) {
-      return res.status(400).json({ success: false, error: 'receiver_id and content are required' });
-    }
-
-    const { data: message, error } = await supabase
+    const { data, error } = await supabase
       .from('messages')
       .insert({
-        sender_id,
-        receiver_id,
+        sender_id: senderId,
+        receiver_id: receiverId,
         content,
-        message_type,
-        media_url
+        type,
+        read: false
       })
       .select()
       .single();
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
-    return res.json({ success: true, data: message });
+    // Create notification
+    await supabase.from('notifications').insert({
+      user_id: receiverId,
+      type: 'new_message',
+      title: 'New Message',
+      message: 'You have a new message',
+      action_url: `/messages/${senderId}`,
+      sender_id: senderId
+    });
+
+    res.json({ success: true, message: data });
   } catch (error: any) {
-    console.error('Send message error:', error);
-    return res.status(500).json({ success: false, error: 'Failed to send message' });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Get conversation with a specific user
-router.get('/conversation/:userId', async (req, res) => {
+// Get conversation
+router.get('/conversation/:userId', authMiddleware, async (req, res) => {
   try {
-    const supabase = getSupabase();
-    if (!supabase) {
-      return res.status(503).json({ success: false, error: 'Database not configured' });
-    }
+    const currentUserId = req.user?.id;
+    const { userId } = req.params;
+    const limit = parseInt(req.query.limit as string) || 50;
 
-    const currentUserId = req.user?.id || req.user?.user_id;
-    const otherUserId = req.params.userId;
-    const { limit = 50, offset = 0 } = req.query;
-
-    const { data: messages, error } = await supabase
+    const { data, error } = await supabase
       .from('messages')
       .select('*')
-      .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${currentUserId})`)
-      .order('created_at', { ascending: false })
-      .range(Number(offset), Number(offset) + Number(limit) - 1);
+      .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${currentUserId})`)
+      .order('created_at', { ascending: true })
+      .limit(limit);
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
-    return res.json({
-      success: true,
-      data: {
-        with: otherUserId,
-        messages: messages || []
-      }
-    });
+    // Mark messages as read
+    await supabase
+      .from('messages')
+      .update({ read: true })
+      .eq('sender_id', userId)
+      .eq('receiver_id', currentUserId)
+      .eq('read', false);
+
+    res.json({ success: true, messages: data });
   } catch (error: any) {
-    console.error('Get conversation error:', error);
-    return res.status(500).json({ success: false, error: 'Failed to fetch conversation' });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Get all conversations for current user
-router.get('/conversations', async (req, res) => {
+// Get all conversations
+router.get('/conversations', authMiddleware, async (req, res) => {
   try {
-    const supabase = getSupabase();
-    if (!supabase) {
-      return res.status(503).json({ success: false, error: 'Database not configured' });
-    }
+    const userId = req.user?.id;
 
-    const currentUserId = req.user?.id || req.user?.user_id;
-
-    // Get latest message for each conversation
-    const { data: conversations, error } = await supabase
+    // Get all unique conversation partners
+    const { data: messages, error } = await supabase
       .from('messages')
-      .select(`
-        *,
-        sender_profile:profiles!messages_sender_id_fkey(id, first_name, last_name, profile_picture_url),
-        receiver_profile:profiles!messages_receiver_id_fkey(id, first_name, last_name, profile_picture_url)
-      `)
-      .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
+      .select('sender_id, receiver_id, created_at')
+      .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
-    // Group by conversation partner and get latest message
-    const conversationMap = new Map();
-
-    conversations?.forEach(message => {
-      const partnerId = message.sender_id === currentUserId ? message.receiver_id : message.sender_id;
-      const partnerProfile = message.sender_id === currentUserId ? message.receiver_profile : message.sender_profile;
-
-      if (!conversationMap.has(partnerId)) {
-        conversationMap.set(partnerId, {
-          partner_id: partnerId,
-          partner_profile: partnerProfile,
-          latest_message: message,
-          unread_count: 0
-        });
-      }
-
-      // Count unread messages (messages sent to current user that haven't been read)
-      if (message.receiver_id === currentUserId && !message.read_at) {
-        conversationMap.get(partnerId).unread_count++;
-      }
+    // Get unique partners
+    const partners = new Set<string>();
+    messages?.forEach(msg => {
+      if (msg.sender_id !== userId) partners.add(msg.sender_id);
+      if (msg.receiver_id !== userId) partners.add(msg.receiver_id);
     });
 
-    const conversationList = Array.from(conversationMap.values());
+    const conversations = [];
+    for (const partnerId of partners) {
+      // Get partner profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', partnerId)
+        .single();
 
-    return res.json({ success: true, data: conversationList });
+      // Get last message
+      const { data: lastMessage } = await supabase
+        .from('messages')
+        .select('*')
+        .or(`and(sender_id.eq.${userId},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${userId})`)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      // Get unread count
+      const { count } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('sender_id', partnerId)
+        .eq('receiver_id', userId)
+        .eq('read', false);
+
+      conversations.push({
+        profile,
+        lastMessage,
+        unreadCount: count || 0
+      });
+    }
+
+    // Sort by last message time
+    conversations.sort((a, b) => 
+      new Date(b.lastMessage?.created_at || 0).getTime() - 
+      new Date(a.lastMessage?.created_at || 0).getTime()
+    );
+
+    res.json({ success: true, conversations });
   } catch (error: any) {
-    console.error('Get conversations error:', error);
-    return res.status(500).json({ success: false, error: 'Failed to fetch conversations' });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Mark messages as read
-router.post('/mark-read', async (req, res) => {
+// Mark as read
+router.post('/mark-read/:userId', authMiddleware, async (req, res) => {
   try {
-    const supabase = getSupabase();
-    if (!supabase) {
-      return res.status(503).json({ success: false, error: 'Database not configured' });
-    }
-
-    const { sender_id } = req.body;
-    const currentUserId = req.user?.id || req.user?.user_id;
-
-    if (!sender_id) {
-      return res.status(400).json({ success: false, error: 'sender_id is required' });
-    }
+    const currentUserId = req.user?.id;
+    const { userId } = req.params;
 
     const { error } = await supabase
       .from('messages')
-      .update({ read_at: new Date().toISOString() })
-      .eq('sender_id', sender_id)
+      .update({ read: true })
+      .eq('sender_id', userId)
       .eq('receiver_id', currentUserId)
-      .is('read_at', null);
+      .eq('read', false);
 
-    if (error) {
-      throw error;
-    }
-
-    return res.json({ success: true });
+    if (error) throw error;
+    res.json({ success: true });
   } catch (error: any) {
-    console.error('Mark read error:', error);
-    return res.status(500).json({ success: false, error: 'Failed to mark messages as read' });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Delete a message
-router.delete('/:id', async (req, res) => {
+// Delete message
+router.delete('/:messageId', authMiddleware, async (req, res) => {
   try {
-    const supabase = getSupabase();
-    if (!supabase) {
-      return res.status(503).json({ success: false, error: 'Database not configured' });
-    }
+    const userId = req.user?.id;
+    const { messageId } = req.params;
 
-    const messageId = req.params.id;
-    const currentUserId = req.user?.id || req.user?.user_id;
-
-    // Only allow deleting own messages
     const { error } = await supabase
       .from('messages')
       .delete()
       .eq('id', messageId)
-      .eq('sender_id', currentUserId);
+      .eq('sender_id', userId);
 
-    if (error) {
-      throw error;
-    }
-
-    return res.json({ success: true });
+    if (error) throw error;
+    res.json({ success: true });
   } catch (error: any) {
-    console.error('Delete message error:', error);
-    return res.status(500).json({ success: false, error: 'Failed to delete message' });
-  }
-});
-
-// Block user (placeholder - would need a blocked_users table)
-router.post('/block', async (req, res) => {
-  try {
-    // This would typically create a record in a blocked_users table
-    // For now, return success as placeholder
-    const { user_id } = req.body;
-
-    if (!user_id) {
-      return res.status(400).json({ success: false, error: 'user_id is required' });
-    }
-
-    // TODO: Implement blocking logic with blocked_users table
-    console.log(`User ${req.user?.id} wants to block user ${user_id}`);
-
-    return res.json({ success: true, message: 'User blocked (placeholder)' });
-  } catch (error: any) {
-    console.error('Block user error:', error);
-    return res.status(500).json({ success: false, error: 'Failed to block user' });
-  }
-});
-
-// Unblock user (placeholder - would need a blocked_users table)
-router.post('/unblock', async (req, res) => {
-  try {
-    // This would typically remove a record from a blocked_users table
-    // For now, return success as placeholder
-    const { user_id } = req.body;
-
-    if (!user_id) {
-      return res.status(400).json({ success: false, error: 'user_id is required' });
-    }
-
-    // TODO: Implement unblocking logic with blocked_users table
-    console.log(`User ${req.user?.id} wants to unblock user ${user_id}`);
-
-    return res.json({ success: true, message: 'User unblocked (placeholder)' });
-  } catch (error: any) {
-    console.error('Unblock user error:', error);
-    return res.status(500).json({ success: false, error: 'Failed to unblock user' });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
 export default router;
-

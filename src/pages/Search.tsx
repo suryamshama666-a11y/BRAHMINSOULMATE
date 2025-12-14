@@ -1,104 +1,233 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import ProfileCard from '@/components/ProfileCard';
-import { Search as SearchIcon, Filter, X, Save, Loader2 } from 'lucide-react';
-import { SearchService, SearchFilters } from '@/services/api/search.service';
-import { UserProfile } from '@/types';
+import { Search as SearchIcon, Filter, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Footer from '@/components/Footer';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Search() {
-  const [profiles, setProfiles] = useState<UserProfile[]>([]);
+  const { profile } = useAuth();
+  const [profiles, setProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
   const [total, setTotal] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
   
   // Filter state
-  const [filters, setFilters] = useState<SearchFilters>({
-    ageMin: 21,
-    ageMax: 35,
-    heightMin: 150,
-    heightMax: 190,
-    limit: 20,
-    offset: 0,
-    sortBy: 'recent',
-    excludeSameGotra: true,
-  });
-  
-  // Filter options
-  const [filterOptions, setFilterOptions] = useState({
-    cities: [] as string[],
-    states: [] as string[],
-    educationLevels: [] as string[],
-    occupations: [] as string[],
-    gotras: [] as string[],
-    subcastes: [] as string[],
-  });
+  const [ageRange, setAgeRange] = useState([21, 35]);
+  const [heightRange, setHeightRange] = useState([150, 190]);
+  const [maritalStatus, setMaritalStatus] = useState('');
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [withPhotosOnly, setWithPhotosOnly] = useState(false);
 
-  // Load filter options
+  // Determine opposite gender
+  const userGender = profile?.gender || 'male';
+  const oppositeGender = userGender === 'male' ? 'female' : 'male';
+
+  // Mock profiles data - all opposite gender
+  const mockProfiles = [
+    {
+      id: '1',
+      name: oppositeGender === 'female' ? 'Priya Sharma' : 'Raj Sharma',
+      age: 26,
+      gender: oppositeGender,
+      height: 165,
+      location: 'Mumbai, Maharashtra',
+      education: 'MBA',
+      profession: 'Software Engineer',
+      religion: 'Hindu',
+      caste: 'Brahmin',
+      gotra: 'Bharadwaja',
+      subscription_type: 'premium',
+      profile_picture: 'https://randomuser.me/api/portraits/women/1.jpg'
+    },
+    {
+      id: '2',
+      name: oppositeGender === 'female' ? 'Anjali Patel' : 'Arjun Patel',
+      age: 28,
+      gender: oppositeGender,
+      height: 162,
+      location: 'Bangalore, Karnataka',
+      education: 'M.Tech',
+      profession: 'Data Scientist',
+      religion: 'Hindu',
+      caste: 'Brahmin',
+      gotra: 'Kashyapa',
+      subscription_type: 'premium',
+      profile_picture: 'https://randomuser.me/api/portraits/women/2.jpg'
+    },
+    {
+      id: '3',
+      name: oppositeGender === 'female' ? 'Kavya Iyer' : 'Karthik Iyer',
+      age: 25,
+      gender: oppositeGender,
+      height: 160,
+      location: 'Chennai, Tamil Nadu',
+      education: 'CA',
+      profession: 'Chartered Accountant',
+      religion: 'Hindu',
+      caste: 'Brahmin',
+      gotra: 'Atri',
+      subscription_type: 'free',
+      profile_picture: `https://randomuser.me/api/portraits/${oppositeGender === 'female' ? 'women' : 'men'}/3.jpg`
+    },
+    {
+      id: '4',
+      name: oppositeGender === 'female' ? 'Rohini Gupta' : 'Rohit Gupta',
+      age: 30,
+      gender: oppositeGender,
+      height: 175,
+      location: 'Delhi, NCR',
+      education: 'MBA',
+      profession: 'Marketing Manager',
+      religion: 'Hindu',
+      caste: 'Brahmin',
+      gotra: 'Vasishtha',
+      subscription_type: 'premium',
+      profile_picture: `https://randomuser.me/api/portraits/${oppositeGender === 'female' ? 'women' : 'men'}/4.jpg`
+    },
+    {
+      id: '5',
+      name: oppositeGender === 'female' ? 'Vidya Singh' : 'Vikram Singh',
+      age: 29,
+      gender: oppositeGender,
+      height: 178,
+      location: 'Jaipur, Rajasthan',
+      education: 'B.Tech',
+      profession: 'Software Developer',
+      religion: 'Hindu',
+      caste: 'Brahmin',
+      gotra: 'Gautama',
+      subscription_type: 'premium',
+      profile_picture: `https://randomuser.me/api/portraits/${oppositeGender === 'female' ? 'women' : 'men'}/5.jpg`
+    },
+    {
+      id: '6',
+      name: oppositeGender === 'female' ? 'Deepika Nair' : 'Deepak Nair',
+      age: 27,
+      gender: oppositeGender,
+      height: 164,
+      location: 'Kochi, Kerala',
+      education: 'MBBS',
+      profession: 'Doctor',
+      religion: 'Hindu',
+      caste: 'Brahmin',
+      gotra: 'Jamadagni',
+      subscription_type: 'premium',
+      profile_picture: `https://randomuser.me/api/portraits/${oppositeGender === 'female' ? 'women' : 'men'}/6.jpg`
+    },
+    {
+      id: '7',
+      name: oppositeGender === 'female' ? 'Aruna Reddy' : 'Arjun Reddy',
+      age: 31,
+      gender: oppositeGender,
+      height: 180,
+      location: 'Hyderabad, Telangana',
+      education: 'M.Sc',
+      profession: 'Research Scientist',
+      religion: 'Hindu',
+      caste: 'Brahmin',
+      gotra: 'Vishwamitra',
+      subscription_type: 'free',
+      profile_picture: `https://randomuser.me/api/portraits/${oppositeGender === 'female' ? 'women' : 'men'}/7.jpg`
+    },
+    {
+      id: '8',
+      name: oppositeGender === 'female' ? 'Meera Joshi' : 'Mohan Joshi',
+      age: 24,
+      gender: oppositeGender,
+      height: 158,
+      location: 'Pune, Maharashtra',
+      education: 'B.Com',
+      profession: 'Accountant',
+      religion: 'Hindu',
+      caste: 'Brahmin',
+      gotra: 'Angirasa',
+      subscription_type: 'premium',
+      profile_picture: `https://randomuser.me/api/portraits/${oppositeGender === 'female' ? 'women' : 'men'}/8.jpg`
+    },
+    {
+      id: '9',
+      name: oppositeGender === 'female' ? 'Kavita Menon' : 'Karthik Menon',
+      age: 33,
+      gender: oppositeGender,
+      height: 176,
+      location: 'Coimbatore, Tamil Nadu',
+      education: 'MBA',
+      profession: 'Business Analyst',
+      religion: 'Hindu',
+      caste: 'Brahmin',
+      gotra: 'Bhrigu',
+      subscription_type: 'premium',
+      profile_picture: `https://randomuser.me/api/portraits/${oppositeGender === 'female' ? 'women' : 'men'}/9.jpg`
+    }
+  ];
+
+  // Load profiles on mount
   useEffect(() => {
-    loadFilterOptions();
+    loadProfiles();
   }, []);
 
-  const loadFilterOptions = async () => {
-    const { data, error } = await SearchService.getFilterOptions();
-    if (data) {
-      setFilterOptions(data);
-    }
+  const loadProfiles = () => {
+    setLoading(true);
+    // Simulate API call
+    setTimeout(() => {
+      setProfiles(mockProfiles);
+      setTotal(mockProfiles.length);
+      setLoading(false);
+    }, 500);
   };
 
-  // Search profiles
-  const searchProfiles = async (resetOffset = true) => {
+  // Search/Filter profiles
+  const searchProfiles = () => {
     setLoading(true);
     
-    const searchFilters = resetOffset ? { ...filters, offset: 0 } : filters;
-    
-    const { data, error } = await SearchService.searchProfiles(searchFilters);
-    
-    if (error) {
-      toast.error('Search failed: ' + error.message);
-      setLoading(false);
-      return;
-    }
-    
-    if (data) {
-      if (resetOffset) {
-        setProfiles(data.profiles);
-      } else {
-        setProfiles([...profiles, ...data.profiles]);
+    setTimeout(() => {
+      let filtered = [...mockProfiles];
+      
+      // Apply age filter
+      filtered = filtered.filter(p => p.age >= ageRange[0] && p.age <= ageRange[1]);
+      
+      // Apply height filter
+      filtered = filtered.filter(p => p.height >= heightRange[0] && p.height <= heightRange[1]);
+      
+      // Apply marital status filter
+      if (maritalStatus) {
+        // In real app, would filter by marital status
       }
-      setTotal(data.total);
-      setHasMore(data.hasMore);
-    }
-    
-    setLoading(false);
-  };
-
-  // Load more profiles
-  const loadMore = () => {
-    setFilters({ ...filters, offset: (filters.offset || 0) + (filters.limit || 20) });
-    searchProfiles(false);
+      
+      // Apply verified filter
+      if (verifiedOnly) {
+        filtered = filtered.filter(p => p.subscription_type === 'premium');
+      }
+      
+      // Apply photos filter
+      if (withPhotosOnly) {
+        filtered = filtered.filter(p => p.profile_picture);
+      }
+      
+      setProfiles(filtered);
+      setTotal(filtered.length);
+      setLoading(false);
+      
+      toast.success(`Found ${filtered.length} matching profiles`);
+    }, 500);
   };
 
   // Reset filters
   const resetFilters = () => {
-    setFilters({
-      ageMin: 21,
-      ageMax: 35,
-      heightMin: 150,
-      heightMax: 190,
-      limit: 20,
-      offset: 0,
-      sortBy: 'recent',
-      excludeSameGotra: true,
-    });
+    setAgeRange([21, 35]);
+    setHeightRange([150, 190]);
+    setMaritalStatus('');
+    setVerifiedOnly(false);
+    setWithPhotosOnly(false);
+    setProfiles(mockProfiles);
+    setTotal(mockProfiles.length);
   };
 
   return (
@@ -109,7 +238,7 @@ export default function Search() {
           <div>
             <h1 className="text-3xl font-serif text-[#FF4500] mb-2">Search Profiles</h1>
             <p className="text-gray-600">
-              {total > 0 ? `Found ${total} matching profiles` : 'Find your perfect match'}
+              {loading ? 'Searching...' : `Found ${total} matching profiles`}
             </p>
           </div>
           <Button
@@ -141,35 +270,32 @@ export default function Search() {
 
                 {/* Age Range */}
                 <div className="space-y-2">
-                  <Label>Age Range: {filters.ageMin} - {filters.ageMax}</Label>
+                  <Label>Age Range: {ageRange[0]} - {ageRange[1]}</Label>
                   <Slider
                     min={18}
                     max={60}
                     step={1}
-                    value={[filters.ageMin || 21, filters.ageMax || 35]}
-                    onValueChange={([min, max]) => setFilters({ ...filters, ageMin: min, ageMax: max })}
+                    value={ageRange}
+                    onValueChange={setAgeRange}
                   />
                 </div>
 
                 {/* Height Range */}
                 <div className="space-y-2">
-                  <Label>Height (cm): {filters.heightMin} - {filters.heightMax}</Label>
+                  <Label>Height (cm): {heightRange[0]} - {heightRange[1]}</Label>
                   <Slider
                     min={140}
                     max={200}
                     step={1}
-                    value={[filters.heightMin || 150, filters.heightMax || 190]}
-                    onValueChange={([min, max]) => setFilters({ ...filters, heightMin: min, heightMax: max })}
+                    value={heightRange}
+                    onValueChange={setHeightRange}
                   />
                 </div>
 
                 {/* Marital Status */}
                 <div className="space-y-2">
                   <Label>Marital Status</Label>
-                  <Select
-                    value={filters.maritalStatus?.[0] || ''}
-                    onValueChange={(value) => setFilters({ ...filters, maritalStatus: value ? [value] : undefined })}
-                  >
+                  <Select value={maritalStatus} onValueChange={setMaritalStatus}>
                     <SelectTrigger>
                       <SelectValue placeholder="Any" />
                     </SelectTrigger>
@@ -182,27 +308,13 @@ export default function Search() {
                   </Select>
                 </div>
 
-                {/* Gotra */}
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="excludeGotra"
-                      checked={filters.excludeSameGotra}
-                      onCheckedChange={(checked) => setFilters({ ...filters, excludeSameGotra: !!checked })}
-                    />
-                    <Label htmlFor="excludeGotra" className="text-sm">
-                      Exclude same Gotra
-                    </Label>
-                  </div>
-                </div>
-
                 {/* Verified Only */}
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="verified"
-                      checked={filters.verifiedOnly}
-                      onCheckedChange={(checked) => setFilters({ ...filters, verifiedOnly: !!checked })}
+                    <Checkbox 
+                      id="verified" 
+                      checked={verifiedOnly}
+                      onCheckedChange={(checked) => setVerifiedOnly(!!checked)}
                     />
                     <Label htmlFor="verified" className="text-sm">
                       Verified profiles only
@@ -213,10 +325,10 @@ export default function Search() {
                 {/* With Photos Only */}
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="photos"
-                      checked={filters.withPhotosOnly}
-                      onCheckedChange={(checked) => setFilters({ ...filters, withPhotosOnly: !!checked })}
+                    <Checkbox 
+                      id="photos" 
+                      checked={withPhotosOnly}
+                      onCheckedChange={(checked) => setWithPhotosOnly(!!checked)}
                     />
                     <Label htmlFor="photos" className="text-sm">
                       With photos only
@@ -226,8 +338,8 @@ export default function Search() {
 
                 {/* Search Button */}
                 <Button
-                  className="w-full bg-[#FF4500] hover:bg-[#E03E00]"
-                  onClick={() => searchProfiles(true)}
+                  className="w-full bg-[#FF4500] hover:bg-[#E03E00] text-white"
+                  onClick={searchProfiles}
                   disabled={loading}
                 >
                   {loading ? (
@@ -248,7 +360,12 @@ export default function Search() {
 
           {/* Results */}
           <div className={showFilters ? 'md:col-span-3' : 'md:col-span-4'}>
-            {profiles.length === 0 && !loading ? (
+            {loading ? (
+              <div className="text-center py-12">
+                <Loader2 className="h-12 w-12 animate-spin mx-auto text-[#FF4500]" />
+                <p className="mt-4 text-gray-600">Loading profiles...</p>
+              </div>
+            ) : profiles.length === 0 ? (
               <Card>
                 <CardContent className="p-12 text-center">
                   <SearchIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -268,38 +385,15 @@ export default function Search() {
                 </CardContent>
               </Card>
             ) : (
-              <>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {profiles.map((profile) => (
-                    <ProfileCard
-                      key={profile.id}
-                      profile={profile}
-                      showActions
-                    />
-                  ))}
-                </div>
-
-                {/* Load More */}
-                {hasMore && (
-                  <div className="mt-8 text-center">
-                    <Button
-                      variant="outline"
-                      onClick={loadMore}
-                      disabled={loading}
-                      className="min-w-[200px]"
-                    >
-                      {loading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Loading...
-                        </>
-                      ) : (
-                        'Load More'
-                      )}
-                    </Button>
-                  </div>
-                )}
-              </>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {profiles.map((profile) => (
+                  <ProfileCard
+                    key={profile.id}
+                    profile={profile}
+                    showActions
+                  />
+                ))}
+              </div>
             )}
           </div>
         </div>

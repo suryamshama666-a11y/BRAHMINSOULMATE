@@ -1,16 +1,19 @@
-import type { NextFunction, Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 
-export function errorHandler(err: any, _req: Request, res: Response, _next: NextFunction) {
-  const status = typeof err?.status === 'number' ? err.status : 500;
-  const code = err?.code || (status >= 500 ? 'INTERNAL_ERROR' : 'ERROR');
-  const message = err?.message || 'Unexpected error';
+export const errorHandler = (
+  err: any,
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  console.error('Error:', err);
 
-  // Minimal logging; in production hook to logger provider
-  if (status >= 500) {
-    // eslint-disable-next-line no-console
-    console.error('Unhandled error:', err);
-  }
+  const statusCode = err.statusCode || 500;
+  const message = err.message || 'Internal Server Error';
 
-  res.status(status).json({ success: false, error: message, code });
-}
-
+  res.status(statusCode).json({
+    success: false,
+    error: message,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+};

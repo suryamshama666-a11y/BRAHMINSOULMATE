@@ -5,6 +5,7 @@ interface AvatarProps {
   alt?: string;
   fallback?: string;
   className?: string;
+  children?: React.ReactNode;
 }
 
 export const Avatar: React.FC<AvatarProps> = ({
@@ -12,9 +13,24 @@ export const Avatar: React.FC<AvatarProps> = ({
   alt = '',
   fallback = '',
   className = '',
+  children,
 }) => {
   const [imageError, setImageError] = React.useState(false);
 
+  // If children are provided, render them (Radix UI pattern)
+  if (children) {
+    return (
+      <div 
+        className={`relative inline-flex items-center justify-center overflow-hidden rounded-full bg-gray-100 ${className}`}
+        role="img"
+        aria-label={alt}
+      >
+        {children}
+      </div>
+    );
+  }
+
+  // Otherwise use the simple pattern
   return (
     <div 
       className={`relative inline-flex items-center justify-center overflow-hidden rounded-full bg-gray-100 ${className}`}

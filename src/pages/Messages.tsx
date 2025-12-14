@@ -1,410 +1,172 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import Footer from '@/components/Footer';
-import { Card } from '@/components/ui/card';
-import { MessageList } from '@/features/messages/MessageList';
-import { EnhancedChatPanel } from '@/features/messages/EnhancedChatPanel';
-import { useEnhancedMessages } from '@/hooks/useEnhancedMessages';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
-import { Loader2 } from 'lucide-react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useMessages } from '@/features/messages/hooks/useMessages';
-import { useProfile } from '@/hooks/useProfile';
-import { ChatHeader } from '@/features/messages/components/ChatHeader';
-import { MessageBubble } from '@/features/messages/components/MessageBubble';
-import { ChatInput } from '@/features/messages/components/ChatInput';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useConversations } from '@/features/messages/hooks/useConversations';
-import { ConversationList } from '@/features/messages/components/ConversationList';
-import { toast } from 'sonner';
-import { EnhancedMessage } from '@/hooks/useEnhancedMessages';
-import { Message, Conversation, UserProfile } from '@/types';
-import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Search, MessageCircle } from 'lucide-react';
+import { ChatWindow } from '@/components/messaging/ChatWindow';
+import { useAuth } from '@/contexts/AuthContext';
+import { messagesService } from '@/services/api';
+import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 
-const Messages: React.FC = () => {
-  const { user } = useSupabaseAuth();
-  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
-  const [mobileViewChat, setMobileViewChat] = useState(false);
-  const { profile: currentUserProfile, updateLastActive } = useProfile();
-  const {
-    conversations,
-    isLoading: isLoadingConversations,
-    blockUser,
-    unblockUser,
-    toggleShortlist,
-    reportUser,
-  } = useConversations();
-
-  // Only fetch messages for the selected conversation
-  const {
-    messages,
-    isLoading: isLoadingMessages,
-    error: messagesError,
-    sendMessage,
-    uploadFile,
-    sendVoiceMessage,
-  } = useMessages(selectedConversation);
-
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [isRecording, setIsRecording] = useState(false);
-
-  // Memoize the conversation partner to prevent unnecessary re-renders
-  const conversationPartner = useMemo(() => 
-    conversations.find(conv => conv.partner_id === selectedConversation)?.partner_profile,
-    [conversations, selectedConversation]
+const Messages = () => {
+  const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const [selectedUser, setSelectedUser] = useState<string | null>(
+    searchParams.get('user')
   );
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Memoize filtered messages for the current conversation
-  const conversationMessages = useMemo(() => 
-    messages.filter(msg => 
-      (msg.sender_id === selectedConversation && msg.receiver_id === user?.id) ||
-      (msg.sender_id === user?.id && msg.receiver_id === selectedConversation)
-    ),
-    [messages, selectedConversation, user?.id]
-  );
-
-  // Update user's last active status
-  useEffect(() => {
-    if (user) {
-      // Update user's last active status
-      updateLastActive();
-
-      // Scroll to bottom on new messages
-      scrollToBottom();
+  // Mock conversations for development
+  const mockConversations = [
+    {
+      user_id: 'user-1',
+      full_name: 'Priya Sharma',
+      profile_picture: 'https://randomuser.me/api/portraits/women/1.jpg',
+      last_message: 'Hi! Thanks for showing interest in my profile.',
+      last_message_at: new Date().toISOString(),
+      unread_count: 2
+    },
+    {
+      user_id: 'user-2',
+      full_name: 'Anjali Patel',
+      profile_picture: 'https://randomuser.me/api/portraits/women/2.jpg',
+      last_message: 'Would love to connect and know more about you.',
+      last_message_at: new Date(Date.now() - 3600000).toISOString(),
+      unread_count: 0
+    },
+    {
+      user_id: 'user-3',
+      full_name: 'Kavya Iyer',
+      profile_picture: 'https://randomuser.me/api/portraits/women/3.jpg',
+      last_message: 'Looking forward to our V-Date!',
+      last_message_at: new Date(Date.now() - 7200000).toISOString(),
+      unread_count: 1
     }
-  }, [user, messages, updateLastActive]);
+  ];
 
-  // Set up interval for updating last active status
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (currentUserProfile?.user_id) {
-        updateLastActive();
+  // Fetch conversations
+  const { data: conversations = mockConversations, isLoading } = useQuery({
+    queryKey: ['conversations', user?.id],
+    queryFn: async () => {
+      try {
+        const data = await messagesService.getConversations();
+        return data.length > 0 ? data : mockConversations;
+      } catch (error) {
+        return mockConversations;
       }
-    }, 60000); // Update last active status every minute
+    },
+    enabled: !!user?.id,
+    refetchInterval: 5000 // Refresh every 5 seconds
+  });
 
-    return () => clearInterval(interval);
-  }, [currentUserProfile?.user_id, updateLastActive]);
-
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  // Scroll to top when component mounts or conversation changes
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [selectedConversation]);
-
-  // Scroll to bottom helper function
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  // Memoized handler functions to prevent unnecessary re-renders
-  const handleSelectConversation = useCallback((partnerId: string) => {
-    setSelectedConversation(partnerId);
-    setMobileViewChat(true);
-  }, []);
-
-  const handleBackToList = useCallback(() => {
-    setMobileViewChat(false);
-    setSelectedConversation(null);
-  }, []);
-
-  const handlePhoneCall = useCallback(() => {
-    // Integration with voice call system
-    if (conversationPartner?.name) {
-      toast.info(`Starting phone call with ${conversationPartner.name}`);
-    }
-  }, [conversationPartner]);
-
-  const handleVideoCall = useCallback(() => {
-    // Integration with video call system
-    if (conversationPartner?.name) {
-      toast.info(`Starting video call with ${conversationPartner.name}`);
-    }
-  }, [conversationPartner]);
-
-  const handleSendMessage = useCallback(async (text: string) => {
-    if (!selectedConversation) return;
-    
-    try {
-      await sendMessage({
-        content: text,
-        message_type: 'text',
-        receiver_id: selectedConversation,
-      });
-    } catch (error) {
-      toast.error('Failed to send message');
-    }
-  }, [selectedConversation, sendMessage]);
-
-  const handleFileUpload = useCallback(async (file: File) => {
-    if (!selectedConversation) return;
-    
-    try {
-      await uploadFile({
-        file,
-        receiver_id: selectedConversation,
-      });
-    } catch (error) {
-      toast.error('Failed to upload file');
-    }
-  }, [selectedConversation, uploadFile]);
-
-  const handleVoiceMessage = useCallback(async (blob: Blob) => {
-    if (!selectedConversation) return;
-    
-    try {
-      await sendVoiceMessage({
-        audio: blob,
-        receiver_id: selectedConversation,
-      });
-    } catch (error) {
-      toast.error('Failed to send voice message');
-    }
-  }, [selectedConversation, sendVoiceMessage]);
-
-  // Transform messages to match EnhancedMessage type - memoized to prevent unnecessary transformations
-  const enhancedMessages = useMemo<EnhancedMessage[]>(() => 
-    messages.map((message) => ({
-      ...message,
-      message_type: message.content_type,
-      status: 'delivered',
-      read_at: undefined,
-    })) || [],
-    [messages]
+  // Filter conversations based on search
+  const filteredConversations = conversations.filter(conv =>
+    conv.full_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // DEVELOPMENT MODE: Bypass authentication check and provide dummy data
-  // Remove this in production
-  const DEVELOPMENT_MODE = true; // Set to false in production
-  
-  if (!user && !DEVELOPMENT_MODE) {
+  const selectedConversation = conversations.find(c => c.user_id === selectedUser);
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <div className="flex-grow flex items-center justify-center">
-          <p className="text-gray-600">Please log in to view your messages</p>
-        </div>
-        <Footer />
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-amber-50 to-red-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-600"></div>
       </div>
     );
   }
-  
-  // Dummy data for development testing
-  const dummyConversations = DEVELOPMENT_MODE && !user ? [
-    {
-      id: 'conv1',
-      partner_id: 'user1',
-      partner_profile: {
-        id: 'user1',
-        name: 'Priya Sharma',
-        profile_image: 'https://i.pravatar.cc/150?img=1',
-        last_active: new Date().toISOString(),
-        is_online: true,
-        user_id: 'user1',
-        age: 26,
-        location: 'Mumbai',
-      },
-      last_message: {
-        id: 'msg1',
-        content: 'Hello, how are you?',
-        sender_id: 'user1',
-        created_at: new Date().toISOString(),
-        read_at: null,
-      },
-      unread_count: 2,
-    },
-    {
-      id: 'conv2',
-      partner_id: 'user2',
-      partner_profile: {
-        id: 'user2',
-        name: 'Rahul Desai',
-        profile_image: 'https://i.pravatar.cc/150?img=2',
-        last_active: new Date(Date.now() - 3600000).toISOString(),
-        is_online: false,
-        user_id: 'user2',
-        age: 28,
-        location: 'Delhi',
-      },
-      last_message: {
-        id: 'msg2',
-        content: 'When can we schedule a call?',
-        sender_id: 'current-user',
-        created_at: new Date(Date.now() - 86400000).toISOString(),
-        read_at: new Date(Date.now() - 80000000).toISOString(),
-      },
-      unread_count: 0,
-    },
-    {
-      id: 'conv3',
-      partner_id: 'user3',
-      partner_profile: {
-        id: 'user3',
-        name: 'Ananya Patel',
-        profile_image: 'https://i.pravatar.cc/150?img=3',
-        last_active: new Date(Date.now() - 7200000).toISOString(),
-        is_online: false,
-        user_id: 'user3',
-        age: 25,
-        location: 'Bangalore',
-      },
-      last_message: {
-        id: 'msg3',
-        content: 'I liked your profile, would like to know more about your family background.',
-        sender_id: 'user3',
-        created_at: new Date(Date.now() - 172800000).toISOString(),
-        read_at: new Date(Date.now() - 170000000).toISOString(),
-      },
-      unread_count: 0,
-    }
-  ] : conversations;
-  
-  const dummyMessages = DEVELOPMENT_MODE && !user && selectedConversation ? [
-    {
-      id: 'msg1',
-      content: 'Hello, how are you?',
-      content_type: 'text',
-      sender_id: selectedConversation,
-      receiver_id: 'current-user',
-      created_at: new Date(Date.now() - 3600000).toISOString(),
-    },
-    {
-      id: 'msg2',
-      content: 'I am good, thank you! How about you?',
-      content_type: 'text',
-      sender_id: 'current-user',
-      receiver_id: selectedConversation,
-      created_at: new Date(Date.now() - 3500000).toISOString(),
-    },
-    {
-      id: 'msg3',
-      content: 'I saw your profile and I am interested in knowing more about your family background.',
-      content_type: 'text',
-      sender_id: selectedConversation,
-      receiver_id: 'current-user',
-      created_at: new Date(Date.now() - 3400000).toISOString(),
-    },
-    {
-      id: 'msg4',
-      content: 'Sure, I come from a traditional Brahmin family. My father is a temple priest and my mother is a teacher.',
-      content_type: 'text',
-      sender_id: 'current-user',
-      receiver_id: selectedConversation,
-      created_at: new Date(Date.now() - 3300000).toISOString(),
-    },
-    {
-      id: 'msg5',
-      content: 'That sounds wonderful! Would you be interested in scheduling a call with our families?',
-      content_type: 'text',
-      sender_id: selectedConversation,
-      receiver_id: 'current-user',
-      created_at: new Date(Date.now() - 3200000).toISOString(),
-    }
-  ] : conversationMessages;
-
-  if (isLoadingConversations && !DEVELOPMENT_MODE) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-brahmin-primary" />
-      </div>
-    );
-  }
-
-  // Use dummy data in development mode, real data otherwise
-  const displayConversations = DEVELOPMENT_MODE && !user ? dummyConversations : conversations;
-  const displayMessages = DEVELOPMENT_MODE && !user ? dummyMessages : conversationMessages;
-  
-  const handleDummySendMessage = async (text: string) => {
-    if (DEVELOPMENT_MODE && !user) {
-      toast.success('Message sent (Development Mode)');
-      // In a real implementation, you would update the messages state here
-      return Promise.resolve(); // Return a resolved Promise
-    } else {
-      return handleSendMessage(text);
-    }
-  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-orange-50/30">
-      <main className="flex-grow container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-red-50/30 via-white to-amber-50/40">
+      <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 
-            className="text-4xl font-serif font-bold mb-2"
-            style={{ color: '#E30613' }}
-          >
+          <h1 className="text-3xl font-serif font-bold mb-2 flex items-center">
+            <MessageCircle className="h-8 w-8 mr-3 text-amber-600" />
             Messages
           </h1>
-          <p className="text-gray-600">Connect with your matches through secure messaging</p>
+          <p className="text-gray-600">Chat with your connections</p>
         </div>
-        
-        {/* Main content area with side-by-side layout */}
-        <div className="flex flex-col md:flex-row h-[75vh] bg-white rounded-lg shadow overflow-hidden">
-          {/* Conversation List - Always visible on desktop, toggleable on mobile */}
-          <div className={`${mobileViewChat ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-1/3 border-r border-gray-200 h-full`}>
-            <ConversationList
-              conversations={displayConversations}
-              onSelect={handleSelectConversation}
-              selectedConversation={selectedConversation}
-            />
-          </div>
-          
-          {/* Chat Panel - Fills remaining space */}
-          <div className={`${!selectedConversation && !mobileViewChat ? 'hidden md:flex' : 'flex'} flex-col flex-1 h-full`}>
-            {selectedConversation ? (
-              isLoadingMessages && !DEVELOPMENT_MODE ? (
-                <div className="flex flex-1 items-center justify-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-brahmin-primary" />
-                </div>
-              ) : messagesError && !DEVELOPMENT_MODE ? (
-                <div className="flex flex-1 items-center justify-center">
-                  <p className="text-red-500">Error loading messages</p>
-                </div>
-              ) : (
-                <>
-                  <ChatHeader 
-                    receiverId={selectedConversation} 
-                    onBack={handleBackToList}
-                    onPhoneCall={handlePhoneCall}
-                    onVideoCall={handleVideoCall}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Conversations List */}
+          <Card className="lg:col-span-1">
+            <CardContent className="p-4">
+              <div className="mb-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search conversations..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
                   />
-                  <ScrollArea className="flex-1 overflow-y-auto p-4" id="message-container">
-                    {displayMessages.length === 0 ? (
-                      <div className="text-center text-gray-500 mt-8">No messages yet.</div>
-                    ) : (
-                      displayMessages.map((msg) => (
-                        <MessageBubble 
-                          key={msg.id} 
-                          message={msg} 
-                          isOwnMessage={msg.sender_id === (user?.id || 'current-user')} 
-                        />
-                      ))
-                    )}
-                    <div ref={messagesEndRef} />
-                  </ScrollArea>
-                  <div className="mt-auto">
-                    <ChatInput
-                      onSendMessage={DEVELOPMENT_MODE && !user ? handleDummySendMessage : handleSendMessage}
-                      onUploadFile={handleFileUpload}
-                      onSendVoiceMessage={handleVoiceMessage}
-                      isRecording={isRecording}
-                      setIsRecording={setIsRecording}
-                      disabled={isLoadingMessages && !DEVELOPMENT_MODE}
-                    />
-                  </div>
-                </>
-              )
-            ) : (
-              <div className="flex flex-1 items-center justify-center">
-                <p className="text-gray-500">Select a conversation to start chatting.</p>
+                </div>
               </div>
+
+              <div className="space-y-2">
+                {filteredConversations.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <MessageCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>No conversations yet</p>
+                  </div>
+                ) : (
+                  filteredConversations.map((conversation) => (
+                    <div
+                      key={conversation.user_id}
+                      onClick={() => setSelectedUser(conversation.user_id)}
+                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                        selectedUser === conversation.user_id
+                          ? 'bg-amber-100'
+                          : 'hover:bg-gray-100'
+                      }`}
+                    >
+                      <Avatar 
+                        src={conversation.profile_picture} 
+                        fallback={conversation.full_name[0]} 
+                        className="h-10 w-10"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-semibold truncate">{conversation.full_name}</h4>
+                          {conversation.unread_count > 0 && (
+                            <Badge className="bg-red-600 text-white">
+                              {conversation.unread_count}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 truncate">
+                          {conversation.last_message}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Chat Window */}
+          <div className="lg:col-span-2">
+            {selectedUser && selectedConversation ? (
+              <ChatWindow
+                partnerId={selectedUser}
+                partnerName={selectedConversation.full_name}
+                partnerImage={selectedConversation.profile_picture}
+              />
+            ) : (
+              <Card className="h-[600px] flex items-center justify-center">
+                <CardContent className="text-center">
+                  <MessageCircle className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                  <h3 className="text-xl font-semibold mb-2">Select a conversation</h3>
+                  <p className="text-gray-600">Choose a conversation from the list to start chatting</p>
+                </CardContent>
+              </Card>
             )}
           </div>
         </div>
-      </main>
-      <Footer />
+      </div>
     </div>
   );
 };
 
-export default React.memo(Messages);
+export default Messages;

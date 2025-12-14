@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { isDevBypassMode } from '@/config/dev';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -28,6 +29,12 @@ export default function ProtectedRoute({
       updateLastActive();
     }
   }, [location.pathname, user, updateLastActive]);
+
+  // DEV MODE: Bypass authentication if enabled
+  if (isDevBypassMode()) {
+    console.log('🔓 DEV MODE: Authentication bypassed');
+    return <>{children}</>;
+  }
 
   // Show loading spinner while checking authentication
   if (loading) {
@@ -52,7 +59,7 @@ export default function ProtectedRoute({
   }
 
   // Check verification requirement
-  if (requireVerified && profile?.verification_status !== 'verified') {
+  if (requireVerified && (profile as any)?.verification_status !== 'verified') {
     return <Navigate to="/profile" state={{ message: 'Please verify your profile to access this feature' }} replace />;
   }
 

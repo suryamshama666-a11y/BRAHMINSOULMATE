@@ -4,6 +4,7 @@ import { UserProfile, UserSubscription, SubscriptionPlan } from '@/types';
 import { toast } from 'sonner';
 import { getSupabase } from '@/lib/getSupabase';
 import type { AuthContextType } from '@/hooks/useAuth';
+import { isDevBypassMode, getDevUser, getDevProfile } from '@/config/dev';
 
 // Create the context
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +32,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         setLoading(true);
         console.log('Setting up auth...');
+        
+        // DEV MODE: Use mock user if bypass is enabled
+        if (isDevBypassMode()) {
+          console.log('🔓 DEV MODE: Using mock user');
+          const mockUser = getDevUser() as any;
+          const mockProfile = getDevProfile() as any;
+          setUser(mockUser);
+          setProfile(mockProfile);
+          setLoading(false);
+          return;
+        }
         
         // Get current session
         const { data: { session }, error: sessionError } = await getSupabase().auth.getSession();

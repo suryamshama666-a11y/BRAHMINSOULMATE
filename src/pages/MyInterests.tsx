@@ -1,97 +1,38 @@
-import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
-import { Heart, Clock, CheckCircle, XCircle } from 'lucide-react';
-import ProfileCard from '@/components/ProfileCard';
+import { Heart, Clock, CheckCircle, XCircle, MapPin, GraduationCap, Briefcase } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { interestsService } from '@/services/api';
+import { useQuery } from '@tanstack/react-query';
 
 const MyInterests = () => {
   const { user } = useAuth();
-  const [interests, setInterests] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadInterests = async () => {
-      setLoading(true);
-      
-      // Mock data for sent interests
-      const mockInterests = [
-        {
-          id: '1',
-          name: 'Ananya Reddy',
-          age: 25,
-          gender: 'female',
-          height: 162,
-          religion: 'Hindu',
-          caste: 'Brahmin',
-          location: 'Hyderabad, Telangana',
-          education: 'M.Sc',
-          profession: 'Research Scientist',
-          subscription_type: 'premium',
-          status: 'pending',
-          sentDate: '2 days ago',
-          lastActive: '1 hour ago'
-        },
-        {
-          id: '2',
-          name: 'Rohit Gupta',
-          age: 28,
-          gender: 'male',
-          height: 175,
-          religion: 'Hindu',
-          caste: 'Brahmin',
-          location: 'Delhi, NCR',
-          education: 'MBA',
-          profession: 'Marketing Manager',
-          subscription_type: 'premium',
-          status: 'accepted',
-          sentDate: '1 week ago',
-          lastActive: '3 hours ago'
-        },
-        {
-          id: '3',
-          name: 'Meera Joshi',
-          age: 27,
-          gender: 'female',
-          height: 158,
-          religion: 'Hindu',
-          caste: 'Brahmin',
-          location: 'Pune, Maharashtra',
-          education: 'B.Tech',
-          profession: 'UI/UX Designer',
-          subscription_type: 'free',
-          status: 'declined',
-          sentDate: '3 days ago',
-          lastActive: '2 days ago'
-        },
-        {
-          id: '4',
-          name: 'Vikram Singh',
-          age: 30,
-          gender: 'male',
-          height: 180,
-          religion: 'Hindu',
-          caste: 'Brahmin',
-          location: 'Jaipur, Rajasthan',
-          education: 'CA',
-          profession: 'Financial Analyst',
-          subscription_type: 'premium',
-          status: 'pending',
-          sentDate: '5 days ago',
-          lastActive: '6 hours ago'
-        }
-      ];
+  // Fetch sent interests
+  const { data: interests = [], isLoading: loading } = useQuery({
+    queryKey: ['interests', 'sent', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      return await interestsService.getSentInterests();
+    },
+    enabled: !!user?.id
+  });
 
-      setTimeout(() => {
-        setInterests(mockInterests);
-        setLoading(false);
-      }, 1000);
-    };
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
 
-    loadInterests();
-  }, [user]);
+    if (diffMins < 60) return `${diffMins} minutes ago`;
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString();
+  };
 
 
 
@@ -160,21 +101,66 @@ const MyInterests = () => {
         {/* Interests Grid */}
         {interests.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {interests.map((profile) => (
-              <ProfileCard 
-                key={profile.id}
-                profile={{
-                  ...profile, 
-                  sentDate: profile.sentDate,
-                  gotra: profile.gotra || 'Gotra not specified'
-                }}
-                variant="interest"
-                onAction={(action, profileId) => {
-                  if (action === 'expressInterest') {
-                    console.log('Express interest for profile:', profileId);
-                  }
-                }}
-              />
+            {interests.map((interest) => (
+              <Card key={interest.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <CardContent className="p-6">
+                  {interest.receiver && (
+                    <>
+                      <div className="flex items-center justify-between mb-4">
+                        <Badge 
+                          variant={
+                            interest.status === 'accepted' ? 'default' : 
+                            interest.status === 'declined' ? 'destructive' : 
+                            'secondary'
+                          }
+                          className={
+                            interest.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                            interest.status === 'declined' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }
+                        >
+                          {interest.status.charAt(0).toUpperCase() + interest.status.slice(1)}
+                        </Badge>
+                      </div>
+
+                      <div className="mb-4">
+                        <h3 className="text-xl font-semibold mb-1">{interest.receiver.full_name}</h3>
+                        <p className="text-gray-600 text-sm">
+                          {interest.receiver.age} years • {interest.receiver.height} cm
+                        </p>
+                      </div>
+
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-center text-sm text-gray-600">
+                          <MapPin className="h-4 w-4 mr-2" />
+                          {interest.receiver.city}, {interest.receiver.state}
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <GraduationCap className="h-4 w-4 mr-2" />
+                          {interest.receiver.education}
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Briefcase className="h-4 w-4 mr-2" />
+                          {interest.receiver.occupation}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-700">{interest.message}</p>
+                        <p className="text-xs text-gray-500 mt-1">Sent {formatDate(interest.created_at)}</p>
+                      </div>
+
+                      {interest.status === 'accepted' && (
+                        <Link to={`/messages?user=${interest.receiver.user_id}`}>
+                          <Button className="w-full mt-4">
+                            Start Conversation
+                          </Button>
+                        </Link>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
             ))}
           </div>
         ) : (

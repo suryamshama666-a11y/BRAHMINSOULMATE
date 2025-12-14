@@ -10,22 +10,7 @@ import {
 } from 'lucide-react';
 
 interface ProfileCardProps {
-  profile: {
-    id: string;
-    name: string;
-    age: number;
-    gender: 'male' | 'female';
-    height: number;
-    religion: string;
-    caste: string;
-    gotra?: string;
-    location: string;
-    education: string;
-    profession: string;
-    subscription_type: 'premium' | 'free';
-    lastActive?: string;
-    [key: string]: any;
-  };
+  profile: any; // Use any for maximum flexibility with different profile structures
   variant?: 'default' | 'online' | 'new' | 'match' | 'favorite' | 'interest' | 'received';
   onAction?: (action: string, profileId: string) => void;
   showActions?: boolean;
@@ -287,7 +272,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                 </div>
                 <div className="flex items-center text-gray-700">
                   <Briefcase className="h-3 w-3 mr-2 text-amber-500 flex-shrink-0" />
-                  <span className="truncate">{profile.profession}</span>
+                  <span className="truncate">{profile.profession || profile.occupation || 'Not specified'}</span>
                 </div>
                 <div className="text-gray-600">
                   <span className="font-medium">Caste:</span> {profile.caste}

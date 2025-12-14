@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Footer from '@/components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,15 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const Dashboard = () => {
   const { profile, user } = useAuth();
+  interface MemberProfile {
+    id: string;
+    gender: string;
+    height: number;
+    gotra: string;
+    subcaste: string;
+    subscription_type: string;
+  }
+
   const [stats, setStats] = useState({
     profileViews: 0,
     interestsSent: 0,
@@ -20,8 +29,8 @@ const Dashboard = () => {
     vDatesCount: 0,
     matchesCount: 0
   });
-  const [recentMembers, setRecentMembers] = useState([]);
-  const [matches, setMatches] = useState([]);
+  const [recentMembers, setRecentMembers] = useState<MemberProfile[]>([]);
+  const [matches, setMatches] = useState<MemberProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,11 +41,15 @@ const Dashboard = () => {
         // Simulate loading time
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Mock data for recent members
+        // Determine opposite gender based on user's gender
+        const userGender = profile?.gender || 'male';
+        const oppositeGender = userGender === 'male' ? 'female' : 'male';
+
+        // Mock data for recent members - all opposite gender
         const mockRecentMembers = [
           {
             id: '1',
-            gender: 'female',
+            gender: oppositeGender,
             height: 165,
             gotra: 'Bharadwaja',
             subcaste: 'Iyer',
@@ -44,7 +57,7 @@ const Dashboard = () => {
           },
           {
             id: '2',
-            gender: 'male',
+            gender: oppositeGender,
             height: 175,
             gotra: 'Kashyapa',
             subcaste: 'Iyengar',
@@ -52,7 +65,7 @@ const Dashboard = () => {
           },
           {
             id: '3',
-            gender: 'female',
+            gender: oppositeGender,
             height: 160,
             gotra: 'Atri',
             subcaste: 'Deshastha',
@@ -60,7 +73,7 @@ const Dashboard = () => {
           },
           {
             id: '4',
-            gender: 'male',
+            gender: oppositeGender,
             height: 180,
             gotra: 'Vasishtha',
             subcaste: 'Kanyakubja',
@@ -72,7 +85,7 @@ const Dashboard = () => {
         const mockMatches = [
           {
             id: '5',
-            gender: 'female',
+            gender: oppositeGender,
             height: 162,
             gotra: 'Gautama',
             subcaste: 'Madhwa',
@@ -80,7 +93,7 @@ const Dashboard = () => {
           },
           {
             id: '6',
-            gender: 'male',
+            gender: oppositeGender,
             height: 178,
             gotra: 'Jamadagni',
             subcaste: 'Smartha',
@@ -88,7 +101,7 @@ const Dashboard = () => {
           },
           {
             id: '7',
-            gender: 'female',
+            gender: oppositeGender,
             height: 158,
             gotra: 'Vishwamitra',
             subcaste: 'Kokanastha',
@@ -96,7 +109,7 @@ const Dashboard = () => {
           },
           {
             id: '8',
-            gender: 'male',
+            gender: oppositeGender,
             height: 172,
             gotra: 'Angirasa',
             subcaste: 'Gaur',

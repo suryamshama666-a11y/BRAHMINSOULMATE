@@ -1,26 +1,28 @@
-import type { NextFunction, Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
+import { Request, Response, NextFunction } from 'express';
+import { createClient } from '@supabase/supabase-js';
 
-// Basic JWT auth middleware (placeholder). Replace with your session strategy if different
-export function authMiddleware(req: Request & { user?: any }, res: Response, next: NextFunction) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
-    return res.status(401).json({ success: false, error: 'Unauthorized' });
-  }
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
-  const token = authHeader.slice('Bearer '.length);
-  const secret = process.env.JWT_SECRET || process.env.VITE_JWT_SECRET;
-  if (!secret) {
-    return res.status(500).json({ success: false, error: 'Server auth misconfiguration' });
-  }
-
+export const authMiddleware = async (req: any, res: Response, next: NextFunction) => {
   try {
-    const decoded = jwt.verify(token, secret);
-    // Attach user for downstream routes
-    req.user = decoded;
-    next();
-  } catch (e) {
-    return res.status(401).json({ success: false, error: 'Invalid token' });
-  }
-}
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ success: false, error: 'No token provided' });
+    }
 
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      return res.status(401).json({ success: false, error: 'Invalid token' });
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    res.status(401).json({ success: false, error: 'Authentication failed' });
+  }
+};

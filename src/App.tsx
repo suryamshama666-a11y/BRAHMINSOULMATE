@@ -1,10 +1,11 @@
 import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import SimpleNavbar from '@/components/SimpleNavbar';
+import { DevModeIndicator } from '@/components/DevModeIndicator';
 
 // Loading component
 const PageLoader = () => (
@@ -88,21 +89,7 @@ const TestPage = () => {
   );
 };
 
-const NavbarSwitcher: React.FC = () => {
-  const location = window.location;
-  const path = location.pathname;
-  const publicPrefixes = [
-    '/', '/login', '/register', '/signup', '/forgot-password', '/reset-password',
-    '/about', '/how-it-works', '/free-vs-paid', '/success-stories', '/help', '/auth'
-  ];
-  const isPublic = publicPrefixes.some((p) => (p === '/' ? path === '/' : path.startsWith(p)));
-  if (isPublic) return <SimpleNavbar />;
-  return (
-    <Suspense fallback={null}>
-      <LazyOriginalNavbar />
-    </Suspense>
-  );
-};
+
 
 const Authenticated: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <ProtectedRoute>
@@ -110,14 +97,22 @@ const Authenticated: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   </ProtectedRoute>
 );
 
-const App = () => {
+// Wrapper component that uses useLocation inside Router
+const AppContent = () => {
+  const location = useLocation();
+  const path = location.pathname;
+  // Only show SimpleNavbar on login and register pages
+  const simpleNavbarPages = ['/login', '/register', '/signup'];
+  const isSimpleNavbar = simpleNavbarPages.some((p) => path.startsWith(p));
+
   return (
-    <ErrorBoundary level="critical">
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <Router>
-            <NavbarSwitcher />
-            <Suspense fallback={<PageLoader />}>
+    <>
+      {isSimpleNavbar ? <SimpleNavbar /> : (
+        <Suspense fallback={null}>
+          <LazyOriginalNavbar />
+        </Suspense>
+      )}
+      <Suspense fallback={<PageLoader />}>
               <Routes>
                 {/* Test Route */}
                 <Route path="/test" element={<TestPage />} />
@@ -213,6 +208,18 @@ const App = () => {
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>
+          </>
+        );
+};
+
+const App = () => {
+  return (
+    <ErrorBoundary level="critical">
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <Router>
+            <AppContent />
+            <DevModeIndicator />
             <Toaster 
               position="top-right" 
               richColors 

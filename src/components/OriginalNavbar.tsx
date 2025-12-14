@@ -266,7 +266,11 @@ export default function OriginalNavbar() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="transition-all duration-200 rounded-full border-2 border-[#FF4500] bg-white text-black hover:bg-[#FF4500] hover:text-white"
+                    className={`transition-all duration-200 rounded-full border-2 border-[#FF4500] ${
+                      location.pathname === '/login' 
+                        ? 'bg-[#FF4500] text-white' 
+                        : 'bg-white text-black hover:bg-[#FF4500] hover:text-white'
+                    }`}
                   >
                     Login
                   </Button>
@@ -276,7 +280,11 @@ export default function OriginalNavbar() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="transition-all duration-200 rounded-full border-2 border-[#FF4500] bg-white text-black hover:bg-[#FF4500] hover:text-white"
+                    className={`transition-all duration-200 rounded-full border-2 border-[#FF4500] ${
+                      location.pathname === '/register' 
+                        ? 'bg-[#FF4500] text-white' 
+                        : 'bg-white text-black hover:bg-[#FF4500] hover:text-white'
+                    }`}
                   >
                     Register
                   </Button>

@@ -1,58 +1,64 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, MapPin, Users, Clock, ArrowRight, Loader2 } from 'lucide-react';
+import { Calendar, MapPin, Users, ArrowRight } from 'lucide-react';
 import Footer from '@/components/Footer';
 import { api } from '@/lib/api';
 
+interface Event {
+  title: string;
+  date: string;
+  time: string;
+  location: string;
+  description: string;
+  attendees: number;
+  type: string;
+}
+
 export default function Events() {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [events, setEvents] = useState<Event[]>([]);
 
   useEffect(() => {
     const loadEvents = async () => {
       try {
-        setLoading(true);
         const eventsData = await api.getEvents();
         setEvents(eventsData);
       } catch (error) {
         console.error('Error loading events:', error);
-      } finally {
-        setLoading(false);
+        // Use static events as fallback
+        setEvents([
+          {
+            title: "Matrimony Meet & Greet",
+            date: "March 15, 2024",
+            time: "10:00 AM - 4:00 PM",
+            location: "The Grand Hotel, Mumbai",
+            description: "Join us for a day of meaningful connections. Meet prospective matches and their families in a comfortable environment.",
+            attendees: 150,
+            type: "In-Person"
+          },
+          {
+            title: "Virtual Matchmaking Session",
+            date: "March 20, 2024",
+            time: "6:00 PM - 8:00 PM",
+            location: "Online (Zoom)",
+            description: "A curated virtual event where you can interact with potential matches from across the country.",
+            attendees: 100,
+            type: "Virtual"
+          },
+          {
+            title: "Cultural Matrimony Gathering",
+            date: "April 5, 2024",
+            time: "11:00 AM - 5:00 PM",
+            location: "Convention Center, Bangalore",
+            description: "A traditional matrimonial event with cultural activities and opportunities to meet like-minded individuals.",
+            attendees: 200,
+            type: "In-Person"
+          }
+        ]);
       }
     };
 
     loadEvents();
   }, []);
-
-  const staticEvents = [
-    {
-      title: "Matrimony Meet & Greet",
-      date: "March 15, 2024",
-      time: "10:00 AM - 4:00 PM",
-      location: "The Grand Hotel, Mumbai",
-      description: "Join us for a day of meaningful connections. Meet prospective matches and their families in a comfortable environment.",
-      attendees: 150,
-      type: "In-Person"
-    },
-    {
-      title: "Virtual Matchmaking Session",
-      date: "March 20, 2024",
-      time: "6:00 PM - 8:00 PM",
-      location: "Online (Zoom)",
-      description: "A curated virtual event where you can interact with potential matches from across the country.",
-      attendees: 100,
-      type: "Virtual"
-    },
-    {
-      title: "Cultural Matrimony Gathering",
-      date: "April 5, 2024",
-      time: "11:00 AM - 5:00 PM",
-      location: "Convention Center, Bangalore",
-      description: "A traditional matrimonial event with cultural activities and opportunities to meet like-minded individuals.",
-      attendees: 200,
-      type: "In-Person"
-    }
-  ];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -87,7 +93,8 @@ export default function Events() {
               <CardContent className="flex-1 flex flex-col">
                 <div className="space-y-3 flex-1">
                   <div className="flex items-start">
-                    <Calendar className="h-5 w-5 text-[#FF4500] mr-2 mt-0.5" />
+                    <Calendar className="h-5 w-5 text-[#FF45
+00] mr-2 mt-0.5" />
                     <div>
                       <p className="font-medium">{event.date}</p>
                       <p className="text-sm text-gray-500">{event.time}</p>

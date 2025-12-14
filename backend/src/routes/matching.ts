@@ -1,341 +1,270 @@
 import express from 'express';
-import { getSupabase } from '../config/supabase';
+import { createClient } from '@supabase/supabase-js';
+import { authMiddleware } from '../middleware/auth';
 
 const router = express.Router();
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
-// Send interest to another user
-router.post('/send-interest', async (req, res) => {
+// Calculate compatibility score
+function calculateCompatibility(profile1: any, profile2: any): number {
+  let score = 0;
+  let factors = 0;
+
+  // Age compatibility (25 points)
+  const ageDiff = Math.abs(profile1.age - profile2.age);
+  if (ageDiff <= 2) score += 25;
+  else if (ageDiff <= 5) score += 20;
+  else if (ageDiff <= 10) score += 15;
+  else score += 5;
+  factors++;
+
+  // Height compatibility (15 points)
+  const heightDiff = Math.abs(profile1.height - profile2.height);
+  if (heightDiff <= 5) score += 15;
+  else if (heightDiff <= 10) score += 10;
+  else score += 5;
+  factors++;
+
+  // Location compatibility (20 points)
+  if (profile1.city === profile2.city) score += 20;
+  else if (profile1.state === profile2.state) score += 15;
+  else if (profile1.country === profile2.country) score += 10;
+  factors++;
+
+  // Education compatibility (15 points)
+  if (profile1.education_level === profile2.education_level) score += 15;
+  else if (Math.abs(profile1.education_level - profile2.education_level) <= 1) score += 10;
+  factors++;
+
+  // Gotra compatibility (10 points) - different gotra preferred
+  if (profile1.gotra !== profile2.gotra) score += 10;
+  factors++;
+
+  // Horoscope compatibility (15 points)
+  if (profile1.rashi && profile2.rashi) {
+    const compatibleRashis: Record<string, string[]> = {
+      'Aries': ['Leo', 'Sagittarius', 'Gemini', 'Aquarius'],
+      'Taurus': ['Virgo', 'Capricorn', 'Cancer', 'Pisces'],
+      'Gemini': ['Libra', 'Aquarius', 'Aries', 'Leo'],
+      'Cancer': ['Scorpio', 'Pisces', 'Taurus', 'Virgo'],
+      'Leo': ['Aries', 'Sagittarius', 'Gemini', 'Libra'],
+      'Virgo': ['Taurus', 'Capricorn', 'Cancer', 'Scorpio'],
+      'Libra': ['Gemini', 'Aquarius', 'Leo', 'Sagittarius'],
+      'Scorpio': ['Cancer', 'Pisces', 'Virgo', 'Capricorn'],
+      'Sagittarius': ['Aries', 'Leo', 'Libra', 'Aquarius'],
+      'Capricorn': ['Taurus', 'Virgo', 'Scorpio', 'Pisces'],
+      'Aquarius': ['Gemini', 'Libra', 'Aries', 'Sagittarius'],
+      'Pisces': ['Cancer', 'Scorpio', 'Taurus', 'Capricorn']
+    };
+    
+    if (compatibleRashis[profile1.rashi]?.includes(profile2.rashi)) {
+      score += 15;
+    } else {
+      score += 5;
+    }
+    factors++;
+  }
+
+  return Math.round(score / factors);
+}
+
+// Get recommended matches
+router.get('/recommendations', authMiddleware, async (req, res) => {
   try {
-    const supabase = getSupabase();
-    if (!supabase) {
-      return res.status(503).json({ success: false, error: 'Database not configured' });
+    const userId = req.user?.id;
+    const limit = parseInt(req.query.limit as string) || 20;
+
+    // Get user profile
+    const { data: userProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (profileError) throw profileError;
+
+    // Get opposite gender profiles
+    const targetGender = userProfile.gender === 'male' ? 'female' : 'male';
+    
+    let query = supabase
+      .from('profiles')
+      .select('*')
+      .eq('gender', targetGender)
+      .eq('verified', true)
+      .neq('id', userId);
+
+    // Apply preference filters
+    if (userProfile.preferences) {
+      const prefs = userProfile.preferences as any;
+      if (prefs.ageMin) query = query.gte('age', prefs.ageMin);
+      if (prefs.ageMax) query = query.lte('age', prefs.ageMax);
+      if (prefs.heightMin) query = query.gte('height', prefs.heightMin);
+      if (prefs.heightMax) query = query.lte('height', prefs.heightMax);
     }
 
-    const { match_id } = req.body;
-    const user_id = req.user?.id || req.user?.user_id;
+    const { data: profiles, error } = await query.limit(limit * 2);
+    if (error) throw error;
 
-    if (!match_id) {
-      return res.status(400).json({ success: false, error: 'match_id is required' });
-    }
+    // Calculate compatibility scores
+    const matchesWithScores = profiles.map(profile => ({
+      ...profile,
+      compatibility_score: calculateCompatibility(userProfile, profile)
+    }));
+
+    // Sort by compatibility and limit
+    const topMatches = matchesWithScores
+      .sort((a, b) => b.compatibility_score - a.compatibility_score)
+      .slice(0, limit);
+
+    res.json({ success: true, matches: topMatches });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Send interest
+router.post('/interest/send', authMiddleware, async (req, res) => {
+  try {
+    const senderId = req.user?.id;
+    const { receiverId, message } = req.body;
 
     // Check if interest already exists
     const { data: existing } = await supabase
-      .from('matches')
+      .from('interests')
       .select('id')
-      .eq('user_id', user_id)
-      .eq('match_id', match_id)
+      .eq('sender_id', senderId)
+      .eq('receiver_id', receiverId)
       .single();
 
     if (existing) {
       return res.status(400).json({ success: false, error: 'Interest already sent' });
     }
 
-    const { data: match, error } = await supabase
-      .from('matches')
+    // Create interest
+    const { data, error } = await supabase
+      .from('interests')
       .insert({
-        user_id,
-        match_id,
+        sender_id: senderId,
+        receiver_id: receiverId,
+        message: message || 'I would like to connect with you',
         status: 'pending'
       })
       .select()
       .single();
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
-    return res.json({ success: true, data: match });
+    // Create notification
+    await supabase.from('notifications').insert({
+      user_id: receiverId,
+      type: 'interest_received',
+      title: 'New Interest',
+      message: 'Someone expressed interest in your profile',
+      action_url: `/interests/received`,
+      sender_id: senderId
+    });
+
+    res.json({ success: true, interest: data });
   } catch (error: any) {
-    console.error('Send interest error:', error);
-    return res.status(500).json({ success: false, error: 'Failed to send interest' });
-  }
-});
-
-// Accept a match
-router.post('/accept/:id', async (req, res) => {
-  try {
-    const supabase = getSupabase();
-    if (!supabase) {
-      return res.status(503).json({ success: false, error: 'Database not configured' });
-    }
-
-    const matchId = req.params.id;
-    const currentUserId = req.user?.id || req.user?.user_id;
-
-    // Update the match status to accepted
-    const { data: match, error } = await supabase
-      .from('matches')
-      .update({ status: 'accepted' })
-      .eq('id', matchId)
-      .eq('match_id', currentUserId) // Only the recipient can accept
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    if (!match) {
-      return res.status(404).json({ success: false, error: 'Match not found or unauthorized' });
-    }
-
-    // Create reverse match for mutual connection
-    await supabase
-      .from('matches')
-      .insert({
-        user_id: currentUserId,
-        match_id: match.user_id,
-        status: 'accepted'
-      });
-
-    return res.json({ success: true, data: match });
-  } catch (error: any) {
-    console.error('Accept match error:', error);
-    return res.status(500).json({ success: false, error: 'Failed to accept match' });
-  }
-});
-
-// Decline a match
-router.post('/decline/:id', async (req, res) => {
-  try {
-    const supabase = getSupabase();
-    if (!supabase) {
-      return res.status(503).json({ success: false, error: 'Database not configured' });
-    }
-
-    const matchId = req.params.id;
-    const currentUserId = req.user?.id || req.user?.user_id;
-
-    const { data: match, error } = await supabase
-      .from('matches')
-      .update({ status: 'declined' })
-      .eq('id', matchId)
-      .eq('match_id', currentUserId) // Only the recipient can decline
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    if (!match) {
-      return res.status(404).json({ success: false, error: 'Match not found or unauthorized' });
-    }
-
-    return res.json({ success: true, data: match });
-  } catch (error: any) {
-    console.error('Decline match error:', error);
-    return res.status(500).json({ success: false, error: 'Failed to decline match' });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
 // Get sent interests
-router.get('/sent', async (req, res) => {
+router.get('/interests/sent', authMiddleware, async (req, res) => {
   try {
-    const supabase = getSupabase();
-    if (!supabase) {
-      return res.status(503).json({ success: false, error: 'Database not configured' });
-    }
+    const userId = req.user?.id;
 
-    const currentUserId = req.user?.id || req.user?.user_id;
-
-    const { data: matches, error } = await supabase
-      .from('matches')
+    const { data, error } = await supabase
+      .from('interests')
       .select(`
         *,
-        match_profile:profiles!matches_match_id_fkey(*)
+        receiver:profiles!interests_receiver_id_fkey(*)
       `)
-      .eq('user_id', currentUserId)
+      .eq('sender_id', userId)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      throw error;
-    }
-
-    return res.json({ success: true, data: matches || [] });
+    if (error) throw error;
+    res.json({ success: true, interests: data });
   } catch (error: any) {
-    console.error('Get sent matches error:', error);
-    return res.status(500).json({ success: false, error: 'Failed to fetch sent interests' });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
 // Get received interests
-router.get('/received', async (req, res) => {
+router.get('/interests/received', authMiddleware, async (req, res) => {
   try {
-    const supabase = getSupabase();
-    if (!supabase) {
-      return res.status(503).json({ success: false, error: 'Database not configured' });
-    }
+    const userId = req.user?.id;
 
-    const currentUserId = req.user?.id || req.user?.user_id;
-
-    const { data: matches, error } = await supabase
-      .from('matches')
+    const { data, error } = await supabase
+      .from('interests')
       .select(`
         *,
-        user_profile:profiles!matches_user_id_fkey(*)
+        sender:profiles!interests_sender_id_fkey(*)
       `)
-      .eq('match_id', currentUserId)
+      .eq('receiver_id', userId)
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
 
-    if (error) {
-      throw error;
-    }
-
-    return res.json({ success: true, data: matches || [] });
+    if (error) throw error;
+    res.json({ success: true, interests: data });
   } catch (error: any) {
-    console.error('Get received matches error:', error);
-    return res.status(500).json({ success: false, error: 'Failed to fetch received interests' });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Get connections (mutual matches)
-router.get('/connections', async (req, res) => {
+// Accept/Decline interest
+router.post('/interest/:id/respond', authMiddleware, async (req, res) => {
   try {
-    const supabase = getSupabase();
-    if (!supabase) {
-      return res.status(503).json({ success: false, error: 'Database not configured' });
-    }
+    const userId = req.user?.id;
+    const { id } = req.params;
+    const { action } = req.body; // 'accept' or 'decline'
 
-    const currentUserId = req.user?.id || req.user?.user_id;
-
-    const { data: connections, error } = await supabase
-      .from('matches')
-      .select(`
-        *,
-        match_profile:profiles!matches_match_id_fkey(*)
-      `)
-      .eq('user_id', currentUserId)
-      .eq('status', 'accepted')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      throw error;
-    }
-
-    return res.json({ success: true, data: connections || [] });
-  } catch (error: any) {
-    console.error('Get connections error:', error);
-    return res.status(500).json({ success: false, error: 'Failed to fetch connections' });
-  }
-});
-
-// Get profile recommendations
-router.get('/recommendations', async (req, res) => {
-  try {
-    const supabase = getSupabase();
-    if (!supabase) {
-      return res.status(503).json({ success: false, error: 'Database not configured' });
-    }
-
-    const currentUserId = req.user?.id || req.user?.user_id;
-    const { limit = 20 } = req.query;
-
-    // Get current user's profile for matching preferences
-    const { data: currentProfile } = await supabase
-      .from('profiles')
+    // Verify interest belongs to user
+    const { data: interest, error: fetchError } = await supabase
+      .from('interests')
       .select('*')
-      .eq('id', currentUserId)
+      .eq('id', id)
+      .eq('receiver_id', userId)
       .single();
 
-    if (!currentProfile) {
-      return res.status(404).json({ success: false, error: 'Profile not found' });
+    if (fetchError) throw fetchError;
+
+    const status = action === 'accept' ? 'accepted' : 'declined';
+    
+    const { error } = await supabase
+      .from('interests')
+      .update({ status })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    // If accepted, create mutual connection
+    if (action === 'accept') {
+      await supabase.from('connections').insert({
+        user_id_1: interest.sender_id,
+        user_id_2: userId,
+        status: 'active'
+      });
+
+      // Notify sender
+      await supabase.from('notifications').insert({
+        user_id: interest.sender_id,
+        type: 'interest_accepted',
+        title: 'Interest Accepted!',
+        message: 'Your interest has been accepted. You can now message each other!',
+        action_url: `/messages/${userId}`,
+        sender_id: userId
+      });
     }
 
-    // Get users already matched with
-    const { data: existingMatches } = await supabase
-      .from('matches')
-      .select('match_id')
-      .eq('user_id', currentUserId);
-
-    const excludeIds = [currentUserId, ...(existingMatches?.map(m => m.match_id) || [])];
-
-    // Basic recommendation logic - opposite gender, same religion/caste, different location
-    let query = supabase
-      .from('profiles')
-      .select('*')
-      .eq('profile_visibility', 'public')
-      .not('id', 'in', `(${excludeIds.join(',')})`)
-      .limit(Number(limit));
-
-    // Prefer opposite gender
-    if (currentProfile.gender === 'male') {
-      query = query.eq('gender', 'female');
-    } else if (currentProfile.gender === 'female') {
-      query = query.eq('gender', 'male');
-    }
-
-    // Same religion/caste preferences
-    if (currentProfile.religion) {
-      query = query.eq('religion', currentProfile.religion);
-    }
-    if (currentProfile.caste) {
-      query = query.eq('caste', currentProfile.caste);
-    }
-
-    const { data: recommendations, error } = await query
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      throw error;
-    }
-
-    return res.json({ success: true, data: recommendations || [] });
+    res.json({ success: true });
   } catch (error: any) {
-    console.error('Get recommendations error:', error);
-    return res.status(500).json({ success: false, error: 'Failed to fetch recommendations' });
-  }
-});
-
-// Add to favorites (placeholder - would need favorites table)
-router.post('/favorites/add', async (req, res) => {
-  try {
-    const { profile_id } = req.body;
-
-    if (!profile_id) {
-      return res.status(400).json({ success: false, error: 'profile_id is required' });
-    }
-
-    // TODO: Implement favorites with a favorites table
-    console.log(`User ${req.user?.id} wants to favorite profile ${profile_id}`);
-
-    return res.json({ success: true, message: 'Added to favorites (placeholder)' });
-  } catch (error: any) {
-    console.error('Add favorite error:', error);
-    return res.status(500).json({ success: false, error: 'Failed to add favorite' });
-  }
-});
-
-// Remove from favorites (placeholder)
-router.post('/favorites/remove', async (req, res) => {
-  try {
-    const { profile_id } = req.body;
-
-    if (!profile_id) {
-      return res.status(400).json({ success: false, error: 'profile_id is required' });
-    }
-
-    // TODO: Implement favorites removal
-    console.log(`User ${req.user?.id} wants to remove favorite profile ${profile_id}`);
-
-    return res.json({ success: true, message: 'Removed from favorites (placeholder)' });
-  } catch (error: any) {
-    console.error('Remove favorite error:', error);
-    return res.status(500).json({ success: false, error: 'Failed to remove favorite' });
-  }
-});
-
-// Get favorites (placeholder)
-router.get('/favorites', async (req, res) => {
-  try {
-    // TODO: Implement favorites listing
-    return res.json({ success: true, data: [], message: 'Favorites list (placeholder)' });
-  } catch (error: any) {
-    console.error('Get favorites error:', error);
-    return res.status(500).json({ success: false, error: 'Failed to fetch favorites' });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
 export default router;
-
