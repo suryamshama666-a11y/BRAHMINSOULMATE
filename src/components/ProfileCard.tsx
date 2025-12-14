@@ -282,6 +282,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                     <span className="font-medium">Gotra:</span> {profile.gotra}
                   </div>
                 )}
+                {profile.about && (
+                  <div className="text-gray-600 mt-2 text-xs border-t pt-2">
+                    <span className="font-medium block mb-1">About:</span>
+                    <p className="italic">{profile.about}</p>
+                  </div>
+                )}
               </div>
               
               {variant !== 'default' && (
