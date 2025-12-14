@@ -12,7 +12,7 @@
   
   body {
     @apply font-sans text-text-primary antialiased;
-    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
     overflow-x: clip;
     position: relative;
     width: 100%;
@@ -323,3 +323,29 @@ button:active {
 .series-3 { background-color: #16a34a; border-color: #16a34a; }
 .series-4 { background-color: #0891b2; border-color: #0891b2; }
 .series-5 { background-color: #a855f7; border-color: #a855f7; }
+
+/* Hide embla carousel navigation buttons globally */
+.embla__button,
+.embla__prev,
+.embla__next,
+[class*="embla"] button[aria-label*="slide"],
+[class*="embla"] button[aria-label*="previous"],
+[class*="embla"] button[aria-label*="next"] {
+  display: none !important;
+}
+
+/* Hide any carousel-like navigation buttons positioned outside content */
+button[aria-label="Previous slide"],
+button[aria-label="Next slide"],
+button[aria-roledescription="carousel"] ~ button,
+[role="region"][aria-roledescription="carousel"] button:not([type="submit"]) {
+  display: none !important;
+}
+
+/* Hide buttons positioned at edges that look like carousel navigation */
+.absolute.-left-12,
+.absolute.-right-12,
+.-left-12,
+.-right-12 {
+  display: none !important;
+}
