@@ -166,6 +166,8 @@ export default function PhotoAlbum({
               {/* Carousel Navigation */}
               {localPhotos.length > 1 && (
                 <>
+                  {/* Navigation arrows removed as per request */}
+                  {/* 
                   <button
                     type="button"
                     onClick={() => {
@@ -194,6 +196,7 @@ export default function PhotoAlbum({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </button>
+                  */}
                 </>
               )}
               
