@@ -50,7 +50,7 @@ const NavbarLinks = () => {
               variant="ghost"
               size="default"
               className={`
-                flex items-center space-x-2 px-4 py-2.5 rounded-md transition-colors text-base font-medium
+                flex items-center space-x-2 px-4 py-3 rounded-md transition-colors text-lg font-medium
                 focus:outline-none focus:ring-1 focus:ring-[#FF4500]
                 ${isActive 
                   ? 'bg-[#FFF1E6] text-[#FF4500] hover:bg-[#FFE4D6] border border-[#FF4500]/20' 
@@ -75,7 +75,7 @@ const NavbarLinks = () => {
             variant="ghost"
             size="default"
             className={`
-              flex items-center space-x-1 px-4 py-2.5 rounded-md transition-colors text-base font-medium
+              flex items-center space-x-1 px-4 py-3 rounded-md transition-colors text-lg font-medium
               text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20
               focus:outline-none focus:ring-1 focus:ring-[#FF4500]
             `}
@@ -92,7 +92,7 @@ const NavbarLinks = () => {
             <DropdownMenuItem key={path} className="focus:bg-[#FFF1E6] focus:text-[#FF4500]">
               <Link
                 to={path}
-                className="flex items-center space-x-2 px-3 py-2 w-full text-base text-neutral-800 hover:text-[#FF4500]"
+                className="flex items-center space-x-2 px-3 py-2.5 w-full text-lg text-neutral-800 hover:text-[#FF4500]"
               >
                 <Icon className="h-5 w-5" />
                 <span>{label}</span>

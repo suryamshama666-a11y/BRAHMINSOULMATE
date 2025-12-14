@@ -106,12 +106,12 @@ export default function ConnectionsDropdown({
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          size="sm"
-          className="relative flex items-center space-x-1 px-3 py-2 rounded-md transition-colors text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20 focus:outline-none focus:ring-1 focus:ring-[#FF4500]"
+          size="default"
+          className="relative flex items-center space-x-2 px-4 py-3 rounded-md transition-colors text-lg font-medium text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20 focus:outline-none focus:ring-1 focus:ring-[#FF4500]"
         >
-          <Users className="h-4 w-4" />
+          <Users className="h-5 w-5" />
           <span>Connections</span>
-          <ChevronDown className="h-3 w-3" />
+          <ChevronDown className="h-4 w-4" />
           {totalNotifications > 0 && (
             <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs bg-red-500 text-white">
               {totalNotifications > 99 ? '99+' : totalNotifications}
