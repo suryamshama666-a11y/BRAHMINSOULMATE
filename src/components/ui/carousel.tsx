@@ -198,6 +198,10 @@ const CarouselPrevious = React.forwardRef<
 >(({ className, variant = "outline", size = "icon", ...props }, ref) => {
   const { orientation, scrollPrev, canScrollPrev } = useCarousel()
 
+  // Hidden as per user request to remove arrows
+  return null
+
+  /* 
   return (
     <Button
       ref={ref}
@@ -218,6 +222,7 @@ const CarouselPrevious = React.forwardRef<
       <span className="sr-only">Previous slide</span>
     </Button>
   )
+  */
 })
 CarouselPrevious.displayName = "CarouselPrevious"
 
@@ -227,6 +232,10 @@ const CarouselNext = React.forwardRef<
 >(({ className, variant = "outline", size = "icon", ...props }, ref) => {
   const { orientation, scrollNext, canScrollNext } = useCarousel()
 
+  // Hidden as per user request to remove arrows
+  return null
+
+  /*
   return (
     <Button
       ref={ref}
@@ -247,6 +256,7 @@ const CarouselNext = React.forwardRef<
       <span className="sr-only">Next slide</span>
     </Button>
   )
+  */
 })
 CarouselNext.displayName = "CarouselNext"
 
