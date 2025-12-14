@@ -358,7 +358,7 @@ const Dashboard = () => {
               <div className="flex flex-col">
                 {matches.map((match, index) => (
                   <div key={match.id}>
-                    <div className="flex items-center space-x-4 p-4 rounded-2xl hover:bg-gradient-to-r hover:from-amber-50 hover:to-orange-50 transition-all duration-300 group border-2 border-transparent hover:border-amber-100">
+                    <div className="flex items-start space-x-4 p-4 rounded-2xl hover:bg-gradient-to-r hover:from-amber-50 hover:to-orange-50 transition-all duration-300 group border-2 border-transparent hover:border-amber-100">
                       <Link to={`/profile/${match.id}`}>
                         <Avatar className="h-16 w-16 border-3 border-amber-200 group-hover:border-amber-400 transition-all shadow-md group-hover:shadow-xl group-hover:scale-110 duration-300">
                           <AvatarImage 
@@ -368,57 +368,55 @@ const Dashboard = () => {
                           <AvatarFallback className="bg-amber-100 text-amber-700 font-bold">{match.gender === 'male' ? 'M' : 'F'}</AvatarFallback>
                         </Avatar>
                       </Link>
-                      <div className="flex-1">
-                        <Link to={`/profile/${match.id}`}>
-                          <h4 className="font-bold text-lg hover:text-amber-600 transition-colors">
-                            {match.gender === 'male' ? 'Male' : 'Female'} Match
-                          </h4>
-                        </Link>
-                        <p className="text-sm text-gray-600 font-medium">{match.height}cm • {match.subcaste}</p>
-                        <div className="flex items-center mt-2 space-x-2">
-                          <Badge variant="secondary" className="text-xs font-semibold bg-amber-100 text-amber-700">
-                            {match.gotra} Gotra
-                          </Badge>
-                          <Badge className="bg-gradient-to-r from-green-400 to-emerald-500 text-white text-xs font-bold">
-                            {Math.floor(Math.random() * 20) + 80}% Match
-                          </Badge>
-                          <Badge className={match.subscription_type === 'premium' ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white' : 'bg-gray-100 text-gray-700'} variant={match.subscription_type === 'premium' ? 'default' : 'outline'}>
-                            {match.subscription_type}
-                          </Badge>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <Link to={`/profile/${match.id}`}>
+                              <h4 className="font-bold text-lg hover:text-amber-600 transition-colors">
+                                {match.gender === 'male' ? 'Male' : 'Female'} Match
+                              </h4>
+                            </Link>
+                            <p className="text-sm text-gray-600 font-medium">{match.height}cm • {match.subcaste}</p>
+                            <div className="flex items-center mt-1 space-x-2">
+                              <span className="text-sm text-amber-700 font-medium">{match.gotra} Gotra</span>
+                              <span className="text-gray-400">•</span>
+                              <span className="text-sm text-green-600 font-bold">{Math.floor(Math.random() * 20) + 80}% Match</span>
+                            </div>
+                          </div>
+                          <Link to={`/profile/${match.id}`}>
+                            <Button className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-full px-6 shadow-md hover:shadow-lg transition-all">
+                              Connect
+                            </Button>
+                          </Link>
+                        </div>
+                        <div className="flex items-center justify-end mt-2 space-x-2">
+                          <button 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              const heart = e.currentTarget.querySelector('svg');
+                              if (heart) {
+                                heart.classList.toggle('fill-[#FF4500]');
+                              }
+                              console.log('Added to favorites:', match.id);
+                            }}
+                            className="p-2 rounded-full hover:bg-red-50 text-[#FF4500] hover:text-[#FF6B32] focus:outline-none transition-all hover:scale-110 duration-200"
+                            title="Add to favorites"
+                          >
+                            <Heart className="h-5 w-5 transition-all" />
+                          </button>
+                          <Link 
+                            to={`/messages?partner=${match.id}`}
+                            className="p-2 rounded-full hover:bg-orange-50 text-[#FF4500] hover:text-[#FF6B32] focus:outline-none transition-all hover:scale-110 duration-200"
+                            title="Send message"
+                          >
+                            <MessageCircle className="h-5 w-5" />
+                          </Link>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <button 
-                          onClick={(e) => {
-                            e.preventDefault();
-                            const heart = e.currentTarget.querySelector('svg');
-                            if (heart) {
-                              heart.classList.toggle('fill-[#FF4500]');
-                            }
-                            console.log('Added to favorites:', match.id);
-                          }}
-                          className="p-2 rounded-full hover:bg-red-50 text-[#FF4500] hover:text-[#FF6B32] focus:outline-none transition-all hover:scale-110 duration-200"
-                          title="Add to favorites"
-                        >
-                          <Heart className="h-6 w-6 transition-all" />
-                        </button>
-                        <Link 
-                          to={`/messages?partner=${match.id}`}
-                          className="p-2 rounded-full hover:bg-orange-50 text-[#FF4500] hover:text-[#FF6B32] focus:outline-none transition-all hover:scale-110 duration-200"
-                          title="Send message"
-                        >
-                          <MessageCircle className="h-6 w-6" />
-                        </Link>
-                        <Link to={`/profile/${match.id}`}>
-                          <Button className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-full px-6 shadow-md hover:shadow-lg transition-all">
-                            Connect
-                          </Button>
-                        </Link>
-                      </div>
+                      {index < matches.length - 1 && (
+                        <div className="h-px bg-gradient-to-r from-transparent via-amber-200 to-transparent my-2" />
+                      )}
                     </div>
-                    {index < matches.length - 1 && (
-                      <div className="h-px bg-gradient-to-r from-transparent via-amber-200 to-transparent my-2" />
-                    )}
                   </div>
                 ))}
                 {matches.length === 0 && (
