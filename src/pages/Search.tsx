@@ -300,7 +300,7 @@ export default function Search() {
                       <SelectValue placeholder="Any" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any</SelectItem>
+                      <SelectItem value="any">Any</SelectItem>
                       <SelectItem value="never_married">Never Married</SelectItem>
                       <SelectItem value="divorced">Divorced</SelectItem>
                       <SelectItem value="widowed">Widowed</SelectItem>
