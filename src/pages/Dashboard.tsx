@@ -275,59 +275,64 @@ const Dashboard = () => {
               </div>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="space-y-4">
-                {recentMembers.map(member => (
-                  <div key={member.id} className="flex items-center space-x-4 p-4 rounded-2xl hover:bg-gradient-to-r hover:from-red-50 hover:to-rose-50 transition-all duration-300 group border-2 border-transparent hover:border-red-100">
-                    <Link to={`/profile/${member.id}`}>
-                      <Avatar className="h-16 w-16 border-3 border-red-200 group-hover:border-red-400 transition-all shadow-md group-hover:shadow-xl group-hover:scale-110 duration-300">
-                        <AvatarImage 
-                          src={`https://randomuser.me/api/portraits/${member.gender === 'male' ? 'men' : 'women'}/${Math.floor(Math.random() * 50) + 1}.jpg`} 
-                          alt={`Profile ${member.id}`} 
-                        />
-                        <AvatarFallback className="bg-red-100 text-red-700 font-bold">{member.gender === 'male' ? 'M' : 'F'}</AvatarFallback>
-                      </Avatar>
-                    </Link>
-                    <div className="flex-1">
+              <div className="flex flex-col">
+                {recentMembers.map((member, index) => (
+                  <div key={member.id}>
+                    <div className="flex items-center space-x-4 p-4 rounded-2xl hover:bg-gradient-to-r hover:from-red-50 hover:to-rose-50 transition-all duration-300 group border-2 border-transparent hover:border-red-100">
                       <Link to={`/profile/${member.id}`}>
-                        <h4 className="font-bold text-lg hover:text-red-600 transition-colors">
-                          {member.gender === 'male' ? 'Male' : 'Female'} Profile
-                        </h4>
+                        <Avatar className="h-16 w-16 border-3 border-red-200 group-hover:border-red-400 transition-all shadow-md group-hover:shadow-xl group-hover:scale-110 duration-300">
+                          <AvatarImage 
+                            src={`https://randomuser.me/api/portraits/${member.gender === 'male' ? 'men' : 'women'}/${Math.floor(Math.random() * 50) + 1}.jpg`} 
+                            alt={`Profile ${member.id}`} 
+                          />
+                          <AvatarFallback className="bg-red-100 text-red-700 font-bold">{member.gender === 'male' ? 'M' : 'F'}</AvatarFallback>
+                        </Avatar>
                       </Link>
-                      <p className="text-sm text-gray-600 font-medium">
-                        {member.height}cm • {member.subcaste}
-                      </p>
-                      <div className="flex items-center mt-2 space-x-2">
-                        <Badge variant="secondary" className="text-xs font-semibold bg-red-100 text-red-700">
-                          {member.gotra} Gotra
-                        </Badge>
-                        <Badge className={member.subscription_type === 'premium' ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white' : 'bg-gray-100 text-gray-700'} variant={member.subscription_type === 'premium' ? 'default' : 'outline'}>
-                          {member.subscription_type}
-                        </Badge>
+                      <div className="flex-1">
+                        <Link to={`/profile/${member.id}`}>
+                          <h4 className="font-bold text-lg hover:text-red-600 transition-colors">
+                            {member.gender === 'male' ? 'Male' : 'Female'} Profile
+                          </h4>
+                        </Link>
+                        <p className="text-sm text-gray-600 font-medium">
+                          {member.height}cm • {member.subcaste}
+                        </p>
+                        <div className="flex items-center mt-2 space-x-2">
+                          <Badge variant="secondary" className="text-xs font-semibold bg-red-100 text-red-700">
+                            {member.gotra} Gotra
+                          </Badge>
+                          <Badge className={member.subscription_type === 'premium' ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white' : 'bg-gray-100 text-gray-700'} variant={member.subscription_type === 'premium' ? 'default' : 'outline'}>
+                            {member.subscription_type}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const heart = e.currentTarget.querySelector('svg');
+                            if (heart) {
+                              heart.classList.toggle('fill-[#FF4500]');
+                            }
+                            console.log('Added to favorites:', member.id);
+                          }}
+                          className="p-2 rounded-full hover:bg-red-50 text-[#FF4500] hover:text-[#FF6B32] focus:outline-none transition-all hover:scale-110 duration-200"
+                          title="Add to favorites"
+                        >
+                          <Heart className="h-6 w-6 transition-all" />
+                        </button>
+                        <Link 
+                          to={`/messages?partner=${member.id}`}
+                          className="p-2 rounded-full hover:bg-orange-50 text-[#FF4500] hover:text-[#FF6B32] focus:outline-none transition-all hover:scale-110 duration-200"
+                          title="Send message"
+                        >
+                          <MessageCircle className="h-6 w-6" />
+                        </Link>
                       </div>
                     </div>
-                    <div className="flex space-x-2">
-                      <button 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          const heart = e.currentTarget.querySelector('svg');
-                          if (heart) {
-                            heart.classList.toggle('fill-[#FF4500]');
-                          }
-                          console.log('Added to favorites:', member.id);
-                        }}
-                        className="p-2 rounded-full hover:bg-red-50 text-[#FF4500] hover:text-[#FF6B32] focus:outline-none transition-all hover:scale-110 duration-200"
-                        title="Add to favorites"
-                      >
-                        <Heart className="h-6 w-6 transition-all" />
-                      </button>
-                      <Link 
-                        to={`/messages?partner=${member.id}`}
-                        className="p-2 rounded-full hover:bg-orange-50 text-[#FF4500] hover:text-[#FF6B32] focus:outline-none transition-all hover:scale-110 duration-200"
-                        title="Send message"
-                      >
-                        <MessageCircle className="h-6 w-6" />
-                      </Link>
-                    </div>
+                    {index < recentMembers.length - 1 && (
+                      <div className="h-px bg-gradient-to-r from-transparent via-red-200 to-transparent my-2" />
+                    )}
                   </div>
                 ))}
               </div>
@@ -350,65 +355,70 @@ const Dashboard = () => {
               </div>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="space-y-4">
-                {matches.map(match => (
-                  <div key={match.id} className="flex items-center space-x-4 p-4 rounded-2xl hover:bg-gradient-to-r hover:from-amber-50 hover:to-orange-50 transition-all duration-300 group border-2 border-transparent hover:border-amber-100">
-                    <Link to={`/profile/${match.id}`}>
-                      <Avatar className="h-16 w-16 border-3 border-amber-200 group-hover:border-amber-400 transition-all shadow-md group-hover:shadow-xl group-hover:scale-110 duration-300">
-                        <AvatarImage 
-                          src={`https://randomuser.me/api/portraits/${match.gender === 'male' ? 'men' : 'women'}/${Math.floor(Math.random() * 50) + 1}.jpg`} 
-                          alt={`Match ${match.id}`} 
-                        />
-                        <AvatarFallback className="bg-amber-100 text-amber-700 font-bold">{match.gender === 'male' ? 'M' : 'F'}</AvatarFallback>
-                      </Avatar>
-                    </Link>
-                    <div className="flex-1">
+              <div className="flex flex-col">
+                {matches.map((match, index) => (
+                  <div key={match.id}>
+                    <div className="flex items-center space-x-4 p-4 rounded-2xl hover:bg-gradient-to-r hover:from-amber-50 hover:to-orange-50 transition-all duration-300 group border-2 border-transparent hover:border-amber-100">
                       <Link to={`/profile/${match.id}`}>
-                        <h4 className="font-bold text-lg hover:text-amber-600 transition-colors">
-                          {match.gender === 'male' ? 'Male' : 'Female'} Match
-                        </h4>
+                        <Avatar className="h-16 w-16 border-3 border-amber-200 group-hover:border-amber-400 transition-all shadow-md group-hover:shadow-xl group-hover:scale-110 duration-300">
+                          <AvatarImage 
+                            src={`https://randomuser.me/api/portraits/${match.gender === 'male' ? 'men' : 'women'}/${Math.floor(Math.random() * 50) + 1}.jpg`} 
+                            alt={`Match ${match.id}`} 
+                          />
+                          <AvatarFallback className="bg-amber-100 text-amber-700 font-bold">{match.gender === 'male' ? 'M' : 'F'}</AvatarFallback>
+                        </Avatar>
                       </Link>
-                      <p className="text-sm text-gray-600 font-medium">{match.height}cm • {match.subcaste}</p>
-                      <div className="flex items-center mt-2 space-x-2">
-                        <Badge variant="secondary" className="text-xs font-semibold bg-amber-100 text-amber-700">
-                          {match.gotra} Gotra
-                        </Badge>
-                        <Badge className="bg-gradient-to-r from-green-400 to-emerald-500 text-white text-xs font-bold">
-                          {Math.floor(Math.random() * 20) + 80}% Match
-                        </Badge>
-                        <Badge className={match.subscription_type === 'premium' ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white' : 'bg-gray-100 text-gray-700'} variant={match.subscription_type === 'premium' ? 'default' : 'outline'}>
-                          {match.subscription_type}
-                        </Badge>
+                      <div className="flex-1">
+                        <Link to={`/profile/${match.id}`}>
+                          <h4 className="font-bold text-lg hover:text-amber-600 transition-colors">
+                            {match.gender === 'male' ? 'Male' : 'Female'} Match
+                          </h4>
+                        </Link>
+                        <p className="text-sm text-gray-600 font-medium">{match.height}cm • {match.subcaste}</p>
+                        <div className="flex items-center mt-2 space-x-2">
+                          <Badge variant="secondary" className="text-xs font-semibold bg-amber-100 text-amber-700">
+                            {match.gotra} Gotra
+                          </Badge>
+                          <Badge className="bg-gradient-to-r from-green-400 to-emerald-500 text-white text-xs font-bold">
+                            {Math.floor(Math.random() * 20) + 80}% Match
+                          </Badge>
+                          <Badge className={match.subscription_type === 'premium' ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white' : 'bg-gray-100 text-gray-700'} variant={match.subscription_type === 'premium' ? 'default' : 'outline'}>
+                            {match.subscription_type}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const heart = e.currentTarget.querySelector('svg');
+                            if (heart) {
+                              heart.classList.toggle('fill-[#FF4500]');
+                            }
+                            console.log('Added to favorites:', match.id);
+                          }}
+                          className="p-2 rounded-full hover:bg-red-50 text-[#FF4500] hover:text-[#FF6B32] focus:outline-none transition-all hover:scale-110 duration-200"
+                          title="Add to favorites"
+                        >
+                          <Heart className="h-6 w-6 transition-all" />
+                        </button>
+                        <Link 
+                          to={`/messages?partner=${match.id}`}
+                          className="p-2 rounded-full hover:bg-orange-50 text-[#FF4500] hover:text-[#FF6B32] focus:outline-none transition-all hover:scale-110 duration-200"
+                          title="Send message"
+                        >
+                          <MessageCircle className="h-6 w-6" />
+                        </Link>
+                        <Link to={`/profile/${match.id}`}>
+                          <Button className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-full px-6 shadow-md hover:shadow-lg transition-all">
+                            Connect
+                          </Button>
+                        </Link>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <button 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          const heart = e.currentTarget.querySelector('svg');
-                          if (heart) {
-                            heart.classList.toggle('fill-[#FF4500]');
-                          }
-                          console.log('Added to favorites:', match.id);
-                        }}
-                        className="p-2 rounded-full hover:bg-red-50 text-[#FF4500] hover:text-[#FF6B32] focus:outline-none transition-all hover:scale-110 duration-200"
-                        title="Add to favorites"
-                      >
-                        <Heart className="h-6 w-6 transition-all" />
-                      </button>
-                      <Link 
-                        to={`/messages?partner=${match.id}`}
-                        className="p-2 rounded-full hover:bg-orange-50 text-[#FF4500] hover:text-[#FF6B32] focus:outline-none transition-all hover:scale-110 duration-200"
-                        title="Send message"
-                      >
-                        <MessageCircle className="h-6 w-6" />
-                      </Link>
-                      <Link to={`/profile/${match.id}`}>
-                        <Button className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-full px-6 shadow-md hover:shadow-lg transition-all">
-                          Connect
-                        </Button>
-                      </Link>
-                    </div>
+                    {index < matches.length - 1 && (
+                      <div className="h-px bg-gradient-to-r from-transparent via-amber-200 to-transparent my-2" />
+                    )}
                   </div>
                 ))}
                 {matches.length === 0 && (
