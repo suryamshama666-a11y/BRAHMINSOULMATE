@@ -435,7 +435,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!user || !profile) return;
     
     try {
-      const { error } = await supabase
+      const { error } = await getSupabase()
         .from('profiles')
         .update({
           privacy_settings: {
