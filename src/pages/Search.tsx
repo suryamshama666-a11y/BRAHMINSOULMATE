@@ -385,7 +385,7 @@ export default function Search() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6">
                 {profiles.map((profile) => (
                   <ProfileCard
                     key={profile.id}

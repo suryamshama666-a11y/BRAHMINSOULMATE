@@ -264,15 +264,15 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               <div className="space-y-1 mb-3 text-sm">
                 <div className="flex items-center text-gray-700">
                   <MapPin className="h-3 w-3 mr-2 text-red-500 flex-shrink-0" />
-                  <span className="truncate">{profile.location}</span>
+                  <span>{profile.location}</span>
                 </div>
                 <div className="flex items-center text-gray-700">
                   <GraduationCap className="h-3 w-3 mr-2 text-blue-500 flex-shrink-0" />
-                  <span className="truncate">{profile.education}</span>
+                  <span>{profile.education}</span>
                 </div>
                 <div className="flex items-center text-gray-700">
                   <Briefcase className="h-3 w-3 mr-2 text-amber-500 flex-shrink-0" />
-                  <span className="truncate">{profile.profession || profile.occupation || 'Not specified'}</span>
+                  <span>{profile.profession || profile.occupation || 'Not specified'}</span>
                 </div>
                 <div className="text-gray-600">
                   <span className="font-medium">Caste:</span> {profile.caste}
