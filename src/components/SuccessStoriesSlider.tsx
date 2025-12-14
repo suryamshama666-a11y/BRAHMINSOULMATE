@@ -91,33 +91,17 @@ const SuccessStoriesSlider: React.FC = () => {
               </CardContent>
             </div>
           </Card>
-
-          {/* Navigation buttons */}
-          <div className="flex justify-center mt-8 space-x-4">
-            <button 
-              onClick={handlePrev}
-              className="p-2 rounded-full bg-white border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors"
-              aria-label="Previous story"
-            >
-              <ChevronLeft size={24} className="text-brahmin-primary" />
-            </button>
-            <div className="flex space-x-2 items-center">
-              {successStories.map((_, index) => (
-                <span 
-                  key={index}
-                  className={`block w-2 h-2 rounded-full ${
-                    index === currentIndex ? 'bg-brahmin-primary' : 'bg-gray-300'
-                  }`}
-                />
-              ))}
-            </div>
-            <button 
-              onClick={handleNext}
-              className="p-2 rounded-full bg-white border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors"
-              aria-label="Next story"
-            >
-              <ChevronRight size={24} className="text-brahmin-primary" />
-            </button>
+          
+          {/* Auto-playing slider indicator instead of manual controls */}
+          <div className="flex justify-center mt-8 space-x-2">
+            {successStories.map((_, index) => (
+              <span 
+                key={index}
+                className={`block w-2 h-2 rounded-full transition-colors duration-300 ${
+                  index === currentIndex ? 'bg-brahmin-primary' : 'bg-gray-300'
+                }`}
+              />
+            ))}
           </div>
         </div>
       </div>
@@ -125,4 +109,4 @@ const SuccessStoriesSlider: React.FC = () => {
   );
 };
 
-export default SuccessStoriesSlider; 
+export default SuccessStoriesSlider;
