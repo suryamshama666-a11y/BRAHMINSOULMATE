@@ -23,8 +23,9 @@ export default function ProfileNotFound() {
             
             <div className="space-y-3">
               <Button
+                variant="outline"
                 onClick={() => navigate('/search')}
-                className="w-full bg-primary text-white"
+                className="w-full"
               >
                 <Search className="h-4 w-4 mr-2" />
                 Browse Profiles
