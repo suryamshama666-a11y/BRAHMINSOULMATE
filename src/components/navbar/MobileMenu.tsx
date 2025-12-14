@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -57,7 +56,7 @@ const MobileMenu = ({ onClose }: MobileMenuProps) => {
           <Button
             variant="ghost"
             className={`
-              w-full justify-start space-x-3 py-2 transition-colors
+              w-full justify-start space-x-3 py-3 text-base transition-colors
               focus:outline-none focus:ring-2 focus:ring-[#FF4500] focus:ring-offset-2
               ${isActive 
                 ? 'bg-[#FFF1E6] text-[#FF4500] hover:bg-[#FFE4D6] border border-[#FF4500]/20' 
@@ -78,7 +77,7 @@ const MobileMenu = ({ onClose }: MobileMenuProps) => {
       <div className="p-4 space-y-6">
         {/* Main Navigation */}
         <div className="space-y-1">
-          <h3 className="px-3 text-sm font-medium text-neutral-500 uppercase tracking-wider mb-2">
+          <h3 className="px-3 text-base font-semibold text-neutral-600 uppercase tracking-wider mb-2">
             Main Menu
           </h3>
           {renderLinks(mainLinks)}
@@ -88,7 +87,7 @@ const MobileMenu = ({ onClose }: MobileMenuProps) => {
 
         {/* Account Links */}
         <div className="space-y-1">
-          <h3 className="px-3 text-sm font-medium text-neutral-500 uppercase tracking-wider mb-2">
+          <h3 className="px-3 text-base font-semibold text-neutral-600 uppercase tracking-wider mb-2">
             Account
           </h3>
           {renderLinks(accountLinks)}
@@ -98,7 +97,7 @@ const MobileMenu = ({ onClose }: MobileMenuProps) => {
 
         {/* Information Links */}
         <div className="space-y-1">
-          <h3 className="px-3 text-sm font-medium text-neutral-500 uppercase tracking-wider mb-2">
+          <h3 className="px-3 text-base font-semibold text-neutral-600 uppercase tracking-wider mb-2">
             Information
           </h3>
           {renderLinks(infoLinks)}
@@ -110,7 +109,7 @@ const MobileMenu = ({ onClose }: MobileMenuProps) => {
         <div className="pt-2">
           <Button
             variant="ghost"
-            className="w-full justify-start space-x-3 py-2 text-[#FF4500] hover:text-[#FF4500] hover:bg-[#FFF1E6]"
+            className="w-full justify-start space-x-3 py-3 text-base text-[#FF4500] hover:text-[#FF4500] hover:bg-[#FFF1E6]"
             onClick={handleLogout}
           >
             <LogOut className="h-5 w-5" />

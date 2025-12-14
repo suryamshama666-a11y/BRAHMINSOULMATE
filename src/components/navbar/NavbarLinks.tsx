@@ -48,9 +48,9 @@ const NavbarLinks = () => {
           <Link key={path} to={path}>
             <Button
               variant="ghost"
-              size="sm"
+              size="default"
               className={`
-                flex items-center space-x-2 px-3 py-2 rounded-md transition-colors
+                flex items-center space-x-2 px-4 py-2.5 rounded-md transition-colors text-base font-medium
                 focus:outline-none focus:ring-1 focus:ring-[#FF4500]
                 ${isActive 
                   ? 'bg-[#FFF1E6] text-[#FF4500] hover:bg-[#FFE4D6] border border-[#FF4500]/20' 
@@ -58,7 +58,7 @@ const NavbarLinks = () => {
                 }
               `}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-5 w-5" />
               <span className="hidden lg:block">{label}</span>
             </Button>
           </Link>
@@ -73,15 +73,15 @@ const NavbarLinks = () => {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            size="sm"
+            size="default"
             className={`
-              flex items-center space-x-1 px-3 py-2 rounded-md transition-colors
+              flex items-center space-x-1 px-4 py-2.5 rounded-md transition-colors text-base font-medium
               text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20
               focus:outline-none focus:ring-1 focus:ring-[#FF4500]
             `}
           >
             <span>More</span>
-            <ChevronDown className="h-3 w-3" />
+            <ChevronDown className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -92,9 +92,9 @@ const NavbarLinks = () => {
             <DropdownMenuItem key={path} className="focus:bg-[#FFF1E6] focus:text-[#FF4500]">
               <Link
                 to={path}
-                className="flex items-center space-x-2 px-2 py-1.5 w-full text-neutral-800 hover:text-[#FF4500]"
+                className="flex items-center space-x-2 px-3 py-2 w-full text-base text-neutral-800 hover:text-[#FF4500]"
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-5 w-5" />
                 <span>{label}</span>
               </Link>
             </DropdownMenuItem>

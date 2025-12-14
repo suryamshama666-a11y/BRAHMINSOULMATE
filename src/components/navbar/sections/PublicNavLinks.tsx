@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Book, Info, DollarSign, Star } from 'lucide-react';
@@ -13,7 +12,7 @@ export default function PublicNavLinks() {
         to="/success-stories"
         className={`nav-link ${isActive('/success-stories') ? 'active' : ''}`}
       >
-        <Star className="h-4 w-4 mr-2" />
+        <Star className="h-5 w-5 mr-2" />
         Success Stories
       </Link>
       
@@ -21,7 +20,7 @@ export default function PublicNavLinks() {
         to="/how-it-works"
         className={`nav-link ${isActive('/how-it-works') ? 'active' : ''}`}
       >
-        <Info className="h-4 w-4 mr-2" />
+        <Info className="h-5 w-5 mr-2" />
         How it Works
       </Link>
       
@@ -29,7 +28,7 @@ export default function PublicNavLinks() {
         to="/free-vs-paid"
         className={`nav-link ${isActive('/free-vs-paid') ? 'active' : ''}`}
       >
-        <DollarSign className="h-4 w-4 mr-2" />
+        <DollarSign className="h-5 w-5 mr-2" />
         Free vs Paid
       </Link>
     </>

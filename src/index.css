@@ -23,6 +23,7 @@
     overscroll-behavior-x: none;
     overscroll-behavior: none;
     touch-action: pan-y pinch-zoom;
+    font-size: 16px;
   }
   
   #root {
@@ -40,19 +41,31 @@
   }
   
   h1 {
-    @apply text-3xl md:text-4xl font-bold;
+    @apply text-4xl md:text-5xl font-bold;
   }
   
   h2 {
-    @apply text-2xl md:text-3xl font-bold;
+    @apply text-3xl md:text-4xl font-bold;
   }
   
   h3 {
+    @apply text-2xl md:text-3xl font-semibold;
+  }
+  
+  h4 {
     @apply text-xl md:text-2xl font-semibold;
   }
   
+  h5 {
+    @apply text-lg md:text-xl font-medium;
+  }
+  
+  p {
+    @apply text-base leading-relaxed;
+  }
+  
   input, textarea, select {
-    @apply focus:outline-none transition-all duration-200;
+    @apply focus:outline-none transition-all duration-200 text-base;
   }
   
   button {
@@ -62,7 +75,7 @@
 
 @layer components {
   .mobile-nav-link {
-    @apply flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-primary-50 w-full;
+    @apply flex items-center px-4 py-3 text-base font-medium rounded-md hover:bg-primary-50 w-full;
   }
   
   .mobile-nav-link.active {
@@ -70,7 +83,7 @@
   }
   
   .mobile-nav-sublink {
-    @apply flex items-center px-5 py-2 text-sm font-medium rounded-md hover:bg-primary-50 ml-2 w-full;
+    @apply flex items-center px-5 py-3 text-base font-medium rounded-md hover:bg-primary-50 ml-2 w-full;
   }
   
   .mobile-nav-sublink.active {
@@ -78,15 +91,15 @@
   }
   
   .nav-dropdown-item {
-    @apply flex items-center w-full text-sm font-medium transition-colors duration-200 hover:bg-primary-50 hover:text-primary-600;
+    @apply flex items-center w-full text-base font-medium transition-colors duration-200 hover:bg-primary-50 hover:text-primary-600;
   }
   
   .nav-link {
-    @apply flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 hover:bg-primary-50;
+    @apply flex items-center px-4 py-2.5 text-base font-medium rounded-md transition-all duration-200 hover:bg-primary-50;
   }
   
   .nav-link.active {
-    @apply bg-primary-50 text-primary-600 font-medium;
+    @apply bg-primary-50 text-primary-600 font-semibold;
   }
   
   .primary-text {
