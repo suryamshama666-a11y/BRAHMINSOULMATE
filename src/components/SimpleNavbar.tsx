@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Heart } from 'lucide-react';
+import { Heart, LogIn, UserPlus } from 'lucide-react';
 
 const SimpleNavbar = () => {
   const location = useLocation();
@@ -16,6 +16,9 @@ const SimpleNavbar = () => {
     backgroundColor: isActive(path) ? '#fef2f2' : 'transparent',
     transition: 'all 0.2s ease'
   });
+
+  const isLoginActive = location.pathname === '/login';
+  const isRegisterActive = location.pathname === '/register';
 
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
@@ -40,17 +43,45 @@ const SimpleNavbar = () => {
           
           {/* Auth Links */}
           <div className="flex items-center space-x-2">
-            <Link 
-              to="/login" 
-              className="px-4 py-2 text-red-600 hover:text-red-700 font-medium"
-            >
-              Login
+            <Link to="/login">
+              <button
+                style={{
+                  backgroundColor: isLoginActive ? '#FF4500' : '#FFFFFF',
+                  color: isLoginActive ? '#FFFFFF' : '#FF4500',
+                  border: '2px solid #FF4500',
+                  borderRadius: '9999px',
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <LogIn style={{ width: '16px', height: '16px', marginRight: '8px', color: isLoginActive ? '#FFFFFF' : '#FF4500' }} />
+                Login
+              </button>
             </Link>
-            <Link 
-              to="/register" 
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
-            >
-              Register
+            <Link to="/register">
+              <button
+                style={{
+                  backgroundColor: isRegisterActive ? '#FF4500' : '#FFFFFF',
+                  color: isRegisterActive ? '#FFFFFF' : '#FF4500',
+                  border: '2px solid #FF4500',
+                  borderRadius: '9999px',
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <UserPlus style={{ width: '16px', height: '16px', marginRight: '8px', color: isRegisterActive ? '#FFFFFF' : '#FF4500' }} />
+                Register
+              </button>
             </Link>
           </div>
         </div>
