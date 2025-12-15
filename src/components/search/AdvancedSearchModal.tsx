@@ -40,6 +40,43 @@ const BRAHMIN_COMMUNITIES = [
   'Velanadu', 'Viswa', 'Other'
 ];
 
+const OCCUPATIONS = [
+  { value: 'software_engineer', label: 'Software Engineer / IT Professional' },
+  { value: 'doctor', label: 'Doctor / Medical Professional' },
+  { value: 'engineer', label: 'Engineer (Non-IT)' },
+  { value: 'ca_accountant', label: 'CA / Chartered Accountant' },
+  { value: 'lawyer', label: 'Lawyer / Legal Professional' },
+  { value: 'teacher_professor', label: 'Teacher / Professor' },
+  { value: 'government_employee', label: 'Government Employee' },
+  { value: 'civil_services', label: 'Civil Services (IAS/IPS/IFS)' },
+  { value: 'banker', label: 'Banker / Finance Professional' },
+  { value: 'business_owner', label: 'Business Owner / Entrepreneur' },
+  { value: 'scientist', label: 'Scientist / Researcher' },
+  { value: 'architect', label: 'Architect' },
+  { value: 'pilot', label: 'Pilot / Aviation' },
+  { value: 'merchant_navy', label: 'Merchant Navy' },
+  { value: 'defense', label: 'Defense / Armed Forces' },
+  { value: 'consultant', label: 'Consultant' },
+  { value: 'manager', label: 'Manager / Executive' },
+  { value: 'pharmacist', label: 'Pharmacist' },
+  { value: 'dentist', label: 'Dentist' },
+  { value: 'physiotherapist', label: 'Physiotherapist' },
+  { value: 'nurse', label: 'Nurse / Healthcare' },
+  { value: 'journalist', label: 'Journalist / Media' },
+  { value: 'artist', label: 'Artist / Designer' },
+  { value: 'marketing', label: 'Marketing / Sales' },
+  { value: 'hr_professional', label: 'HR Professional' },
+  { value: 'data_scientist', label: 'Data Scientist / Analyst' },
+  { value: 'product_manager', label: 'Product Manager' },
+  { value: 'real_estate', label: 'Real Estate' },
+  { value: 'agriculture', label: 'Agriculture / Farming' },
+  { value: 'priest', label: 'Priest / Religious Professional' },
+  { value: 'student', label: 'Student' },
+  { value: 'homemaker', label: 'Homemaker' },
+  { value: 'not_working', label: 'Not Working Currently' },
+  { value: 'other', label: 'Other' },
+];
+
 const MARRIAGE_TIMELINE = [
   { value: '3_months', label: 'Within 3 months' },
   { value: '6_months', label: 'Within 6 months' },
@@ -129,11 +166,13 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
     country: [],
     gotra: [],
     brahminCommunity: [],
+    occupation: [],
   });
 
   const [saveSearchName, setSaveSearchName] = useState('');
   const [gotraSearch, setGotraSearch] = useState('');
   const [communitySearch, setCommunitySearch] = useState('');
+  const [occupationSearch, setOccupationSearch] = useState('');
 
   const handleSearch = () => {
     onSearch(filters);
@@ -163,6 +202,10 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
     c.toLowerCase().includes(communitySearch.toLowerCase())
   );
 
+  const filteredOccupations = OCCUPATIONS.filter(o => 
+    o.label.toLowerCase().includes(occupationSearch.toLowerCase())
+  );
+
   const currentIncomeRanges = INCOME_RANGES[filters.income?.currency as keyof typeof INCOME_RANGES] || INCOME_RANGES.INR;
 
   return (
@@ -176,8 +219,8 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
 
         <div className="p-6">
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-5 bg-orange-50 border border-orange-200 p-1 gap-1">
-              {['basic', 'location', 'community', 'horoscope', 'preferences'].map((tab) => (
+            <TabsList className="grid w-full grid-cols-6 bg-orange-50 border border-orange-200 p-1 gap-1">
+              {['basic', 'location', 'community', 'occupation', 'horoscope', 'preferences'].map((tab) => (
                 <TabsTrigger 
                   key={tab}
                   value={tab}
@@ -399,6 +442,36 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
               </div>
             </TabsContent>
 
+            <TabsContent value="occupation" className="space-y-6 mt-4 bg-white">
+              <div className="space-y-3">
+                <Label className="text-gray-900 font-medium text-base">Occupation / Profession</Label>
+                <Input
+                  placeholder="Search occupation..."
+                  value={occupationSearch}
+                  onChange={(e) => setOccupationSearch(e.target.value)}
+                  className="bg-white border-orange-200"
+                />
+                <div className="max-h-64 overflow-y-auto border rounded-md p-3 border-orange-200 bg-orange-50/50">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {filteredOccupations.map((occupation) => (
+                      <div key={occupation.value} className="flex items-center space-x-2 py-1">
+                        <Checkbox
+                          id={`occupation-${occupation.value}`}
+                          checked={(filters.occupation || []).includes(occupation.value)}
+                          onCheckedChange={() => toggleArrayFilter('occupation', occupation.value)}
+                          className="border-[#FF4500] data-[state=checked]:bg-[#FF4500]"
+                        />
+                        <Label htmlFor={`occupation-${occupation.value}`} className="cursor-pointer text-sm">
+                          {occupation.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500">Select one or more occupations to filter profiles</p>
+              </div>
+            </TabsContent>
+
             <TabsContent value="horoscope" className="space-y-4 bg-white">
               <div className="flex gap-4">
                 <div className="space-y-2">
@@ -451,7 +524,22 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
             </TabsContent>
 
             <TabsContent value="preferences" className="space-y-6 mt-4 bg-white">
-              <div className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 p-4 bg-green-50 rounded-md border-2 border-green-300">
+                  <Checkbox
+                    id="onlineStatus"
+                    checked={filters.onlineStatus}
+                    onCheckedChange={(checked) => setFilters({...filters, onlineStatus: checked as boolean})}
+                    className="w-5 h-5 border-2 border-green-600 data-[state=checked]:bg-green-600 data-[state=checked]:text-white"
+                  />
+                  <div>
+                    <Label htmlFor="onlineStatus" className="text-gray-900 font-medium cursor-pointer">
+                      Show Online Profiles Only
+                    </Label>
+                    <p className="text-xs text-gray-500">Filter to show only profiles that are currently online</p>
+                  </div>
+                </div>
+
                 <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-md border border-orange-200">
                   <Checkbox
                     id="verified"
@@ -478,13 +566,13 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
 
                 <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-md border border-orange-200">
                   <Checkbox
-                    id="onlineStatus"
-                    checked={filters.onlineStatus}
-                    onCheckedChange={(checked) => setFilters({...filters, onlineStatus: checked as boolean})}
+                    id="photosOnly"
+                    checked={filters.verified}
+                    onCheckedChange={(checked) => setFilters({...filters, verified: checked as boolean})}
                     className="w-5 h-5 border-2 border-[#FF4500] data-[state=checked]:bg-[#FF4500] data-[state=checked]:text-white"
                   />
-                  <Label htmlFor="onlineStatus" className="text-gray-900 font-medium cursor-pointer">
-                    Currently online
+                  <Label htmlFor="photosOnly" className="text-gray-900 font-medium cursor-pointer">
+                    Profiles with photos only
                   </Label>
                 </div>
               </div>
