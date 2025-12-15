@@ -1,8 +1,20 @@
-
 import { VDate, VDateInvitation, VDateTemplate, UserAvailability } from '@/types/vdates';
 import { getAllProfiles } from '@/data/profiles';
 
 const profiles = getAllProfiles();
+
+// Helper to get dates relative to today
+const getRelativeDate = (daysFromNow: number): string => {
+  const date = new Date();
+  date.setDate(date.getDate() + daysFromNow);
+  return date.toISOString().split('T')[0];
+};
+
+const getRelativeDateObject = (daysFromNow: number): Date => {
+  const date = new Date();
+  date.setDate(date.getDate() + daysFromNow);
+  return date;
+};
 
 export const vdateTemplates: VDateTemplate[] = [
   {
@@ -62,42 +74,42 @@ export const mockVDates: VDate[] = [
     id: 'vdate-1',
     participantIds: ['user-1', profiles[0]?.id || 'profile-1'],
     initiatorId: 'user-1',
-    date: '2025-06-20',
+    date: getRelativeDate(5), // 5 days from now
     time: '19:00',
     type: 'video',
     status: 'confirmed',
     title: 'Getting to know each other',
     duration: 30,
     meetingLink: 'https://meet.brahminmatrimony.com/room/vdate-1',
-    createdAt: new Date('2025-06-15'),
-    updatedAt: new Date('2025-06-16'),
+    createdAt: getRelativeDateObject(-5),
+    updatedAt: getRelativeDateObject(-4),
     reminderSent: false
   },
   {
     id: 'vdate-2',
     participantIds: ['user-1', profiles[1]?.id || 'profile-2'],
     initiatorId: profiles[1]?.id || 'profile-2',
-    date: '2025-06-22',
+    date: getRelativeDate(7), // 7 days from now
     time: '18:30',
     type: 'coffee',
     status: 'pending',
     title: 'Virtual Coffee Chat',
     duration: 45,
-    createdAt: new Date('2025-06-14'),
-    updatedAt: new Date('2025-06-14')
+    createdAt: getRelativeDateObject(-6),
+    updatedAt: getRelativeDateObject(-6)
   },
   {
     id: 'vdate-3',
     participantIds: ['user-1', profiles[2]?.id || 'profile-3'],
     initiatorId: 'user-1',
-    date: '2025-06-10',
+    date: getRelativeDate(-10), // 10 days ago (past/completed)
     time: '20:00',
     type: 'movie',
     status: 'completed',
     title: 'Movie Night',
     duration: 120,
-    createdAt: new Date('2025-06-08'),
-    updatedAt: new Date('2025-06-10'),
+    createdAt: getRelativeDateObject(-12),
+    updatedAt: getRelativeDateObject(-10),
     feedback: [
       {
         userId: 'user-1',
@@ -105,7 +117,7 @@ export const mockVDates: VDate[] = [
         comment: 'Had a wonderful time! Great conversation.',
         connectionQuality: 'excellent',
         wouldMeetAgain: true,
-        submittedAt: new Date('2025-06-10')
+        submittedAt: getRelativeDateObject(-10)
       }
     ]
   }
@@ -119,7 +131,7 @@ export const mockInvitations: VDateInvitation[] = [
     vdateId: 'pending-vdate-1',
     message: 'Would you like to have a virtual coffee chat this weekend?',
     status: 'sent',
-    createdAt: new Date('2025-06-14')
+    createdAt: getRelativeDateObject(-1)
   },
   {
     id: 'inv-2',
@@ -128,7 +140,7 @@ export const mockInvitations: VDateInvitation[] = [
     vdateId: 'pending-vdate-2',
     message: 'Hi! I enjoyed our conversation. Would you like to have a video date?',
     status: 'sent',
-    createdAt: new Date('2025-06-13')
+    createdAt: getRelativeDateObject(-2)
   }
 ];
 
