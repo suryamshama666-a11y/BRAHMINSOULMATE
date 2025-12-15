@@ -196,19 +196,21 @@ const OnlineProfiles = () => {
 
         {/* Online Profiles Grid */}
         {onlineProfiles.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {onlineProfiles.map((profile) => (
-              <ProfileCard 
-                key={profile.id}
-                profile={{
-                  ...profile, 
-                  lastSeen: profile.lastSeen,
-                  gotra: profile.gotra || 'Gotra not specified'
-                }}
-                variant="online"
-                onAction={handleProfileAction}
-              />
-            ))}
+          <div className="max-w-5xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {onlineProfiles.map((profile) => (
+                <ProfileCard 
+                  key={profile.id}
+                  profile={{
+                    ...profile, 
+                    lastSeen: profile.lastSeen,
+                    gotra: profile.gotra || 'Gotra not specified'
+                  }}
+                  variant="online"
+                  onAction={handleProfileAction}
+                />
+              ))}
+            </div>
           </div>
         ) : (
           <Card className="text-center py-16">
