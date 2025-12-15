@@ -19,10 +19,20 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 
 // Lazy loaded pages with named chunks for better caching
 const LazyOriginalNavbar = React.lazy(() => import(/* webpackChunkName: "navbar" */ '@/components/OriginalNavbar'));
-const Login = React.lazy(() => import(/* webpackChunkName: "auth" */ '@/pages/Login'));
-const Register = React.lazy(() => import(/* webpackChunkName: "auth" */ '@/pages/Register'));
-const ForgotPassword = React.lazy(() => import(/* webpackChunkName: "auth" */ '@/pages/ForgotPassword'));
-const ResetPassword = React.lazy(() => import(/* webpackChunkName: "auth" */ '@/pages/ResetPassword'));
+
+// Auth pages loaded together to prevent flash when navigating between them
+const authPagesPromise = Promise.all([
+  import(/* webpackChunkName: "auth" */ '@/pages/Login'),
+  import(/* webpackChunkName: "auth" */ '@/pages/Register'),
+  import(/* webpackChunkName: "auth" */ '@/pages/ForgotPassword'),
+  import(/* webpackChunkName: "auth" */ '@/pages/ResetPassword'),
+]);
+
+const Login = React.lazy(() => authPagesPromise.then(([login]) => login));
+const Register = React.lazy(() => authPagesPromise.then(([, register]) => register));
+const ForgotPassword = React.lazy(() => authPagesPromise.then(([, , forgot]) => forgot));
+const ResetPassword = React.lazy(() => authPagesPromise.then(([, , , reset]) => reset));
+
 const Dashboard = React.lazy(() => import(/* webpackChunkName: "dashboard" */ '@/pages/Dashboard'));
 const Profile = React.lazy(() => import(/* webpackChunkName: "profile" */ '@/pages/Profile'));
 const ProfileManagement = React.lazy(() => import(/* webpackChunkName: "profile" */ '@/pages/ProfileManagement'));
@@ -117,47 +127,12 @@ const AppContent = () => {
                 {/* Test Route */}
                 <Route path="/test" element={<TestPage />} />
                 
-                {/* Public Routes */}
-                <Route 
-                  path="/login" 
-                  element={
-                    <Suspense fallback={<PageLoader />}>
-                      <Login />
-                    </Suspense>
-                  } 
-                />
-                <Route 
-                  path="/register" 
-                  element={
-                    <Suspense fallback={<PageLoader />}>
-                      <Register />
-                    </Suspense>
-                  } 
-                />
-                <Route 
-                  path="/signup" 
-                  element={
-                    <Suspense fallback={<PageLoader />}>
-                      <Register />
-                    </Suspense>
-                  } 
-                />
-                <Route 
-                  path="/forgot-password" 
-                  element={
-                    <Suspense fallback={<PageLoader />}>
-                      <ForgotPassword />
-                    </Suspense>
-                  } 
-                />
-                <Route 
-                  path="/reset-password" 
-                  element={
-                    <Suspense fallback={<PageLoader />}>
-                      <ResetPassword />
-                    </Suspense>
-                  } 
-                />
+                {/* Public Routes - Auth pages share same chunk, no nested Suspense needed */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/signup" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route 
                   path="/auth/callback" 
                   element={
