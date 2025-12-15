@@ -6,6 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import SimpleNavbar from '@/components/SimpleNavbar';
 import { DevModeIndicator } from '@/components/DevModeIndicator';
+import { CollapsibleChatWidget } from '@/components/CollapsibleChatWidget';
 
 // Loading component
 const PageLoader = () => (
@@ -88,7 +89,6 @@ const TestPage = () => {
     </div>
   );
 };
-
 
 
 const Authenticated: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -219,6 +219,7 @@ const App = () => {
         <AuthProvider>
           <Router>
             <AppContent />
+            <CollapsibleChatWidget />
             <DevModeIndicator />
             <Toaster 
               position="top-right" 
