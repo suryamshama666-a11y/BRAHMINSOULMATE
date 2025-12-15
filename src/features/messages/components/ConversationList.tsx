@@ -123,12 +123,12 @@ export const ConversationList: React.FC<ConversationListProps> = ({
               {/* Conversation details */}
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 bg-green-500 rounded-full"></span>
-                    <h3 className="text-[11px] font-medium text-gray-900 truncate">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-medium text-gray-900 truncate">
                       {conversation.partner_name || 'User'}
                     </h3>
-                    <span className="text-[10px] text-green-500">Online</span>
+                    <span className="h-2.5 w-2.5 bg-green-500 rounded-full"></span>
+                    <span className="text-xs text-green-500 font-medium">Online</span>
                   </div>
                   {conversation.last_message && (
                     <span className="text-xs text-gray-500">
