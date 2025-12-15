@@ -1,7 +1,12 @@
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Heart, MapPin, Briefcase, GraduationCap, RefreshCw } from 'lucide-react';
+import { Heart, MapPin, Briefcase, GraduationCap, RefreshCw, Filter, SlidersHorizontal } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { matchingService, interestsService } from '@/services/api';
@@ -10,8 +15,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 const Matches = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    ageMin: '',
+    ageMax: '',
+    location: 'all',
+    caste: 'all',
+    sortBy: 'compatibility'
+  });
 
-  // Fetch matches
   const { data: matches = [], isLoading: loading } = useQuery({
     queryKey: ['matches', user?.id],
     queryFn: async () => {
@@ -22,7 +34,29 @@ const Matches = () => {
     enabled: !!user?.id
   });
 
-  // Recalculate matches mutation
+  const filteredMatches = matches.filter((match: any) => {
+    const profile = match.profile;
+    if (!profile) return false;
+
+    if (filters.ageMin && profile.age < parseInt(filters.ageMin)) return false;
+    if (filters.ageMax && profile.age > parseInt(filters.ageMax)) return false;
+    if (filters.location !== 'all' && profile.state !== filters.location) return false;
+    if (filters.caste !== 'all' && profile.caste !== filters.caste) return false;
+
+    return true;
+  }).sort((a: any, b: any) => {
+    if (filters.sortBy === 'compatibility') {
+      return b.compatibility_score - a.compatibility_score;
+    } else if (filters.sortBy === 'age_asc') {
+      return (a.profile?.age || 0) - (b.profile?.age || 0);
+    } else if (filters.sortBy === 'age_desc') {
+      return (b.profile?.age || 0) - (a.profile?.age || 0);
+    } else if (filters.sortBy === 'recent') {
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+    }
+    return 0;
+  });
+
   const recalculateMutation = useMutation({
     mutationFn: async () => {
       if (!user?.id) throw new Error('Not authenticated');
@@ -37,7 +71,6 @@ const Matches = () => {
     }
   });
 
-  // Send interest mutation
   const sendInterestMutation = useMutation({
     mutationFn: async ({ profileId, message }: { profileId: string; message: string }) => {
       await interestsService.sendInterest(profileId, message);
@@ -61,6 +94,19 @@ const Matches = () => {
     recalculateMutation.mutate();
   };
 
+  const resetFilters = () => {
+    setFilters({
+      ageMin: '',
+      ageMax: '',
+      location: 'all',
+      caste: 'all',
+      sortBy: 'compatibility'
+    });
+  };
+
+  const uniqueLocations = [...new Set(matches.map((m: any) => m.profile?.state).filter(Boolean))];
+  const uniqueCastes = [...new Set(matches.map((m: any) => m.profile?.caste).filter(Boolean))];
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 via-amber-50 to-red-100 flex items-center justify-center">
@@ -72,24 +118,107 @@ const Matches = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50/30 via-white to-amber-50/40">
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8 flex justify-between items-center">
+        <div className="mb-8 flex justify-between items-center flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-serif font-bold mb-2">Your Matches</h1>
             <p className="text-gray-600">
-              {matches.length} profiles matched based on your preferences
+              {filteredMatches.length} profiles matched based on your preferences
             </p>
           </div>
-          <Button
-            onClick={handleRecalculate}
-            disabled={recalculateMutation.isPending}
-            variant="outline"
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${recalculateMutation.isPending ? 'animate-spin' : ''}`} />
-            Recalculate Matches
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <SlidersHorizontal className="h-4 w-4 mr-2" />
+              Filters
+            </Button>
+            <Button
+              onClick={handleRecalculate}
+              disabled={recalculateMutation.isPending}
+              variant="outline"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${recalculateMutation.isPending ? 'animate-spin' : ''}`} />
+              Recalculate Matches
+            </Button>
+          </div>
         </div>
 
-        {matches.length === 0 && !loading ? (
+        <Collapsible open={showFilters} onOpenChange={setShowFilters}>
+          <CollapsibleContent>
+            <Card className="mb-6">
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Min Age</Label>
+                    <Input
+                      type="number"
+                      placeholder="18"
+                      value={filters.ageMin}
+                      onChange={(e) => setFilters({ ...filters, ageMin: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Max Age</Label>
+                    <Input
+                      type="number"
+                      placeholder="50"
+                      value={filters.ageMax}
+                      onChange={(e) => setFilters({ ...filters, ageMax: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Location</Label>
+                    <Select value={filters.location} onValueChange={(v) => setFilters({ ...filters, location: v })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Locations" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Locations</SelectItem>
+                        {uniqueLocations.map((loc: string) => (
+                          <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Caste</Label>
+                    <Select value={filters.caste} onValueChange={(v) => setFilters({ ...filters, caste: v })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Castes" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Castes</SelectItem>
+                        {uniqueCastes.map((caste: string) => (
+                          <SelectItem key={caste} value={caste}>{caste}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Sort By</Label>
+                    <Select value={filters.sortBy} onValueChange={(v) => setFilters({ ...filters, sortBy: v })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sort By" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="compatibility">Compatibility Score</SelectItem>
+                        <SelectItem value="age_asc">Age (Low to High)</SelectItem>
+                        <SelectItem value="age_desc">Age (High to Low)</SelectItem>
+                        <SelectItem value="recent">Recently Added</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="mt-4 flex justify-end">
+                  <Button variant="ghost" onClick={resetFilters}>Reset Filters</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </CollapsibleContent>
+        </Collapsible>
+
+        {filteredMatches.length === 0 && !loading ? (
           <Card>
             <CardContent className="py-12 text-center">
               <p className="text-gray-600 mb-4">No matches found yet.</p>
@@ -98,7 +227,7 @@ const Matches = () => {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {matches.map((match) => (
+            {filteredMatches.map((match: any) => (
               <Card key={match.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">

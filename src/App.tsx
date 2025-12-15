@@ -50,6 +50,8 @@ const Community = React.lazy(() => import(/* webpackChunkName: "community" */ '@
 const MyFavorites = React.lazy(() => import(/* webpackChunkName: "connections" */ '@/pages/MyFavorites'));
 const MyInterests = React.lazy(() => import(/* webpackChunkName: "connections" */ '@/pages/MyInterests'));
 const InterestsReceived = React.lazy(() => import(/* webpackChunkName: "connections" */ '@/pages/InterestsReceived'));
+const WhoViewedYou = React.lazy(() => import(/* webpackChunkName: "connections" */ '@/pages/WhoViewedYou'));
+const YouViewed = React.lazy(() => import(/* webpackChunkName: "connections" */ '@/pages/YouViewed'));
 
 // Import Profile browsing pages
 const OnlineProfiles = React.lazy(() => import(/* webpackChunkName: "profiles" */ '@/pages/OnlineProfiles'));
@@ -176,6 +178,8 @@ const AppContent = () => {
                 <Route path="/interests-received" element={<Authenticated><InterestsReceived /></Authenticated>} />
                 <Route path="/online-profiles" element={<Authenticated><OnlineProfiles /></Authenticated>} />
                 <Route path="/new-members" element={<Authenticated><NewMembers /></Authenticated>} />
+                <Route path="/connections/who-viewed" element={<Authenticated><WhoViewedYou /></Authenticated>} />
+                <Route path="/connections/you-viewed" element={<Authenticated><YouViewed /></Authenticated>} />
 
                 {/* Landing page as root */}
                 <Route
