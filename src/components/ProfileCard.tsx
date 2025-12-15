@@ -310,7 +310,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                       {profile.profileCompletion}%
                     </Badge>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                  <div className="w-full bg-gray-300 rounded-full h-1.5 border border-gray-500">
                     <div 
                       className="bg-purple-600 h-1.5 rounded-full transition-all duration-300" 
                       style={{ width: `${profile.profileCompletion}%` }}
