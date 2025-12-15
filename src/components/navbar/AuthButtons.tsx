@@ -11,20 +11,19 @@ const AuthButtons = () => {
     <div className="flex items-center space-x-2">
       <Link to="/login">
         <Button
-          variant="outline"
           size="sm"
           className={`
             transition-all duration-200 rounded-full border-2 border-[#FF4500]
             ${currentPath === '/login'
-              ? 'bg-[#FF4500] text-white'
-              : 'bg-white text-black hover:bg-[#FF4500] hover:text-white'
+              ? '!bg-[#FF4500] !text-white'
+              : '!bg-white !text-black hover:!bg-[#FF4500] hover:!text-white'
             }
           `}
         >
           <LogIn className={`h-4 w-4 mr-2 ${
             currentPath === '/login' 
-              ? 'text-white' 
-              : 'text-black group-hover:text-white'
+              ? '!text-white' 
+              : '!text-black'
           }`} />
           <span>Login</span>
         </Button>
@@ -32,20 +31,19 @@ const AuthButtons = () => {
       
       <Link to="/register">
         <Button
-          variant="outline"
           size="sm"
           className={`
             transition-all duration-200 rounded-full border-2 border-[#FF4500]
             ${currentPath === '/register'
-              ? 'bg-[#FF4500] text-white'
-              : 'bg-white text-black hover:bg-[#FF4500] hover:text-white'
+              ? '!bg-[#FF4500] !text-white'
+              : '!bg-white !text-black hover:!bg-[#FF4500] hover:!text-white'
             }
           `}
         >
           <UserPlus className={`h-4 w-4 mr-2 ${
             currentPath === '/register' 
-              ? 'text-white' 
-              : 'text-black group-hover:text-white'
+              ? '!text-white' 
+              : '!text-black'
           }`} />
           <span>Register</span>
         </Button>
