@@ -265,7 +265,7 @@ const NewMembers = () => {
                       Online Profiles
                     </Button>
                     <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => navigate('/search')}>
-                      <Users className="h-4 w-4 mr-2 text-orange-600" />
+                      <Users className="h-4 w-4 mr-2 text-white" />
                       All Profiles
                     </Button>
                   </div>
