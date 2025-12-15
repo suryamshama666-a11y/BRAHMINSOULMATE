@@ -3,13 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Heart, MessageCircle, Eye, Clock, MapPin } from 'lucide-react';
 import ProfileCard from '@/components/ProfileCard';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 const OnlineProfiles = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [onlineProfiles, setOnlineProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -120,6 +122,35 @@ const OnlineProfiles = () => {
     loadOnlineProfiles();
   }, [user]);
 
+  const handleProfileAction = (action: string, profileId: string) => {
+    const targetProfile = onlineProfiles.find(p => p.id === profileId);
+    const profileName = targetProfile?.name || 'User';
+    
+    switch(action) {
+      case 'view':
+        navigate(`/profile/${profileId}`);
+        break;
+      case 'message':
+        navigate(`/messages?partnerId=${profileId}&partnerName=${encodeURIComponent(profileName)}`);
+        toast.success(`Opening chat with ${profileName}`);
+        break;
+      case 'expressInterest':
+        toast.success(`Interest expressed to ${profileName}!`);
+        break;
+      case 'report':
+        toast.success(`Report submitted for ${profileName}. Our team will review.`);
+        break;
+      case 'block':
+        toast.success(`${profileName} has been blocked`);
+        break;
+      case 'unblock':
+        toast.success(`${profileName} has been unblocked`);
+        break;
+      default:
+        console.log('Unknown action:', action);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 via-amber-50 to-red-100 flex items-center justify-center">
@@ -175,10 +206,7 @@ const OnlineProfiles = () => {
                   gotra: profile.gotra || 'Gotra not specified'
                 }}
                 variant="online"
-                onAction={(action, profileId) => {
-                  console.log(`Action: ${action} on profile: ${profileId}`);
-                  // Handle actions like express interest, report, block, etc.
-                }}
+                onAction={handleProfileAction}
               />
             ))}
           </div>

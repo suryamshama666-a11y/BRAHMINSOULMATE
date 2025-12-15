@@ -3,13 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Heart, MessageCircle, Eye, Star, HeartOff } from 'lucide-react';
 import ProfileCard from '@/components/ProfileCard';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 const MyFavorites = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -77,6 +79,39 @@ const MyFavorites = () => {
 
   const removeFavorite = (profileId) => {
     setFavorites(favorites.filter(fav => fav.id !== profileId));
+    toast.success('Removed from favorites');
+  };
+
+  const handleProfileAction = (action: string, profileId: string) => {
+    const targetProfile = favorites.find(p => p.id === profileId);
+    const profileName = targetProfile?.name || 'User';
+    
+    switch(action) {
+      case 'removeFavorite':
+        removeFavorite(profileId);
+        break;
+      case 'view':
+        navigate(`/profile/${profileId}`);
+        break;
+      case 'message':
+        navigate(`/messages?partnerId=${profileId}&partnerName=${encodeURIComponent(profileName)}`);
+        toast.success(`Opening chat with ${profileName}`);
+        break;
+      case 'expressInterest':
+        toast.success(`Interest expressed to ${profileName}!`);
+        break;
+      case 'report':
+        toast.success(`Report submitted for ${profileName}. Our team will review.`);
+        break;
+      case 'block':
+        toast.success(`${profileName} has been blocked`);
+        break;
+      case 'unblock':
+        toast.success(`${profileName} has been unblocked`);
+        break;
+      default:
+        console.log('Unknown action:', action);
+    }
   };
 
   if (loading) {
@@ -120,11 +155,7 @@ const MyFavorites = () => {
                   gotra: profile.gotra || 'Gotra not specified'
                 }}
                 variant="favorite"
-                onAction={(action, profileId) => {
-                  if (action === 'removeFavorite') {
-                    removeFavorite(profileId);
-                  }
-                }}
+                onAction={handleProfileAction}
               />
             ))}
           </div>

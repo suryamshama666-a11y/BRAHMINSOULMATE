@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -13,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function Search() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [profiles, setProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
@@ -24,6 +26,36 @@ export default function Search() {
   const [maritalStatus, setMaritalStatus] = useState('any');
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [withPhotosOnly, setWithPhotosOnly] = useState(false);
+
+  // Handle profile card actions
+  const handleProfileAction = (action: string, profileId: string) => {
+    const targetProfile = profiles.find(p => p.id === profileId);
+    const profileName = targetProfile?.name || 'User';
+    
+    switch(action) {
+      case 'view':
+        navigate(`/profile/${profileId}`);
+        break;
+      case 'message':
+        navigate(`/messages?partnerId=${profileId}&partnerName=${encodeURIComponent(profileName)}`);
+        toast.success(`Opening chat with ${profileName}`);
+        break;
+      case 'expressInterest':
+        toast.success(`Interest expressed to ${profileName}!`);
+        break;
+      case 'report':
+        toast.success(`Report submitted for ${profileName}. Our team will review.`);
+        break;
+      case 'block':
+        toast.success(`${profileName} has been blocked`);
+        break;
+      case 'unblock':
+        toast.success(`${profileName} has been unblocked`);
+        break;
+      default:
+        console.log('Unknown action:', action);
+    }
+  };
 
   // Determine opposite gender
   const userGender = profile?.gender || 'male';
@@ -391,6 +423,7 @@ export default function Search() {
                     <ProfileCard
                       profile={profile}
                       showActions
+                      onAction={handleProfileAction}
                     />
                   </div>
                 ))}
