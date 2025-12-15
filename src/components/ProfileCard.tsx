@@ -179,7 +179,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           <div className="flex-shrink-0">
             {/* Profile Picture */}
             <div className="relative">
-              <div className="w-40 h-48 overflow-hidden bg-gray-100">
+              <div className="w-40 h-48 overflow-hidden bg-gradient-to-br from-red-100 to-orange-100">
                 <img
                   src={`https://randomuser.me/api/portraits/${profile.gender === 'male' ? 'men' : 'women'}/${Math.floor(Math.random() * 50) + 1}.jpg`}
                   alt={profile.name}
