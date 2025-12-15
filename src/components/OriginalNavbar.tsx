@@ -131,6 +131,21 @@ export default function OriginalNavbar() {
               </Button>
             </Link>
 
+            <Link to="/profile">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-colors focus:outline-none focus:ring-1 focus:ring-[#FF4500] ${
+                  location.pathname === '/profile' || location.pathname.startsWith('/profile/')
+                    ? 'bg-[#FFF1E6] text-[#FF4500] hover:bg-[#FFE4D6] border border-[#FF4500]/20'
+                    : 'text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20'
+                }`}
+              >
+                <User className="h-4 w-4" />
+                <span className="hidden lg:block">Profile</span>
+              </Button>
+            </Link>
+
             {/* Connections Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
