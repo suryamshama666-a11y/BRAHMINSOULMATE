@@ -11,6 +11,7 @@ import { Search as SearchIcon, Filter, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
+import LocationSearch from '@/components/search/LocationSearch';
 
 export default function Search() {
   const { profile } = useAuth();
@@ -262,6 +263,10 @@ export default function Search() {
     setTotal(mockProfiles.length);
   };
 
+  const handleLocationSearch = (params: { location: string; distance: number; useCurrentLocation: boolean }) => {
+    toast.success(`Searching within ${params.distance}km of ${params.location}`);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <main className="flex-grow container mx-auto px-4 py-8">
@@ -299,6 +304,9 @@ export default function Search() {
                     Reset
                   </Button>
                 </div>
+
+                {/* Location Search */}
+                <LocationSearch onSearch={handleLocationSearch} />
 
                 {/* Age Range */}
                 <div className="space-y-2">
