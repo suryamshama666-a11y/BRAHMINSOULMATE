@@ -106,7 +106,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         />
         <div>
           <div className="flex items-center">
-            <h2 className="font-medium text-gray-900">{receiverProfile?.name || 'User'}</h2>
+            <h2 className="text-sm font-medium text-gray-900">{receiverProfile?.name || 'User'}</h2>
             {receiverProfile?.verified && (
               <span 
                 className="ml-2 bg-green-500 text-white text-xs px-1 py-0.5 rounded-full" 
