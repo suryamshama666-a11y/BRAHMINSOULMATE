@@ -109,7 +109,7 @@ const Landing = () => {
                 </Button>
               </Link>
               <Link to="/login">
-                <Button variant="outline" className="px-8 py-6 text-lg rounded-full border-2 border-gray-300 hover:border-rose-400 hover:text-rose-600 transition-all duration-300">
+                <Button variant="outline" className="px-8 py-6 text-lg rounded-full border-2 border-gray-300 hover:border-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all duration-300">
                   Sign In
                 </Button>
               </Link>
