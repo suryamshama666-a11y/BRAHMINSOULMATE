@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, MapPin, Users, ArrowRight, Loader2 } from 'lucide-react';
@@ -195,10 +196,13 @@ export default function Events() {
                         {(event.participant_count || 0) >= event.capacity ? 'Event Full' : 'Register'}
                       </Button>
                     )}
-                    <button className="flex items-center text-[#FF4500] hover:text-[#FF4500]/80 transition-colors">
+                    <Link 
+                      to={`/events/${event.id}`}
+                      className="flex items-center text-[#FF4500] hover:text-[#FF4500]/80 transition-colors"
+                    >
                       View Details
                       <ArrowRight className="h-4 w-4 ml-1" />
-                    </button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>

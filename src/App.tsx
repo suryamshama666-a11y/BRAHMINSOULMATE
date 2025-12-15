@@ -66,6 +66,8 @@ const Help = React.lazy(() => import(/* webpackChunkName: "help" */ '@/pages/Hel
 const SuccessStories = React.lazy(() => import(/* webpackChunkName: "success-stories" */ '@/pages/SuccessStories'));
 const Account = React.lazy(() => import(/* webpackChunkName: "account" */ '@/pages/Account'));
 const AstrologicalServices = React.lazy(() => import(/* webpackChunkName: "astrological-services" */ '@/pages/AstrologicalServices'));
+const EventDetails = React.lazy(() => import(/* webpackChunkName: "events" */ '@/pages/EventDetails'));
+const Admin = React.lazy(() => import(/* webpackChunkName: "admin" */ '@/pages/Admin'));
 
 // Configure the query client with better caching strategy
 const queryClient = new QueryClient({
@@ -166,7 +168,9 @@ const AppContent = () => {
                 <Route path="/community" element={<Authenticated><Community /></Authenticated>} />
                 <Route path="/plans" element={<Authenticated><Plans /></Authenticated>} />
                 <Route path="/events" element={<Authenticated><Events /></Authenticated>} />
+                <Route path="/events/:id" element={<Authenticated><EventDetails /></Authenticated>} />
                 <Route path="/astrological-services" element={<Authenticated><AstrologicalServices /></Authenticated>} />
+                <Route path="/admin" element={<Authenticated><Admin /></Authenticated>} />
                 <Route path="/my-favorites" element={<Authenticated><MyFavorites /></Authenticated>} />
                 <Route path="/my-interests" element={<Authenticated><MyInterests /></Authenticated>} />
                 <Route path="/interests-received" element={<Authenticated><InterestsReceived /></Authenticated>} />

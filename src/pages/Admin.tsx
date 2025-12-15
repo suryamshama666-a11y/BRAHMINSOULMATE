@@ -9,9 +9,10 @@ import Footer from '@/components/Footer';
 import { AdminHeader } from './admin/components/AdminHeader';
 import { UserManagementTab } from './admin/components/UserManagementTab';
 import { AnalyticsTab } from './admin/components/AnalyticsTab';
+import { EventsManagementTab } from './admin/components/EventsManagementTab';
 import {
   Shield, Users, FileText, Activity,
-  AlertTriangle
+  AlertTriangle, Calendar
 } from 'lucide-react';
 
 const Admin = () => {
@@ -72,10 +73,14 @@ const Admin = () => {
         <AdminHeader adminRole={adminRole} isMobile={isMobile} />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2' : 'grid-cols-4'}`}>
+          <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2' : 'grid-cols-5'}`}>
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               {!isMobile && 'Users'}
+            </TabsTrigger>
+            <TabsTrigger value="events" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              {!isMobile && 'Events'}
             </TabsTrigger>
             <TabsTrigger value="content" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
@@ -98,6 +103,10 @@ const Admin = () => {
               onSearchChange={setSearchTerm}
               onModerateUser={handleModerateUser}
             />
+          </TabsContent>
+
+          <TabsContent value="events" className="space-y-6">
+            <EventsManagementTab />
           </TabsContent>
 
           <TabsContent value="content" className="space-y-6">
