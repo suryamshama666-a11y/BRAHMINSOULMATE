@@ -346,7 +346,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                     </Link>
                     <Button 
                       size="sm" 
-                      className={`flex-1 text-xs ${styles.buttonColor} text-white`}
+                      className={`flex-1 text-xs ${styles.buttonColor} text-white border-0`}
                       onClick={() => onAction?.('message', profile.id)}
                     >
                       <MessageCircle className="h-3 w-3 mr-1 text-white" />
