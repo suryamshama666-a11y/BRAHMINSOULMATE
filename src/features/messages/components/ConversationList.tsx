@@ -107,9 +107,9 @@ export const ConversationList: React.FC<ConversationListProps> = ({
           sortedConversations.map((conversation) => (
             <div
               key={conversation.id}
-              onClick={() => onSelect(conversation.partner_id)}
+              onClick={() => onSelect(conversation.id)}
               className={`flex items-center p-3 cursor-pointer hover:bg-gray-50 border-b border-gray-100 ${
-                selectedConversation === conversation.partner_id ? 'bg-amber-50' : ''
+                selectedConversation === conversation.id ? 'bg-amber-50' : ''
               }`}
             >
               {/* Avatar */}

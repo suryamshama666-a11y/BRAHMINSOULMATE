@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useConversations } from '@/features/messages/hooks/useConversations';
 import { ConversationList } from '@/features/messages/components/ConversationList';
+import { ChatBox } from '@/features/messages/components/ChatBox';
 
 // Define a simplified conversation type for this component
 interface ConversationItem {
@@ -21,7 +22,7 @@ interface ConversationItem {
 const MessagesIndexPage: React.FC = () => {
   const { user, loading } = useAuth();
   const { conversations: rawConversations, isLoading } = useConversations();
-  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+  const [selectedConversation, setSelectedConversation] = useState<ConversationItem | null>(null);
   
   // Transform conversations to match our simplified type
   const conversations: ConversationItem[] = rawConversations.map(conv => ({
@@ -40,72 +41,86 @@ const MessagesIndexPage: React.FC = () => {
 
   // Handle conversation selection
   const handleSelectConversation = (conversationId: string) => {
-    setSelectedConversation(conversationId);
-    // In a real app with routing, this would navigate to the conversation page
-    // router.push(`/messages/${conversationId}`);
-    
-    // For demo purposes, we'll just update the URL without a page reload
-    window.history.pushState({}, '', `/messages/${conversationId}`);
+    const conv = conversations.find(c => c.id === conversationId);
+    if (conv) {
+      setSelectedConversation(conv);
+    }
+  };
+
+  const handleBack = () => {
+    setSelectedConversation(null);
   };
 
   // Loading state
   if (loading || !user) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="h-8 w-8 border-4 border-t-transparent border-gray-500 rounded-full animate-spin"></div>
+        <div className="h-8 w-8 border-4 border-t-transparent border-orange-500 rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-100">
       {/* Sidebar with conversations list */}
-      <div className="w-full md:w-1/3 lg:w-1/4 border-r border-gray-200 bg-white">
-        <div className="p-4 border-b border-gray-200">
-          <h1 className="text-2xl font-bold text-gray-800">Messages</h1>
-          <p className="text-sm text-gray-500">Connect with your matches</p>
+      <div className={`${selectedConversation ? 'hidden md:block' : 'block'} w-full md:w-80 lg:w-96 border-r border-gray-200 bg-white`}>
+        <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-orange-500 to-amber-500">
+          <h1 className="text-2xl font-bold text-white">Messages</h1>
+          <p className="text-sm text-white/80">Connect with your matches</p>
         </div>
         
         <ConversationList
           conversations={conversations}
-          selectedConversation={selectedConversation}
+          selectedConversation={selectedConversation?.id || null}
           onSelect={handleSelectConversation}
         />
       </div>
 
-      {/* Empty state or placeholder when no conversation is selected */}
-      <div className="hidden md:flex flex-col flex-1 items-center justify-center bg-gray-50">
-        {isLoading ? (
-          <div className="h-8 w-8 border-4 border-t-transparent border-gray-500 rounded-full animate-spin"></div>
-        ) : conversations.length === 0 ? (
-          <div className="text-center p-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 text-amber-500 mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-              </svg>
-            </div>
-            <h3 className="text-xl font-medium text-gray-900 mb-1">No conversations yet</h3>
-            <p className="text-gray-500">
-              Start connecting with potential matches to begin conversations
-            </p>
-            <button 
-              className="mt-4 px-4 py-2 bg-gradient-to-r from-red-500 to-amber-500 text-white rounded-md shadow-sm hover:shadow-md transition-all"
-              onClick={() => window.location.href = '/discover'}
-            >
-              Discover Matches
-            </button>
-          </div>
+      {/* Chat area */}
+      <div className={`${selectedConversation ? 'flex' : 'hidden md:flex'} flex-col flex-1`}>
+        {selectedConversation ? (
+          <ChatBox
+            conversationId={selectedConversation.id}
+            partnerId={selectedConversation.partner_id}
+            partnerName={selectedConversation.partner_name}
+            partnerAvatar={selectedConversation.partner_avatar}
+            onBack={handleBack}
+          />
         ) : (
-          <div className="text-center p-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 text-gray-500 mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-1">Select a conversation</h3>
-            <p className="text-gray-500">
-              Choose a conversation from the list to start messaging
-            </p>
+          <div className="flex flex-col items-center justify-center h-full bg-gradient-to-b from-orange-50 to-amber-50">
+            {isLoading ? (
+              <div className="h-8 w-8 border-4 border-t-transparent border-orange-500 rounded-full animate-spin"></div>
+            ) : conversations.length === 0 ? (
+              <div className="text-center p-8">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-orange-400 to-amber-400 text-white mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No conversations yet</h3>
+                <p className="text-gray-500 max-w-xs mb-4">
+                  Start connecting with potential matches to begin conversations
+                </p>
+                <button 
+                  className="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-full font-medium shadow-lg hover:shadow-xl transition-all"
+                  onClick={() => window.location.href = '/discover'}
+                >
+                  Discover Matches
+                </button>
+              </div>
+            ) : (
+              <div className="text-center p-8">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-orange-400 to-amber-400 text-white mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Select a conversation</h3>
+                <p className="text-gray-500 max-w-xs">
+                  Choose a conversation from the list to start messaging
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -113,4 +128,4 @@ const MessagesIndexPage: React.FC = () => {
   );
 };
 
-export default MessagesIndexPage; 
+export default MessagesIndexPage;
