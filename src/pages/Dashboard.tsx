@@ -249,7 +249,7 @@ const Dashboard = () => {
               </div>
               <div className="text-center mt-8">
                 <Link to="/online-profiles">
-                  <Button className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all px-8 py-3 rounded-full font-semibold">
+                  <Button className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all px-8 py-3 rounded-full font-semibold border-0 outline-none ring-0 focus:ring-0 focus:outline-none">
                     View All Online Profiles
                   </Button>
                 </Link>
