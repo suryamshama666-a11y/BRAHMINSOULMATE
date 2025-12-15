@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Sidebar,
@@ -25,6 +24,49 @@ import {
 } from '@/utils/profileUtils';
 import { ProfileGender, ProfileMaritalStatus, Gotra, BrahminSubcaste, Rashi, IshtaDevata } from '@/types/profile';
 
+const COUNTRIES = [
+  { value: 'india', label: 'India' },
+  { value: 'usa', label: 'USA' },
+  { value: 'uk', label: 'UK' },
+  { value: 'canada', label: 'Canada' },
+  { value: 'australia', label: 'Australia' },
+  { value: 'new_zealand', label: 'New Zealand' },
+  { value: 'ireland', label: 'Ireland' },
+  { value: 'europe', label: 'Europe' },
+];
+
+const MARRIAGE_TIMELINE = [
+  { value: '3_months', label: 'Within 3 months' },
+  { value: '6_months', label: 'Within 6 months' },
+  { value: '1_year', label: 'Within 1 year' },
+  { value: '2_years', label: 'Within 2 years' },
+  { value: 'not_decided', label: 'Not Decided' },
+  { value: 'flexible', label: 'Flexible' },
+];
+
+const INCOME_RANGES = {
+  INR: [
+    { value: '0-300000', label: 'Below 3 Lakhs' },
+    { value: '300000-500000', label: '3-5 Lakhs' },
+    { value: '500000-1000000', label: '5-10 Lakhs' },
+    { value: '1000000-2000000', label: '10-20 Lakhs' },
+    { value: '2000000-5000000', label: '20-50 Lakhs' },
+    { value: '5000000+', label: 'Above 50 Lakhs' },
+  ],
+  USD: [
+    { value: '0-50000', label: 'Below $50K' },
+    { value: '50000-100000', label: '$50K - $100K' },
+    { value: '100000-150000', label: '$100K - $150K' },
+    { value: '150000+', label: 'Above $150K' },
+  ],
+  GBP: [
+    { value: '0-40000', label: 'Below £40K' },
+    { value: '40000-80000', label: '£40K - £80K' },
+    { value: '80000-120000', label: '£80K - £120K' },
+    { value: '120000+', label: 'Above £120K' },
+  ],
+};
+
 interface SearchSidebarProps {
   onSearch: (filters: any) => void;
 }
@@ -34,7 +76,6 @@ export function SearchSidebar({ onSearch }: SearchSidebarProps) {
   const [showRecentSearches, setShowRecentSearches] = React.useState(false);
   const [activeFilters, setActiveFilters] = React.useState(0);
   
-  // Filter states
   const [gender, setGender] = React.useState<ProfileGender>();
   const [ageRange, setAgeRange] = React.useState<[number, number]>([18, 60]);
   const [maritalStatus, setMaritalStatus] = React.useState<ProfileMaritalStatus>();
@@ -46,15 +87,18 @@ export function SearchSidebar({ onSearch }: SearchSidebarProps) {
   const [onlineOnly, setOnlineOnly] = React.useState(false);
   const [photosOnly, setPhotosOnly] = React.useState(false);
   const [verifiedOnly, setVerifiedOnly] = React.useState(false);
+  const [country, setCountry] = React.useState<string>();
+  const [marriageTimeline, setMarriageTimeline] = React.useState<string>();
+  const [incomeCurrency, setIncomeCurrency] = React.useState<string>('INR');
+  const [incomeRange, setIncomeRange] = React.useState<string>();
 
-  // Get all filter options
   const allGotras = getAllGotras();
   const allSubcastes = getAllSubcastes();
   const allMaritalStatuses = getAllMaritalStatuses();
   const allRashis = getAllRashis();
   const allIshtaDevatas = getAllIshtaDevatas();
+  const currentIncomeRanges = INCOME_RANGES[incomeCurrency as keyof typeof INCOME_RANGES] || INCOME_RANGES.INR;
 
-  // Basic Search Groups
   const BasicFilters = () => (
     <SidebarGroup>
       <SidebarGroupLabel>Basic Filters</SidebarGroupLabel>
@@ -97,16 +141,80 @@ export function SearchSidebar({ onSearch }: SearchSidebarProps) {
             </SelectContent>
           </Select>
         </div>
+
+        <div className="space-y-2">
+          <Label>Country</Label>
+          <Select value={country} onValueChange={setCountry}>
+            <SelectTrigger>
+              <SelectValue placeholder="Any country" />
+            </SelectTrigger>
+            <SelectContent>
+              {COUNTRIES.map(c => (
+                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Wish to Marry</Label>
+          <Select value={marriageTimeline} onValueChange={setMarriageTimeline}>
+            <SelectTrigger>
+              <SelectValue placeholder="Any timeline" />
+            </SelectTrigger>
+            <SelectContent>
+              {MARRIAGE_TIMELINE.map(t => (
+                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </SidebarGroupContent>
     </SidebarGroup>
   );
 
-  // Religious & Cultural Filters
+  const IncomeFilters = () => (
+    <SidebarGroup>
+      <SidebarGroupLabel>Income</SidebarGroupLabel>
+      <SidebarGroupContent className="space-y-4">
+        <div className="space-y-2">
+          <Label>Currency</Label>
+          <Select value={incomeCurrency} onValueChange={(value) => {
+            setIncomeCurrency(value);
+            setIncomeRange(undefined);
+          }}>
+            <SelectTrigger>
+              <SelectValue placeholder="Currency" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="INR">₹ Rupees</SelectItem>
+              <SelectItem value="USD">$ Dollar</SelectItem>
+              <SelectItem value="GBP">£ Pound</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Income Range</Label>
+          <Select value={incomeRange} onValueChange={setIncomeRange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Any range" />
+            </SelectTrigger>
+            <SelectContent>
+              {currentIncomeRanges.map(r => (
+                <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+
   const ReligiousFilters = () => (
     <SidebarGroup>
       <SidebarGroupLabel>Religious & Cultural</SidebarGroupLabel>
       <SidebarGroupContent className="space-y-4">
-        {/* ... Religious filter fields ... */}
         <div className="space-y-2">
           <Label>Gotra</Label>
           <Select value={gotra} onValueChange={(value) => setGotra(value as Gotra)}>
@@ -122,10 +230,10 @@ export function SearchSidebar({ onSearch }: SearchSidebarProps) {
         </div>
 
         <div className="space-y-2">
-          <Label>Subcaste</Label>
+          <Label>Brahmin Community</Label>
           <Select value={subcaste} onValueChange={(value) => setSubcaste(value as BrahminSubcaste)}>
             <SelectTrigger>
-              <SelectValue placeholder="Any Subcaste" />
+              <SelectValue placeholder="Any Community" />
             </SelectTrigger>
             <SelectContent>
               {allSubcastes.map(sc => (
@@ -152,7 +260,6 @@ export function SearchSidebar({ onSearch }: SearchSidebarProps) {
     </SidebarGroup>
   );
 
-  // Additional Options
   const AdditionalFilters = () => (
     <SidebarGroup>
       <SidebarGroupLabel>Additional Options</SidebarGroupLabel>
@@ -184,7 +291,6 @@ export function SearchSidebar({ onSearch }: SearchSidebarProps) {
     </SidebarGroup>
   );
 
-  // Saved and Recent Searches (at bottom)
   const SavedSearches = () => (
     <SidebarGroup>
       <button 
@@ -234,7 +340,6 @@ export function SearchSidebar({ onSearch }: SearchSidebarProps) {
   return (
     <Sidebar>
       <SidebarContent>
-        {/* Filter Header */}
         <div className="p-4 border-b">
           <h2 className="text-xl font-serif font-semibold">Search Filters</h2>
           <div className="flex items-center justify-between mt-2">
@@ -248,7 +353,6 @@ export function SearchSidebar({ onSearch }: SearchSidebarProps) {
               variant="outline" 
               size="sm"
               onClick={() => {
-                // Reset all filters
                 setGender(undefined);
                 setAgeRange([18, 60]);
                 setMaritalStatus(undefined);
@@ -260,6 +364,10 @@ export function SearchSidebar({ onSearch }: SearchSidebarProps) {
                 setOnlineOnly(false);
                 setPhotosOnly(false);
                 setVerifiedOnly(false);
+                setCountry(undefined);
+                setMarriageTimeline(undefined);
+                setIncomeCurrency('INR');
+                setIncomeRange(undefined);
                 setActiveFilters(0);
                 toast.info("All filters have been reset");
               }}
@@ -270,12 +378,11 @@ export function SearchSidebar({ onSearch }: SearchSidebarProps) {
           </div>
         </div>
 
-        {/* Main Filters */}
         <BasicFilters />
+        <IncomeFilters />
         <ReligiousFilters />
         <AdditionalFilters />
 
-        {/* Action Buttons */}
         <div className="p-4 space-y-3">
           <Button 
             className="w-full bg-brahmin-primary hover:bg-brahmin-dark"
@@ -291,7 +398,11 @@ export function SearchSidebar({ onSearch }: SearchSidebarProps) {
                 ishtaDevata,
                 onlineOnly,
                 photosOnly,
-                verifiedOnly
+                verifiedOnly,
+                country,
+                marriageTimeline,
+                incomeCurrency,
+                incomeRange
               };
               onSearch(filters);
               toast.success("Filters applied successfully");
@@ -313,7 +424,6 @@ export function SearchSidebar({ onSearch }: SearchSidebarProps) {
           </Button>
         </div>
 
-        {/* Saved and Recent Searches at Bottom */}
         <div className="mt-auto">
           <SavedSearches />
           <RecentSearches />

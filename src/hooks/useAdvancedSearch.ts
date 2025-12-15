@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { getSupabase } from '@/lib/getSupabase';
 import { useSupabaseAuth } from './useSupabaseAuth';
@@ -17,7 +16,12 @@ export interface SearchFilters {
     states?: string[];
     cities?: string[];
     maxDistance?: number;
+    country?: string[];
   };
+  country?: string[];
+  gotra?: string[];
+  brahminCommunity?: string[];
+  marriageTimeline?: string;
   income?: {
     min?: number;
     max?: number;

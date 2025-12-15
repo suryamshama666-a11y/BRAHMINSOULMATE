@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,107 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SearchFilters } from '@/hooks/useAdvancedSearch';
+
+const COUNTRIES = [
+  { value: 'india', label: 'India' },
+  { value: 'usa', label: 'USA' },
+  { value: 'uk', label: 'UK' },
+  { value: 'canada', label: 'Canada' },
+  { value: 'australia', label: 'Australia' },
+  { value: 'new_zealand', label: 'New Zealand' },
+  { value: 'ireland', label: 'Ireland' },
+  { value: 'europe', label: 'Europe' },
+];
+
+const GOTRAS = [
+  'Agastya', 'Angirasa', 'Atri', 'Bharadwaja', 'Bhargava', 'Bhrigu',
+  'Dhanvantari', 'Gautama', 'Gritsamada', 'Jamadagni', 'Kaashyapa', 'Kaushika',
+  'Kutsa', 'Maitreya', 'Marichi', 'Mudgala', 'Parashar', 'Pulaha',
+  'Pulastya', 'Sankrithi', 'Shandilya', 'Upamanyu', 'Vasishtha', 'Vatsa',
+  'Vishvamitra', 'Other'
+];
+
+const BRAHMIN_COMMUNITIES = [
+  'Adi Gaur', 'Anavil', 'Andhra Brahmin', 'Babburu', 'Bardai', 'Barendra',
+  'Bhatt', 'Bhumihar', 'Chitpavan', 'Dadhich', 'Daivadnya', 'Danua',
+  'Deshastha', 'Devarukhe', 'Dhima', 'Dravida', 'Gaur', 'Gowd Saraswat',
+  'Gurukkal', 'Havyaka', 'Hoysala', 'Iyer', 'Iyengar', 'Jangid', 'Jhadua',
+  'Jyotish', 'Kanyakubja', 'Karhade', 'Kashmiri Pandit', 'Kokanastha',
+  'Kota', 'Kulin', 'Maithil', 'Nagar', 'Namboodiri', 'Niyogi', 'Panda',
+  'Rarhi', 'Rigvedi', 'Sakaldwipi', 'Sanadya', 'Sanketi', 'Saryuparin',
+  'Smartha', 'Sri Vaishnava', 'Sthanika', 'Tyagi', 'Uriya', 'Vaidiki',
+  'Velanadu', 'Viswa', 'Other'
+];
+
+const MARRIAGE_TIMELINE = [
+  { value: '3_months', label: 'Within 3 months' },
+  { value: '6_months', label: 'Within 6 months' },
+  { value: '1_year', label: 'Within 1 year' },
+  { value: '2_years', label: 'Within 2 years' },
+  { value: 'not_decided', label: 'Not Decided' },
+  { value: 'flexible', label: 'Flexible' },
+];
+
+const INCOME_RANGES = {
+  INR: [
+    { value: '0-300000', label: 'Below 3 Lakhs' },
+    { value: '300000-500000', label: '3-5 Lakhs' },
+    { value: '500000-1000000', label: '5-10 Lakhs' },
+    { value: '1000000-2000000', label: '10-20 Lakhs' },
+    { value: '2000000-5000000', label: '20-50 Lakhs' },
+    { value: '5000000-10000000', label: '50 Lakhs - 1 Crore' },
+    { value: '10000000+', label: 'Above 1 Crore' },
+  ],
+  USD: [
+    { value: '0-30000', label: 'Below $30K' },
+    { value: '30000-50000', label: '$30K - $50K' },
+    { value: '50000-75000', label: '$50K - $75K' },
+    { value: '75000-100000', label: '$75K - $100K' },
+    { value: '100000-150000', label: '$100K - $150K' },
+    { value: '150000-250000', label: '$150K - $250K' },
+    { value: '250000+', label: 'Above $250K' },
+  ],
+  GBP: [
+    { value: '0-25000', label: 'Below £25K' },
+    { value: '25000-40000', label: '£25K - £40K' },
+    { value: '40000-60000', label: '£40K - £60K' },
+    { value: '60000-80000', label: '£60K - £80K' },
+    { value: '80000-120000', label: '£80K - £120K' },
+    { value: '120000-200000', label: '£120K - £200K' },
+    { value: '200000+', label: 'Above £200K' },
+  ],
+  EUR: [
+    { value: '0-30000', label: 'Below €30K' },
+    { value: '30000-50000', label: '€30K - €50K' },
+    { value: '50000-75000', label: '€50K - €75K' },
+    { value: '75000-100000', label: '€75K - €100K' },
+    { value: '100000-150000', label: '€100K - €150K' },
+    { value: '150000+', label: 'Above €150K' },
+  ],
+  CAD: [
+    { value: '0-40000', label: 'Below C$40K' },
+    { value: '40000-60000', label: 'C$40K - C$60K' },
+    { value: '60000-90000', label: 'C$60K - C$90K' },
+    { value: '90000-120000', label: 'C$90K - C$120K' },
+    { value: '120000-180000', label: 'C$120K - C$180K' },
+    { value: '180000+', label: 'Above C$180K' },
+  ],
+  AUD: [
+    { value: '0-40000', label: 'Below A$40K' },
+    { value: '40000-60000', label: 'A$40K - A$60K' },
+    { value: '60000-90000', label: 'A$60K - A$90K' },
+    { value: '90000-120000', label: 'A$90K - A$120K' },
+    { value: '120000-180000', label: 'A$120K - A$180K' },
+    { value: '180000+', label: 'Above A$180K' },
+  ],
+  NZD: [
+    { value: '0-40000', label: 'Below NZ$40K' },
+    { value: '40000-60000', label: 'NZ$40K - NZ$60K' },
+    { value: '60000-90000', label: 'NZ$60K - NZ$90K' },
+    { value: '90000-120000', label: 'NZ$90K - NZ$120K' },
+    { value: '120000+', label: 'Above NZ$120K' },
+  ],
+};
 
 interface AdvancedSearchModalProps {
   open: boolean;
@@ -26,9 +126,14 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
   const [filters, setFilters] = useState<SearchFilters>({
     ageRange: [21, 35],
     heightRange: [150, 180],
+    country: [],
+    gotra: [],
+    brahminCommunity: [],
   });
 
   const [saveSearchName, setSaveSearchName] = useState('');
+  const [gotraSearch, setGotraSearch] = useState('');
+  const [communitySearch, setCommunitySearch] = useState('');
 
   const handleSearch = () => {
     onSearch(filters);
@@ -42,6 +147,24 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
     }
   };
 
+  const toggleArrayFilter = (key: keyof SearchFilters, value: string) => {
+    const currentArray = (filters[key] as string[]) || [];
+    const newArray = currentArray.includes(value)
+      ? currentArray.filter(item => item !== value)
+      : [...currentArray, value];
+    setFilters({ ...filters, [key]: newArray });
+  };
+
+  const filteredGotras = GOTRAS.filter(g => 
+    g.toLowerCase().includes(gotraSearch.toLowerCase())
+  );
+
+  const filteredCommunities = BRAHMIN_COMMUNITIES.filter(c => 
+    c.toLowerCase().includes(communitySearch.toLowerCase())
+  );
+
+  const currentIncomeRanges = INCOME_RANGES[filters.income?.currency as keyof typeof INCOME_RANGES] || INCOME_RANGES.INR;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-white border-2 border-orange-200">
@@ -53,12 +176,12 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
 
         <div className="p-6">
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 bg-orange-50 border border-orange-200 p-1 gap-1">
-              {['basic', 'family', 'horoscope', 'preferences'].map((tab) => (
+            <TabsList className="grid w-full grid-cols-5 bg-orange-50 border border-orange-200 p-1 gap-1">
+              {['basic', 'location', 'community', 'horoscope', 'preferences'].map((tab) => (
                 <TabsTrigger 
                   key={tab}
                   value={tab}
-                  className="data-[state=active]:bg-[#FF4500] data-[state=active]:text-white bg-white"
+                  className="data-[state=active]:bg-[#FF4500] data-[state=active]:text-white bg-white text-xs md:text-sm"
                 >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
                 </TabsTrigger>
@@ -66,122 +189,118 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
             </TabsList>
 
             <TabsContent value="basic" className="space-y-6 mt-4 bg-white">
-              <div className="flex flex-wrap gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="space-y-3">
                   <Label className="text-gray-900 font-medium">Age Range</Label>
-                  <div className="w-24">
-                    <Select 
-                      value={`${filters.ageRange[0]}-${filters.ageRange[1]}`}
-                      onValueChange={(value) => {
-                        const [min, max] = value.split('-').map(Number);
-                        setFilters({...filters, ageRange: [min, max]});
-                      }}
-                    >
-                      <SelectTrigger className="bg-white border-orange-200">
-                        <SelectValue placeholder="Age" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="18-23">18 to 23</SelectItem>
-                        <SelectItem value="20-25">20 to 25</SelectItem>
-                        <SelectItem value="25-30">25 to 30</SelectItem>
-                        <SelectItem value="30-35">30 to 35</SelectItem>
-                        <SelectItem value="35-40">35 to 40</SelectItem>
-                        <SelectItem value="40-45">40 to 45</SelectItem>
-                        <SelectItem value="45-50">45 to 50</SelectItem>
-                        <SelectItem value="50-55">50 to 55</SelectItem>
-                        <SelectItem value="55-60">55 to 60</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Select 
+                    value={`${filters.ageRange[0]}-${filters.ageRange[1]}`}
+                    onValueChange={(value) => {
+                      const [min, max] = value.split('-').map(Number);
+                      setFilters({...filters, ageRange: [min, max]});
+                    }}
+                  >
+                    <SelectTrigger className="bg-white border-orange-200">
+                      <SelectValue placeholder="Age" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="18-23">18 to 23</SelectItem>
+                      <SelectItem value="20-25">20 to 25</SelectItem>
+                      <SelectItem value="25-30">25 to 30</SelectItem>
+                      <SelectItem value="30-35">30 to 35</SelectItem>
+                      <SelectItem value="35-40">35 to 40</SelectItem>
+                      <SelectItem value="40-45">40 to 45</SelectItem>
+                      <SelectItem value="45-50">45 to 50</SelectItem>
+                      <SelectItem value="50-55">50 to 55</SelectItem>
+                      <SelectItem value="55-60">55 to 60</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-3">
                   <Label className="text-gray-900 font-medium">Height Range</Label>
-                  <div className="w-36">
-                    <Select 
-                      value={`${filters.heightRange[0]}-${filters.heightRange[1]}`}
-                      onValueChange={(value) => {
-                        const [min, max] = value.split('-').map(Number);
-                        setFilters({...filters, heightRange: [min, max]});
-                      }}
-                    >
-                      <SelectTrigger className="bg-white border-orange-200">
-                        <SelectValue placeholder="Height" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="140-150">140 to 150 cm</SelectItem>
-                        <SelectItem value="150-160">150 to 160 cm</SelectItem>
-                        <SelectItem value="160-170">160 to 170 cm</SelectItem>
-                        <SelectItem value="170-180">170 to 180 cm</SelectItem>
-                        <SelectItem value="180-190">180 to 190 cm</SelectItem>
-                        <SelectItem value="190-200">190 to 200 cm</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-gray-900 font-medium">Religion</Label>
-                  <div className="w-28">
-                    <Select onValueChange={(value) => setFilters({...filters, religion: value})}>
-                      <SelectTrigger className="bg-white border-orange-200">
-                        <SelectValue placeholder="Religion" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="hinduism">Hinduism</SelectItem>
-                        <SelectItem value="islam">Islam</SelectItem>
-                        <SelectItem value="christianity">Christianity</SelectItem>
-                        <SelectItem value="sikhism">Sikhism</SelectItem>
-                        <SelectItem value="buddhism">Buddhism</SelectItem>
-                        <SelectItem value="jainism">Jainism</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Select 
+                    value={`${filters.heightRange[0]}-${filters.heightRange[1]}`}
+                    onValueChange={(value) => {
+                      const [min, max] = value.split('-').map(Number);
+                      setFilters({...filters, heightRange: [min, max]});
+                    }}
+                  >
+                    <SelectTrigger className="bg-white border-orange-200">
+                      <SelectValue placeholder="Height" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="140-150">140 to 150 cm</SelectItem>
+                      <SelectItem value="150-160">150 to 160 cm</SelectItem>
+                      <SelectItem value="160-170">160 to 170 cm</SelectItem>
+                      <SelectItem value="170-180">170 to 180 cm</SelectItem>
+                      <SelectItem value="180-190">180 to 190 cm</SelectItem>
+                      <SelectItem value="190-200">190 to 200 cm</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-3">
                   <Label className="text-gray-900 font-medium">Marital Status</Label>
-                  <div className="w-32">
-                    <Select onValueChange={(value) => setFilters({...filters, maritalStatus: [value]})}>
-                      <SelectTrigger className="bg-white border-orange-200">
-                        <SelectValue placeholder="Marital Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="never_married">Never Married</SelectItem>
-                        <SelectItem value="divorced">Divorced</SelectItem>
-                        <SelectItem value="widowed">Widowed</SelectItem>
-                        <SelectItem value="separated">Separated</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Select onValueChange={(value) => setFilters({...filters, maritalStatus: [value]})}>
+                    <SelectTrigger className="bg-white border-orange-200">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="never_married">Never Married</SelectItem>
+                      <SelectItem value="divorced">Divorced</SelectItem>
+                      <SelectItem value="widowed">Widowed</SelectItem>
+                      <SelectItem value="separated">Separated</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-3">
+                  <Label className="text-gray-900 font-medium">Wish to Marry</Label>
+                  <Select 
+                    value={filters.marriageTimeline || ''}
+                    onValueChange={(value) => setFilters({...filters, marriageTimeline: value})}
+                  >
+                    <SelectTrigger className="bg-white border-orange-200">
+                      <SelectValue placeholder="Timeline" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MARRIAGE_TIMELINE.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
               <div className="space-y-3">
                 <Label className="text-gray-900 font-medium">Annual Income</Label>
                 <div className="flex gap-2">
-                  <div className="w-20">
+                  <div className="w-28">
                     <Select 
                       value={filters.income?.currency || 'INR'}
                       onValueChange={(value) => setFilters({
                         ...filters, 
-                        income: { ...filters.income, currency: value }
+                        income: { ...filters.income, currency: value, range: '' }
                       })}
                     >
                       <SelectTrigger className="bg-white border-orange-200">
                         <SelectValue placeholder="Currency" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="INR">₹ INR</SelectItem>
-                        <SelectItem value="USD">$ USD</SelectItem>
+                        <SelectItem value="INR">₹ Rupees</SelectItem>
+                        <SelectItem value="USD">$ Dollar</SelectItem>
+                        <SelectItem value="GBP">£ Pound</SelectItem>
+                        <SelectItem value="EUR">€ Euro</SelectItem>
                         <SelectItem value="CAD">C$ CAD</SelectItem>
-                        <SelectItem value="GBP">£ GBP</SelectItem>
-                        <SelectItem value="EUR">€ EUR</SelectItem>
+                        <SelectItem value="AUD">A$ AUD</SelectItem>
+                        <SelectItem value="NZD">NZ$ NZD</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   
-                  <div className="w-32">
+                  <div className="flex-1">
                     <Select 
                       value={filters.income?.range || ''}
                       onValueChange={(value) => setFilters({
@@ -190,15 +309,14 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
                       })}
                     >
                       <SelectTrigger className="bg-white border-orange-200">
-                        <SelectValue placeholder="Income range" />
+                        <SelectValue placeholder="Select income range" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="0-25k">0 - 25K</SelectItem>
-                        <SelectItem value="25k-50k">25K - 50K</SelectItem>
-                        <SelectItem value="50k-75k">50K - 75K</SelectItem>
-                        <SelectItem value="75k-100k">75K - 100K</SelectItem>
-                        <SelectItem value="100k-150k">100K - 150K</SelectItem>
-                        <SelectItem value="150k+">150K+</SelectItem>
+                        {currentIncomeRanges.map((range) => (
+                          <SelectItem key={range.value} value={range.value}>
+                            {range.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -206,35 +324,76 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({
               </div>
             </TabsContent>
 
-            <TabsContent value="family" className="space-y-4 bg-white">
-              <div className="flex gap-4">
-                <div className="space-y-2">
-                  <Label>Family Type</Label>
-                  <div className="w-24">
-                    <Select onValueChange={(value) => setFilters({...filters, family: {...filters.family, type: [value]}})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="nuclear">Nuclear</SelectItem>
-                        <SelectItem value="joint">Joint</SelectItem>
-                      </SelectContent>
-                    </Select>
+            <TabsContent value="location" className="space-y-4 bg-white">
+              <div className="space-y-3">
+                <Label className="text-gray-900 font-medium">Country</Label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-3 border rounded-md border-orange-200 bg-orange-50/50">
+                  {COUNTRIES.map((country) => (
+                    <div key={country.value} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`country-${country.value}`}
+                        checked={(filters.country || []).includes(country.value)}
+                        onCheckedChange={() => toggleArrayFilter('country', country.value)}
+                        className="border-[#FF4500] data-[state=checked]:bg-[#FF4500]"
+                      />
+                      <Label htmlFor={`country-${country.value}`} className="cursor-pointer">
+                        {country.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="community" className="space-y-6 bg-white">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <Label className="text-gray-900 font-medium">Gotra</Label>
+                  <Input
+                    placeholder="Search gotra..."
+                    value={gotraSearch}
+                    onChange={(e) => setGotraSearch(e.target.value)}
+                    className="bg-white border-orange-200"
+                  />
+                  <div className="max-h-48 overflow-y-auto border rounded-md p-3 border-orange-200 bg-orange-50/50">
+                    {filteredGotras.map((gotra) => (
+                      <div key={gotra} className="flex items-center space-x-2 py-1">
+                        <Checkbox
+                          id={`gotra-${gotra}`}
+                          checked={(filters.gotra || []).includes(gotra)}
+                          onCheckedChange={() => toggleArrayFilter('gotra', gotra)}
+                          className="border-[#FF4500] data-[state=checked]:bg-[#FF4500]"
+                        />
+                        <Label htmlFor={`gotra-${gotra}`} className="cursor-pointer">
+                          {gotra}
+                        </Label>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Siblings</Label>
-                  <div className="w-16">
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      className="bg-white border-orange-200"
-                      onChange={(e) => setFilters({
-                        ...filters,
-                        family: { ...filters.family, siblings: parseInt(e.target.value) || undefined }
-                      })}
-                    />
+                <div className="space-y-3">
+                  <Label className="text-gray-900 font-medium">Brahmin Community</Label>
+                  <Input
+                    placeholder="Search community..."
+                    value={communitySearch}
+                    onChange={(e) => setCommunitySearch(e.target.value)}
+                    className="bg-white border-orange-200"
+                  />
+                  <div className="max-h-48 overflow-y-auto border rounded-md p-3 border-orange-200 bg-orange-50/50">
+                    {filteredCommunities.map((community) => (
+                      <div key={community} className="flex items-center space-x-2 py-1">
+                        <Checkbox
+                          id={`community-${community}`}
+                          checked={(filters.brahminCommunity || []).includes(community)}
+                          onCheckedChange={() => toggleArrayFilter('brahminCommunity', community)}
+                          className="border-[#FF4500] data-[state=checked]:bg-[#FF4500]"
+                        />
+                        <Label htmlFor={`community-${community}`} className="cursor-pointer">
+                          {community}
+                        </Label>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>

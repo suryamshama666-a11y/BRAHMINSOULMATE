@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,117 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { FormField } from '@/components/ui/form-field';
 import { Search, Filter, X } from 'lucide-react';
+
+const COUNTRIES = [
+  { value: 'india', label: 'India' },
+  { value: 'usa', label: 'USA' },
+  { value: 'uk', label: 'UK' },
+  { value: 'canada', label: 'Canada' },
+  { value: 'australia', label: 'Australia' },
+  { value: 'new_zealand', label: 'New Zealand' },
+  { value: 'ireland', label: 'Ireland' },
+  { value: 'europe', label: 'Europe' },
+];
+
+const GOTRAS = [
+  'Agastya', 'Angirasa', 'Atri', 'Bharadwaja', 'Bhargava', 'Bhrigu',
+  'Dhanvantari', 'Gautama', 'Gritsamada', 'Jamadagni', 'Kaashyapa', 'Kaushika',
+  'Kutsa', 'Maitreya', 'Marichi', 'Mudgala', 'Parashar', 'Pulaha',
+  'Pulastya', 'Sankrithi', 'Shandilya', 'Upamanyu', 'Vasishtha', 'Vatsa',
+  'Vishvamitra', 'Other'
+];
+
+const BRAHMIN_COMMUNITIES = [
+  'Adi Gaur', 'Anavil', 'Andhra Brahmin', 'Babburu', 'Bardai', 'Barendra',
+  'Bhatt', 'Bhumihar', 'Chitpavan', 'Dadhich', 'Daivadnya', 'Danua',
+  'Deshastha', 'Devarukhe', 'Dhima', 'Dravida', 'Gaur', 'Gowd Saraswat',
+  'Gurukkal', 'Havyaka', 'Hoysala', 'Iyer', 'Iyengar', 'Jangid', 'Jhadua',
+  'Jyotish', 'Kanyakubja', 'Karhade', 'Kashmiri Pandit', 'Kokanastha',
+  'Kota', 'Kulin', 'Maithil', 'Nagar', 'Namboodiri', 'Niyogi', 'Panda',
+  'Rarhi', 'Rigvedi', 'Sakaldwipi', 'Sanadya', 'Sanketi', 'Saryuparin',
+  'Smartha', 'Sri Vaishnava', 'Sthanika', 'Tyagi', 'Uriya', 'Vaidiki',
+  'Velanadu', 'Viswa', 'Other'
+];
+
+const MARRIAGE_TIMELINE = [
+  { value: '3_months', label: 'Within 3 months' },
+  { value: '6_months', label: 'Within 6 months' },
+  { value: '1_year', label: 'Within 1 year' },
+  { value: '2_years', label: 'Within 2 years' },
+  { value: 'not_decided', label: 'Not Decided' },
+  { value: 'flexible', label: 'Flexible' },
+];
+
+const CURRENCIES = [
+  { value: 'INR', label: '₹ Rupees', symbol: '₹' },
+  { value: 'USD', label: '$ Dollar', symbol: '$' },
+  { value: 'GBP', label: '£ Pound', symbol: '£' },
+  { value: 'EUR', label: '€ Euro', symbol: '€' },
+  { value: 'AUD', label: 'A$ AUD', symbol: 'A$' },
+  { value: 'CAD', label: 'C$ CAD', symbol: 'C$' },
+  { value: 'NZD', label: 'NZ$ NZD', symbol: 'NZ$' },
+];
+
+const INCOME_RANGES = {
+  INR: [
+    { value: '0-300000', label: 'Below 3 Lakhs' },
+    { value: '300000-500000', label: '3-5 Lakhs' },
+    { value: '500000-1000000', label: '5-10 Lakhs' },
+    { value: '1000000-2000000', label: '10-20 Lakhs' },
+    { value: '2000000-5000000', label: '20-50 Lakhs' },
+    { value: '5000000-10000000', label: '50 Lakhs - 1 Crore' },
+    { value: '10000000+', label: 'Above 1 Crore' },
+  ],
+  USD: [
+    { value: '0-30000', label: 'Below $30K' },
+    { value: '30000-50000', label: '$30K - $50K' },
+    { value: '50000-75000', label: '$50K - $75K' },
+    { value: '75000-100000', label: '$75K - $100K' },
+    { value: '100000-150000', label: '$100K - $150K' },
+    { value: '150000-250000', label: '$150K - $250K' },
+    { value: '250000+', label: 'Above $250K' },
+  ],
+  GBP: [
+    { value: '0-25000', label: 'Below £25K' },
+    { value: '25000-40000', label: '£25K - £40K' },
+    { value: '40000-60000', label: '£40K - £60K' },
+    { value: '60000-80000', label: '£60K - £80K' },
+    { value: '80000-120000', label: '£80K - £120K' },
+    { value: '120000-200000', label: '£120K - £200K' },
+    { value: '200000+', label: 'Above £200K' },
+  ],
+  EUR: [
+    { value: '0-30000', label: 'Below €30K' },
+    { value: '30000-50000', label: '€30K - €50K' },
+    { value: '50000-75000', label: '€50K - €75K' },
+    { value: '75000-100000', label: '€75K - €100K' },
+    { value: '100000-150000', label: '€100K - €150K' },
+    { value: '150000+', label: 'Above €150K' },
+  ],
+  AUD: [
+    { value: '0-40000', label: 'Below A$40K' },
+    { value: '40000-60000', label: 'A$40K - A$60K' },
+    { value: '60000-90000', label: 'A$60K - A$90K' },
+    { value: '90000-120000', label: 'A$90K - A$120K' },
+    { value: '120000-180000', label: 'A$120K - A$180K' },
+    { value: '180000+', label: 'Above A$180K' },
+  ],
+  CAD: [
+    { value: '0-40000', label: 'Below C$40K' },
+    { value: '40000-60000', label: 'C$40K - C$60K' },
+    { value: '60000-90000', label: 'C$60K - C$90K' },
+    { value: '90000-120000', label: 'C$90K - C$120K' },
+    { value: '120000-180000', label: 'C$120K - C$180K' },
+    { value: '180000+', label: 'Above C$180K' },
+  ],
+  NZD: [
+    { value: '0-40000', label: 'Below NZ$40K' },
+    { value: '40000-60000', label: 'NZ$40K - NZ$60K' },
+    { value: '60000-90000', label: 'NZ$60K - NZ$90K' },
+    { value: '90000-120000', label: 'NZ$90K - NZ$120K' },
+    { value: '120000+', label: 'Above NZ$120K' },
+  ],
+};
 
 interface SearchFilters {
   ageRange: [number, number];
@@ -25,6 +135,12 @@ interface SearchFilters {
   };
   manglik: boolean | null;
   rashi: string[];
+  country: string[];
+  gotra: string[];
+  brahminCommunity: string[];
+  incomeCurrency: string;
+  incomeRange: string;
+  marriageTimeline: string;
 }
 
 interface AdvancedSearchFiltersProps {
@@ -41,6 +157,8 @@ export const AdvancedSearchFilters: React.FC<AdvancedSearchFiltersProps> = ({
   onClearFilters
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [gotraSearch, setGotraSearch] = useState('');
+  const [communitySearch, setCommunitySearch] = useState('');
 
   const updateFilter = (key: keyof SearchFilters, value: any) => {
     onFiltersChange({ ...filters, [key]: value });
@@ -51,12 +169,22 @@ export const AdvancedSearchFilters: React.FC<AdvancedSearchFiltersProps> = ({
   };
 
   const toggleArrayFilter = (key: keyof SearchFilters, value: string) => {
-    const currentArray = filters[key] as string[];
+    const currentArray = (filters[key] as string[]) || [];
     const newArray = currentArray.includes(value)
       ? currentArray.filter(item => item !== value)
       : [...currentArray, value];
     updateFilter(key, newArray);
   };
+
+  const filteredGotras = GOTRAS.filter(g => 
+    g.toLowerCase().includes(gotraSearch.toLowerCase())
+  );
+
+  const filteredCommunities = BRAHMIN_COMMUNITIES.filter(c => 
+    c.toLowerCase().includes(communitySearch.toLowerCase())
+  );
+
+  const currentIncomeRanges = INCOME_RANGES[filters.incomeCurrency as keyof typeof INCOME_RANGES] || INCOME_RANGES.INR;
 
   return (
     <Card>
@@ -118,6 +246,43 @@ export const AdvancedSearchFilters: React.FC<AdvancedSearchFiltersProps> = ({
             </div>
           </FormField>
 
+          {/* Country Filter */}
+          <FormField label="Country">
+            <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-3">
+              {COUNTRIES.map((country) => (
+                <div key={country.value} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`country-${country.value}`}
+                    checked={(filters.country || []).includes(country.value)}
+                    onCheckedChange={() => toggleArrayFilter('country', country.value)}
+                  />
+                  <Label htmlFor={`country-${country.value}`}>
+                    {country.label}
+                  </Label>
+                </div>
+              ))}
+            </div>
+          </FormField>
+
+          {/* Marriage Timeline */}
+          <FormField label="Wish to Marry">
+            <Select
+              value={filters.marriageTimeline || ''}
+              onValueChange={(value) => updateFilter('marriageTimeline', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select timeline" />
+              </SelectTrigger>
+              <SelectContent>
+                {MARRIAGE_TIMELINE.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
+
           <FormField label="City">
             <Input
               value={filters.location.city}
@@ -139,41 +304,93 @@ export const AdvancedSearchFilters: React.FC<AdvancedSearchFiltersProps> = ({
         {isExpanded && (
           <div className="space-y-6 pt-4 border-t">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Religion */}
+              {/* Gotra Filter */}
               <div>
-                <Label className="text-base font-medium mb-3 block">Religion</Label>
-                <div className="space-y-2">
-                  {['hindu', 'muslim', 'christian', 'sikh', 'buddhist', 'jain'].map((religion) => (
-                    <div key={religion} className="flex items-center space-x-2">
+                <Label className="text-base font-medium mb-3 block">Gotra</Label>
+                <Input
+                  placeholder="Search gotra..."
+                  value={gotraSearch}
+                  onChange={(e) => setGotraSearch(e.target.value)}
+                  className="mb-2"
+                />
+                <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-3">
+                  {filteredGotras.map((gotra) => (
+                    <div key={gotra} className="flex items-center space-x-2">
                       <Checkbox
-                        id={`religion-${religion}`}
-                        checked={filters.religion.includes(religion)}
-                        onCheckedChange={() => toggleArrayFilter('religion', religion)}
+                        id={`gotra-${gotra}`}
+                        checked={(filters.gotra || []).includes(gotra)}
+                        onCheckedChange={() => toggleArrayFilter('gotra', gotra)}
                       />
-                      <Label htmlFor={`religion-${religion}`} className="capitalize">
-                        {religion}
+                      <Label htmlFor={`gotra-${gotra}`}>
+                        {gotra}
                       </Label>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Caste */}
+              {/* Brahmin Community Filter */}
               <div>
-                <Label className="text-base font-medium mb-3 block">Caste</Label>
-                <div className="space-y-2">
-                  {['brahmin', 'kshatriya', 'vaishya', 'shudra'].map((caste) => (
-                    <div key={caste} className="flex items-center space-x-2">
+                <Label className="text-base font-medium mb-3 block">Brahmin Community</Label>
+                <Input
+                  placeholder="Search community..."
+                  value={communitySearch}
+                  onChange={(e) => setCommunitySearch(e.target.value)}
+                  className="mb-2"
+                />
+                <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-3">
+                  {filteredCommunities.map((community) => (
+                    <div key={community} className="flex items-center space-x-2">
                       <Checkbox
-                        id={`caste-${caste}`}
-                        checked={filters.caste.includes(caste)}
-                        onCheckedChange={() => toggleArrayFilter('caste', caste)}
+                        id={`community-${community}`}
+                        checked={(filters.brahminCommunity || []).includes(community)}
+                        onCheckedChange={() => toggleArrayFilter('brahminCommunity', community)}
                       />
-                      <Label htmlFor={`caste-${caste}`} className="capitalize">
-                        {caste}
+                      <Label htmlFor={`community-${community}`}>
+                        {community}
                       </Label>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* Income Filter with Currency */}
+              <div>
+                <Label className="text-base font-medium mb-3 block">Annual Income</Label>
+                <div className="space-y-3">
+                  <Select
+                    value={filters.incomeCurrency || 'INR'}
+                    onValueChange={(value) => {
+                      updateFilter('incomeCurrency', value);
+                      updateFilter('incomeRange', '');
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CURRENCIES.map((currency) => (
+                        <SelectItem key={currency.value} value={currency.value}>
+                          {currency.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={filters.incomeRange || ''}
+                    onValueChange={(value) => updateFilter('incomeRange', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select income range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currentIncomeRanges.map((range) => (
+                        <SelectItem key={range.value} value={range.value}>
+                          {range.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
