@@ -1,13 +1,18 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { CreditCard, Landmark, IndianRupee } from 'lucide-react';
+import { CreditCard, Landmark, IndianRupee, Smartphone, ShieldCheck, Zap } from 'lucide-react';
 import { toast } from 'sonner';
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 interface PaymentFormProps {
   planName: string;
@@ -16,139 +21,394 @@ interface PaymentFormProps {
   onCancel?: () => void;
 }
 
+const PAYMENT_GATEWAYS = [
+  { id: 'razorpay', name: 'Razorpay', icon: '💳', description: 'Cards, UPI, Net Banking, Wallets', popular: true },
+  { id: 'payu', name: 'PayU', icon: '🏦', description: 'All payment methods' },
+  { id: 'cashfree', name: 'Cashfree', icon: '⚡', description: 'Fast settlements, UPI' },
+  { id: 'paytm', name: 'Paytm', icon: '📱', description: 'Paytm Wallet, UPI, Cards' },
+];
+
+const INDIAN_BANKS = [
+  { value: 'sbi', label: 'State Bank of India' },
+  { value: 'hdfc', label: 'HDFC Bank' },
+  { value: 'icici', label: 'ICICI Bank' },
+  { value: 'axis', label: 'Axis Bank' },
+  { value: 'kotak', label: 'Kotak Mahindra Bank' },
+  { value: 'pnb', label: 'Punjab National Bank' },
+  { value: 'bob', label: 'Bank of Baroda' },
+  { value: 'canara', label: 'Canara Bank' },
+];
+
+const UPI_APPS = [
+  { value: 'gpay', label: 'Google Pay', icon: '🔵' },
+  { value: 'phonepe', label: 'PhonePe', icon: '🟣' },
+  { value: 'paytm', label: 'Paytm', icon: '🔷' },
+  { value: 'bhim', label: 'BHIM UPI', icon: '🟠' },
+  { value: 'amazonpay', label: 'Amazon Pay', icon: '🟡' },
+  { value: 'other', label: 'Other UPI App', icon: '📱' },
+];
+
+const loadRazorpayScript = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 export default function PaymentForm({ planName, planPrice, onSuccess, onCancel }: PaymentFormProps) {
   const [isProcessing, setIsProcessing] = useState(false);
-  
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const [selectedGateway, setSelectedGateway] = useState('razorpay');
+  const [selectedBank, setSelectedBank] = useState('sbi');
+  const [selectedUpiApp, setSelectedUpiApp] = useState('gpay');
+  const [upiId, setUpiId] = useState('');
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+
+  useEffect(() => {
+    loadRazorpayScript().then(setRazorpayLoaded);
+  }, []);
+
+  const formatPrice = (price: number) => {
+    return (price).toLocaleString('en-IN');
+  };
+
+  const initializeRazorpay = async () => {
+    if (!razorpayLoaded) {
+      toast.error('Payment gateway is loading. Please try again.');
+      return;
+    }
+
     setIsProcessing(true);
-    
-    // Simulate payment processing
+
+    try {
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_xxxxxxxxxxxx',
+        amount: planPrice * 100,
+        currency: 'INR',
+        name: 'Brahmin Soulmate Connect',
+        description: `${planName} Subscription`,
+        handler: function (response: any) {
+          toast.success('Payment successful!');
+          console.log('Payment ID:', response.razorpay_payment_id);
+          if (onSuccess) onSuccess();
+        },
+        prefill: {
+          name: '',
+          email: '',
+          contact: '',
+        },
+        theme: {
+          color: '#FF4500',
+        },
+        modal: {
+          ondismiss: function () {
+            setIsProcessing(false);
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        toast.error(`Payment failed: ${response.error.description}`);
+        setIsProcessing(false);
+      });
+      rzp.open();
+    } catch (error) {
+      toast.error('Failed to initialize payment. Please try again.');
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePayUPayment = () => {
+    setIsProcessing(true);
+    toast.info('Redirecting to PayU...');
     setTimeout(() => {
       setIsProcessing(false);
       toast.success('Payment successful!');
       if (onSuccess) onSuccess();
     }, 2000);
   };
-  
+
+  const handleCashfreePayment = () => {
+    setIsProcessing(true);
+    toast.info('Redirecting to Cashfree...');
+    setTimeout(() => {
+      setIsProcessing(false);
+      toast.success('Payment successful!');
+      if (onSuccess) onSuccess();
+    }, 2000);
+  };
+
+  const handlePaytmPayment = () => {
+    setIsProcessing(true);
+    toast.info('Redirecting to Paytm...');
+    setTimeout(() => {
+      setIsProcessing(false);
+      toast.success('Payment successful!');
+      if (onSuccess) onSuccess();
+    }, 2000);
+  };
+
+  const handlePayment = () => {
+    switch (selectedGateway) {
+      case 'razorpay':
+        initializeRazorpay();
+        break;
+      case 'payu':
+        handlePayUPayment();
+        break;
+      case 'cashfree':
+        handleCashfreePayment();
+        break;
+      case 'paytm':
+        handlePaytmPayment();
+        break;
+      default:
+        initializeRazorpay();
+    }
+  };
+
   return (
-    <Card className="w-full max-w-lg mx-auto">
-      <CardHeader>
-        <CardTitle>Complete Your Payment</CardTitle>
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 border-b">
+        <CardTitle className="flex items-center gap-2">
+          <ShieldCheck className="h-5 w-5 text-green-600" />
+          Secure Payment
+        </CardTitle>
         <CardDescription>
-          You're subscribing to the {planName} plan at {(planPrice / 100).toLocaleString('en-IN')} INR.
+          Subscribe to <span className="font-semibold text-orange-600">{planName}</span> plan at{' '}
+          <span className="font-bold text-lg text-gray-900">₹{formatPrice(planPrice)}</span>
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="card">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="card">Credit Card</TabsTrigger>
-            <TabsTrigger value="bank">Net Banking</TabsTrigger>
-            <TabsTrigger value="upi">UPI</TabsTrigger>
+
+      <CardContent className="pt-6">
+        <div className="mb-6">
+          <Label className="text-base font-medium mb-3 block">Select Payment Gateway</Label>
+          <RadioGroup
+            value={selectedGateway}
+            onValueChange={setSelectedGateway}
+            className="grid grid-cols-2 gap-3"
+          >
+            {PAYMENT_GATEWAYS.map((gateway) => (
+              <div key={gateway.id} className="relative">
+                <RadioGroupItem value={gateway.id} id={gateway.id} className="peer sr-only" />
+                <Label
+                  htmlFor={gateway.id}
+                  className="flex flex-col p-4 border-2 rounded-lg cursor-pointer transition-all peer-checked:border-orange-500 peer-checked:bg-orange-50 hover:bg-gray-50"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{gateway.icon}</span>
+                    <span className="font-medium">{gateway.name}</span>
+                    {gateway.popular && (
+                      <span className="text-xs bg-orange-500 text-white px-2 py-0.5 rounded-full">Popular</span>
+                    )}
+                  </div>
+                  <span className="text-xs text-gray-500 mt-1">{gateway.description}</span>
+                </Label>
+              </div>
+            ))}
+          </RadioGroup>
+        </div>
+
+        <Tabs defaultValue="upi" className="mt-6">
+          <TabsList className="grid w-full grid-cols-4 bg-orange-50">
+            <TabsTrigger value="upi" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white">
+              <Smartphone className="h-4 w-4 mr-1" />
+              UPI
+            </TabsTrigger>
+            <TabsTrigger value="card" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white">
+              <CreditCard className="h-4 w-4 mr-1" />
+              Card
+            </TabsTrigger>
+            <TabsTrigger value="netbanking" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white">
+              <Landmark className="h-4 w-4 mr-1" />
+              Bank
+            </TabsTrigger>
+            <TabsTrigger value="wallet" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white">
+              <Zap className="h-4 w-4 mr-1" />
+              Wallet
+            </TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="card">
-            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="cardName">Cardholder Name</Label>
-                <Input id="cardName" placeholder="As it appears on the card" required />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="cardNumber">Card Number</Label>
-                <div className="relative">
-                  <Input 
-                    id="cardNumber" 
-                    placeholder="1234 5678 9012 3456" 
-                    required 
-                    className="pl-10"
-                    pattern="[0-9\s]{13,19}"
-                  />
-                  <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="expiry">Expiry Date</Label>
-                  <Input id="expiry" placeholder="MM/YY" required pattern="(0[1-9]|1[0-2])\/[0-9]{2}" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cvv">CVV</Label>
-                  <Input id="cvv" placeholder="123" required pattern="[0-9]{3,4}" type="password" />
-                </div>
-              </div>
-              
-              <Button type="submit" className="w-full" disabled={isProcessing}>
-                {isProcessing ? 'Processing...' : `Pay ₹${(planPrice / 100).toLocaleString('en-IN')}`}
-              </Button>
-            </form>
-          </TabsContent>
-          
-          <TabsContent value="bank">
-            <div className="mt-4 space-y-4">
-              <RadioGroup defaultValue="sbi">
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="sbi" id="sbi" />
-                  <Label htmlFor="sbi" className="flex items-center">
-                    <Landmark className="mr-2 h-4 w-4" />
-                    State Bank of India
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="hdfc" id="hdfc" />
-                  <Label htmlFor="hdfc" className="flex items-center">
-                    <Landmark className="mr-2 h-4 w-4" />
-                    HDFC Bank
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="icici" id="icici" />
-                  <Label htmlFor="icici" className="flex items-center">
-                    <Landmark className="mr-2 h-4 w-4" />
-                    ICICI Bank
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="axis" id="axis" />
-                  <Label htmlFor="axis" className="flex items-center">
-                    <Landmark className="mr-2 h-4 w-4" />
-                    Axis Bank
-                  </Label>
-                </div>
+
+          <TabsContent value="upi" className="mt-4 space-y-4">
+            <div className="space-y-3">
+              <Label className="font-medium">Choose UPI App</Label>
+              <RadioGroup
+                value={selectedUpiApp}
+                onValueChange={setSelectedUpiApp}
+                className="grid grid-cols-3 gap-2"
+              >
+                {UPI_APPS.map((app) => (
+                  <div key={app.value} className="relative">
+                    <RadioGroupItem value={app.value} id={`upi-${app.value}`} className="peer sr-only" />
+                    <Label
+                      htmlFor={`upi-${app.value}`}
+                      className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all peer-checked:border-orange-500 peer-checked:bg-orange-50 hover:bg-gray-50"
+                    >
+                      <span>{app.icon}</span>
+                      <span className="text-sm">{app.label}</span>
+                    </Label>
+                  </div>
+                ))}
               </RadioGroup>
-              
-              <Button className="w-full" onClick={handleSubmit} disabled={isProcessing}>
-                {isProcessing ? 'Processing...' : 'Continue to Bank'}
-              </Button>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="upiId">Or Enter UPI ID</Label>
+              <div className="relative">
+                <Input
+                  id="upiId"
+                  value={upiId}
+                  onChange={(e) => setUpiId(e.target.value)}
+                  placeholder="yourname@upi or mobile@paytm"
+                  className="pl-10"
+                />
+                <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+              </div>
+              <p className="text-xs text-gray-500">Supports: Google Pay, PhonePe, Paytm, BHIM UPI, Amazon Pay</p>
             </div>
           </TabsContent>
-          
-          <TabsContent value="upi">
-            <div className="mt-4 space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="upiId">UPI ID</Label>
-                <div className="relative">
-                  <Input 
-                    id="upiId" 
-                    placeholder="yourname@upi" 
-                    required 
-                    className="pl-10"
-                  />
-                  <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-                </div>
+
+          <TabsContent value="card" className="mt-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="cardName">Cardholder Name</Label>
+              <Input id="cardName" placeholder="Name as on card" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cardNumber">Card Number</Label>
+              <div className="relative">
+                <Input
+                  id="cardNumber"
+                  placeholder="1234 5678 9012 3456"
+                  className="pl-10"
+                  maxLength={19}
+                />
+                <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
               </div>
-              
-              <Button className="w-full" onClick={handleSubmit} disabled={isProcessing}>
-                {isProcessing ? 'Processing...' : 'Pay with UPI'}
-              </Button>
+              <p className="text-xs text-gray-500">Accepts: Visa, Mastercard, RuPay, American Express</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="expiry">Expiry Date</Label>
+                <Input id="expiry" placeholder="MM/YY" maxLength={5} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cvv">CVV</Label>
+                <Input id="cvv" placeholder="123" type="password" maxLength={4} />
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="netbanking" className="mt-4">
+            <div className="space-y-3">
+              <Label className="font-medium">Select Your Bank</Label>
+              <RadioGroup
+                value={selectedBank}
+                onValueChange={setSelectedBank}
+                className="grid grid-cols-2 gap-2"
+              >
+                {INDIAN_BANKS.map((bank) => (
+                  <div key={bank.value} className="relative">
+                    <RadioGroupItem value={bank.value} id={`bank-${bank.value}`} className="peer sr-only" />
+                    <Label
+                      htmlFor={`bank-${bank.value}`}
+                      className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all peer-checked:border-orange-500 peer-checked:bg-orange-50 hover:bg-gray-50"
+                    >
+                      <Landmark className="h-4 w-4 text-gray-600" />
+                      <span className="text-sm">{bank.label}</span>
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+              <p className="text-xs text-gray-500 mt-2">You will be redirected to your bank's secure page</p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="wallet" className="mt-4">
+            <div className="space-y-3">
+              <Label className="font-medium">Select Wallet</Label>
+              <RadioGroup defaultValue="paytm" className="grid grid-cols-2 gap-2">
+                {[
+                  { value: 'paytm', label: 'Paytm Wallet', icon: '🔷' },
+                  { value: 'phonepe', label: 'PhonePe Wallet', icon: '🟣' },
+                  { value: 'amazonpay', label: 'Amazon Pay Balance', icon: '🟡' },
+                  { value: 'mobikwik', label: 'MobiKwik', icon: '🔵' },
+                  { value: 'freecharge', label: 'Freecharge', icon: '🟢' },
+                  { value: 'airtel', label: 'Airtel Money', icon: '🔴' },
+                ].map((wallet) => (
+                  <div key={wallet.value} className="relative">
+                    <RadioGroupItem value={wallet.value} id={`wallet-${wallet.value}`} className="peer sr-only" />
+                    <Label
+                      htmlFor={`wallet-${wallet.value}`}
+                      className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all peer-checked:border-orange-500 peer-checked:bg-orange-50 hover:bg-gray-50"
+                    >
+                      <span>{wallet.icon}</span>
+                      <span className="text-sm">{wallet.label}</span>
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
             </div>
           </TabsContent>
         </Tabs>
+
+        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-600">Subtotal</span>
+            <span>₹{formatPrice(planPrice)}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm mt-1">
+            <span className="text-gray-600">GST (18%)</span>
+            <span>₹{formatPrice(Math.round(planPrice * 0.18))}</span>
+          </div>
+          <div className="flex justify-between items-center font-bold text-lg mt-2 pt-2 border-t">
+            <span>Total</span>
+            <span className="text-orange-600">₹{formatPrice(Math.round(planPrice * 1.18))}</span>
+          </div>
+        </div>
+
+        <Button
+          onClick={handlePayment}
+          className="w-full mt-4 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white py-6 text-lg"
+          disabled={isProcessing}
+        >
+          {isProcessing ? (
+            <>
+              <span className="animate-spin mr-2">⏳</span>
+              Processing...
+            </>
+          ) : (
+            <>Pay ₹{formatPrice(Math.round(planPrice * 1.18))}</>
+          )}
+        </Button>
       </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={onCancel}>Cancel</Button>
-        <p className="text-sm text-muted-foreground">Secure payment powered by Brahmin Match</p>
+
+      <CardFooter className="flex flex-col space-y-3 bg-gray-50 border-t">
+        <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
+          <span className="flex items-center gap-1">
+            <ShieldCheck className="h-4 w-4 text-green-600" />
+            256-bit SSL Encrypted
+          </span>
+          <span>|</span>
+          <span>PCI DSS Compliant</span>
+          <span>|</span>
+          <span>RBI Approved</span>
+        </div>
+        <div className="flex items-center justify-center gap-2">
+          <img src="https://cdn.razorpay.com/static/assets/logo/upi.svg" alt="UPI" className="h-6" />
+          <img src="https://cdn.razorpay.com/static/assets/logo/visa.svg" alt="Visa" className="h-4" />
+          <img src="https://cdn.razorpay.com/static/assets/logo/mastercard.svg" alt="Mastercard" className="h-6" />
+          <img src="https://cdn.razorpay.com/static/assets/logo/rupay.svg" alt="RuPay" className="h-6" />
+        </div>
+        <Button variant="ghost" onClick={onCancel} className="text-gray-500">
+          Cancel Payment
+        </Button>
       </CardFooter>
     </Card>
   );
