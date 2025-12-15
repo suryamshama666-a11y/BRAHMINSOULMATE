@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -104,8 +103,8 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
             isCurrentPlan 
               ? 'bg-gray-100 text-gray-500 border-gray-300 cursor-not-allowed' 
               : plan.isPopular
-              ? 'border-red-500 text-red-600 hover:bg-red-50 font-semibold'
-              : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+              ? 'border-red-500 text-red-600 hover:bg-red-50 hover:text-red-600 font-semibold'
+              : 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-700'
           }`}
         >
           {isCurrentPlan ? 'Current Plan' : 'Choose Plan'}
