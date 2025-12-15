@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Eye, UserPlus, Calendar, MapPin } from 'lucide-react';
+import { Heart, MessageCircle, Eye, UserPlus, Calendar, MapPin, Filter, Users, Clock } from 'lucide-react';
 import ProfileCard from '@/components/ProfileCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -14,12 +16,18 @@ const NewMembers = () => {
   const navigate = useNavigate();
   const [newMembers, setNewMembers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showFilters, setShowFilters] = useState(true);
+  
+  const [filterOnline, setFilterOnline] = useState(false);
+  const [filterNewMember, setFilterNewMember] = useState(true);
+  const [filterVerified, setFilterVerified] = useState(false);
+  const [filterWithPhoto, setFilterWithPhoto] = useState(false);
+  const [sortBy, setSortBy] = useState('newest');
 
   useEffect(() => {
     const loadNewMembers = async () => {
       setLoading(true);
       
-      // Mock data for new members
       const mockNewMembers = [
         {
           id: '1',
@@ -157,10 +165,12 @@ const NewMembers = () => {
     }
   };
 
-  const getProfileCompletionColor = (completion) => {
-    if (completion >= 80) return 'text-green-600 bg-green-100';
-    if (completion >= 60) return 'text-yellow-600 bg-yellow-100';
-    return 'text-red-600 bg-red-100';
+  const resetFilters = () => {
+    setFilterOnline(false);
+    setFilterNewMember(true);
+    setFilterVerified(false);
+    setFilterWithPhoto(false);
+    setSortBy('newest');
   };
 
   if (loading) {
@@ -174,70 +184,128 @@ const NewMembers = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50/30 via-white to-amber-50/40">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-serif font-bold mb-2 flex items-center">
-                  <UserPlus className="h-8 w-8 mr-3" />
-                  New Members
-                </h1>
-                <p className="text-purple-100">Recently joined members looking for their perfect match</p>
-              </div>
-              <Badge className="bg-white text-gray-800 px-4 py-2 font-semibold">
-                {newMembers.length} New This Week
-              </Badge>
-            </div>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-serif text-purple-600 mb-2 flex items-center">
+              <UserPlus className="h-8 w-8 mr-3" />
+              New Members
+            </h1>
+            <p className="text-gray-600">
+              {newMembers.length} new members this week
+            </p>
           </div>
+          <Button
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-2"
+          >
+            <Filter className="h-4 w-4" />
+            {showFilters ? 'Hide' : 'Show'} Filters
+          </Button>
         </div>
 
-        {/* New Member Info */}
-        <div className="mb-6">
-          <Card className="border-2 border-purple-100/50 bg-purple-50/50">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2 text-purple-700">
-                <UserPlus className="h-5 w-5" />
-                <p className="text-sm font-medium">
-                  Be among the first to connect with these new members and make a great first impression!
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <div className="grid md:grid-cols-4 gap-6">
+          {showFilters && (
+            <Card className="md:col-span-1 h-fit">
+              <CardContent className="p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg">Filters</h3>
+                  <Button variant="ghost" size="sm" onClick={resetFilters} className="text-purple-600">
+                    Reset
+                  </Button>
+                </div>
 
-        {/* New Members Grid */}
-        {newMembers.length > 0 ? (
-          <div className="max-w-5xl">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {newMembers.map((profile) => (
-                <ProfileCard 
-                  key={profile.id}
-                  profile={{
-                    ...profile, 
-                    joinedDate: profile.joinedDate,
-                    gotra: profile.gotra || 'Gotra not specified'
-                  }}
-                  variant="new"
-                  onAction={handleProfileAction}
-                />
-              ))}
-            </div>
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Quick Filters</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 p-2 bg-green-50 rounded">
+                      <Checkbox checked={filterOnline} onCheckedChange={(c) => setFilterOnline(!!c)} />
+                      <div className="flex items-center gap-1">
+                        <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <Label className="text-sm cursor-pointer">Live Now</Label>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 p-2 bg-purple-50 rounded">
+                      <Checkbox checked={filterNewMember} onCheckedChange={(c) => setFilterNewMember(!!c)} />
+                      <div className="flex items-center gap-1">
+                        <UserPlus className="h-3 w-3 text-purple-600" />
+                        <Label className="text-sm cursor-pointer">New Members</Label>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 p-2 bg-orange-50 rounded">
+                      <Checkbox checked={filterVerified} onCheckedChange={(c) => setFilterVerified(!!c)} />
+                      <Label className="text-sm cursor-pointer">Verified Only</Label>
+                    </div>
+                    <div className="flex items-center gap-2 p-2 bg-blue-50 rounded">
+                      <Checkbox checked={filterWithPhoto} onCheckedChange={(c) => setFilterWithPhoto(!!c)} />
+                      <Label className="text-sm cursor-pointer">With Photo</Label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-3">
+                  <Label className="text-sm font-medium">Sort By</Label>
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">Newest First</SelectItem>
+                      <SelectItem value="lastActive">Last Active</SelectItem>
+                      <SelectItem value="profileComplete">Profile Complete</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="border-t pt-3">
+                  <Label className="text-sm font-medium">Browse By</Label>
+                  <div className="mt-2 space-y-2">
+                    <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => navigate('/online')}>
+                      <Clock className="h-4 w-4 mr-2 text-green-600" />
+                      Online Profiles
+                    </Button>
+                    <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => navigate('/search')}>
+                      <Users className="h-4 w-4 mr-2 text-orange-600" />
+                      All Profiles
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className={showFilters ? 'md:col-span-3' : 'md:col-span-4'}>
+            {newMembers.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {newMembers.map((profile) => (
+                  <ProfileCard 
+                    key={profile.id}
+                    profile={{
+                      ...profile, 
+                      joinedDate: profile.joinedDate,
+                      gotra: profile.gotra || 'Gotra not specified'
+                    }}
+                    variant="new"
+                    onAction={handleProfileAction}
+                  />
+                ))}
+              </div>
+            ) : (
+              <Card className="text-center py-16">
+                <CardContent>
+                  <UserPlus className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                  <h3 className="text-xl font-semibold mb-2">No New Members This Week</h3>
+                  <p className="text-gray-600 mb-6">Check back later for new profiles</p>
+                  <Link to="/search">
+                    <Button className="bg-purple-600 hover:bg-purple-700">
+                      Browse All Profiles
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
           </div>
-        ) : (
-          <Card className="text-center py-16">
-            <CardContent>
-              <UserPlus className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-xl font-semibold mb-2">No New Members This Week</h3>
-              <p className="text-gray-600 mb-6">Check back later for new profiles</p>
-              <Link to="/search">
-                <Button className="bg-purple-600 hover:bg-purple-700">
-                  Browse All Profiles
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        )}
+        </div>
       </div>
     </div>
   );
