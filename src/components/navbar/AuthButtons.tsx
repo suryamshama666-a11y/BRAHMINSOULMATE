@@ -16,14 +16,14 @@ const AuthButtons = () => {
           className={`
             transition-all duration-200 rounded-full border-2 border-[#FF4500]
             ${currentPath === '/login'
-              ? 'bg-white text-[#FF4500]'
+              ? 'bg-[#FF4500] text-white'
               : 'bg-white text-black hover:bg-[#FF4500] hover:text-white'
             }
           `}
         >
           <LogIn className={`h-4 w-4 mr-2 ${
             currentPath === '/login' 
-              ? 'text-[#FF4500]' 
+              ? 'text-white' 
               : 'text-black group-hover:text-white'
           }`} />
           <span>Login</span>
