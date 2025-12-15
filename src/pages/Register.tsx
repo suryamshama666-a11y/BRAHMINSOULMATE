@@ -20,9 +20,9 @@ const Register = () => {
     lastName: '',
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Redirect if already authenticated
   React.useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard');
@@ -107,9 +107,25 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-orange-50/30 p-4">
-      <Card className="w-full max-w-md border-2 border-primary/20 shadow-2xl">
-        <CardHeader className="text-center bg-orange-50 border-b border-primary/20">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-orange-50 via-rose-50 to-amber-50">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-gradient-to-br from-orange-200/40 to-rose-200/40 rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-gradient-to-br from-amber-200/40 to-orange-200/40 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-rose-100/30 to-orange-100/30 rounded-full blur-3xl" />
+        <svg className="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="mandala-register" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-orange-900"/>
+              <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-orange-900"/>
+              <circle cx="50" cy="50" r="20" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-orange-900"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#mandala-register)" />
+        </svg>
+      </div>
+
+      <Card className="w-full max-w-md border-2 border-primary/20 shadow-2xl relative z-10 backdrop-blur-sm bg-white/90">
+        <CardHeader className="text-center bg-gradient-to-r from-orange-50 to-rose-50 border-b border-primary/20">
           <div className="flex items-center justify-center mb-4">
             <Heart className="h-8 w-8 text-primary mr-2" />
             <h1 className="text-2xl font-serif font-bold text-primary">
@@ -126,7 +142,7 @@ const Register = () => {
               <Button
                 type="button"
                 variant="outline"
-                className="w-full border-red-200"
+                className="w-full border-red-200 hover:bg-red-50 transform hover:scale-105 transition-all duration-300"
                 onClick={() => handleSocialLogin('google')}
               >
                 <img src="/google.svg" alt="Google" className="w-5 h-5 mr-2" />
@@ -135,7 +151,7 @@ const Register = () => {
               <Button
                 type="button"
                 variant="outline"
-                className="w-full border-red-200"
+                className="w-full border-red-200 hover:bg-red-50 transform hover:scale-105 transition-all duration-300"
                 onClick={() => handleSocialLogin('facebook')}
               >
                 <img src="/facebook.svg" alt="Facebook" className="w-5 h-5 mr-2" />
@@ -227,7 +243,7 @@ const Register = () => {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showConfirmPassword ? 'text' : 'password'}
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
@@ -235,6 +251,13 @@ const Register = () => {
                   className="pl-10 pr-10 border-red-200 focus:border-red-400"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
             </FormField>
             
