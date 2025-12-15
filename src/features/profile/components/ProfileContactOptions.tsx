@@ -60,9 +60,9 @@ export default function ProfileContactOptions({ profile }: ProfileContactOptions
           <div className="grid grid-cols-2 gap-3">
             <Button
               onClick={handleLike}
-              className={`contact-button flex items-center justify-center h-12 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg font-semibold
+              className={`contact-button flex items-center justify-center h-12 rounded-full transition-all duration-300 transform hover:scale-105 shadow-md font-semibold
                 ${liked 
-                  ? 'bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-red-300/50' 
+                  ? 'bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white' 
                   : 'bg-gradient-to-r from-red-100 to-pink-100 hover:from-red-200 hover:to-pink-200 text-red-600'}`}
             >
               <Heart className={`h-5 w-5 transition-all duration-300 ${liked ? 'fill-white animate-pulse' : 'fill-red-400'}`} />
@@ -73,7 +73,7 @@ export default function ProfileContactOptions({ profile }: ProfileContactOptions
               onClick={handleMessage}
               className="contact-button flex items-center justify-center h-12 rounded-full 
                 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-white 
-                hover:shadow-lg shadow-md shadow-amber-300/50 transition-all duration-300 transform hover:scale-105 font-semibold"
+                hover:shadow-lg shadow-md transition-all duration-300 transform hover:scale-105 font-semibold"
             >
               <MessageCircle className="h-5 w-5 fill-white" />
               <span className="ml-2">Message</span>
@@ -83,7 +83,7 @@ export default function ProfileContactOptions({ profile }: ProfileContactOptions
               onClick={handleVideoCall}
               className="contact-button flex items-center justify-center h-12 rounded-full 
                 bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-700 hover:to-amber-700 text-white 
-                hover:shadow-lg shadow-md shadow-red-400/50 transition-all duration-300 transform hover:scale-105 font-semibold"
+                hover:shadow-lg shadow-md transition-all duration-300 transform hover:scale-105 font-semibold"
             >
               <Video className="h-5 w-5 fill-white" />
               <span className="ml-2">Video</span>
@@ -93,7 +93,7 @@ export default function ProfileContactOptions({ profile }: ProfileContactOptions
               onClick={handlePhone}
               className="contact-button flex items-center justify-center h-12 rounded-full 
                 bg-gradient-to-r from-amber-600 to-red-600 hover:from-amber-700 hover:to-red-700 text-white 
-                hover:shadow-lg shadow-md shadow-amber-400/50 transition-all duration-300 transform hover:scale-105 font-semibold"
+                hover:shadow-lg shadow-md transition-all duration-300 transform hover:scale-105 font-semibold"
             >
               <Phone className="h-5 w-5 fill-white" />
               <span className="ml-2">Call</span>
@@ -103,7 +103,7 @@ export default function ProfileContactOptions({ profile }: ProfileContactOptions
               onClick={handleCalendar}
               className="contact-button flex items-center justify-center h-12 col-span-2 rounded-full 
                 bg-gradient-to-r from-red-500 via-amber-500 to-red-500 hover:from-red-600 hover:via-amber-600 hover:to-red-600 text-white 
-                hover:shadow-lg shadow-md shadow-red-300/50 transition-all duration-300 transform hover:scale-105 font-semibold"
+                hover:shadow-lg shadow-md transition-all duration-300 transform hover:scale-105 font-semibold"
             >
               <Calendar className="h-5 w-5 fill-white" />
               <span className="ml-2">Schedule Meeting</span>
