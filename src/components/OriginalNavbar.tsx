@@ -262,31 +262,39 @@ export default function OriginalNavbar() {
             ) : (
               <div className="flex items-center space-x-2">
                 <Link to="/login">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={`transition-all duration-200 rounded-full border-2 border-[#FF4500] ${
-                      location.pathname === '/login' 
-                        ? 'bg-[#FF4500] text-white' 
-                        : 'bg-white text-black hover:bg-[#FF4500] hover:text-white'
-                    }`}
+                  <button
+                    style={{
+                      backgroundColor: location.pathname === '/login' ? '#FF4500' : '#FFFFFF',
+                      color: location.pathname === '/login' ? '#FFFFFF' : '#000000',
+                      border: '2px solid #FF4500',
+                      borderRadius: '9999px',
+                      padding: '6px 12px',
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
                   >
                     Login
-                  </Button>
+                  </button>
                 </Link>
                 
                 <Link to="/register">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={`transition-all duration-200 rounded-full border-2 border-[#FF4500] ${
-                      location.pathname === '/register' 
-                        ? 'bg-[#FF4500] text-white' 
-                        : 'bg-white text-black hover:bg-[#FF4500] hover:text-white'
-                    }`}
+                  <button
+                    style={{
+                      backgroundColor: location.pathname === '/register' ? '#FF4500' : '#FFFFFF',
+                      color: location.pathname === '/register' ? '#FFFFFF' : '#000000',
+                      border: '2px solid #FF4500',
+                      borderRadius: '9999px',
+                      padding: '6px 12px',
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
                   >
                     Register
-                  </Button>
+                  </button>
                 </Link>
               </div>
             )}
