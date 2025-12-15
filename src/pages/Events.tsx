@@ -187,7 +187,7 @@ export default function Events() {
                       <Button 
                         onClick={() => handleRegister(event.id)}
                         disabled={registeringId === event.id || (event.participant_count || 0) >= event.capacity}
-                        style={{ backgroundColor: '#E30613' }}
+                        style={{ backgroundColor: '#E30613', color: 'white' }}
                       >
                         {registeringId === event.id ? (
                           <Loader2 className="h-4 w-4 animate-spin mr-2" />
