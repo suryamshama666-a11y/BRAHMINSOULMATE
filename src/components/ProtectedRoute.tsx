@@ -22,16 +22,17 @@ export default function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { user, profile, loading, updateLastActive } = useAuth();
   const location = useLocation();
+  const devMode = isDevBypassMode();
 
-  // Update last active timestamp when user navigates
+  // Update last active timestamp when user navigates (skip in dev mode)
   useEffect(() => {
-    if (user) {
+    if (user && !devMode) {
       updateLastActive();
     }
-  }, [location.pathname, user, updateLastActive]);
+  }, [location.pathname, user, updateLastActive, devMode]);
 
   // DEV MODE: Bypass authentication if enabled
-  if (isDevBypassMode()) {
+  if (devMode) {
     console.log('🔓 DEV MODE: Authentication bypassed');
     return <>{children}</>;
   }
