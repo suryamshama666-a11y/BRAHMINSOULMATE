@@ -69,13 +69,22 @@ export default function ConnectionsDropdown({
       isNew: data.interestedInMe > 0
     },
     {
-      id: 'profile-views',
-      label: 'Profile Views',
+      id: 'who-viewed',
+      label: 'Who Viewed You',
       count: data.profileViews,
       icon: Eye,
-      route: '/my-connections?tab=views',
+      route: '/connections/who-viewed',
       description: 'People who viewed your profile',
       color: 'bg-blue-500'
+    },
+    {
+      id: 'you-viewed',
+      label: 'You Viewed',
+      count: 0,
+      icon: Eye,
+      route: '/connections/you-viewed',
+      description: 'Profiles you recently viewed',
+      color: 'bg-indigo-500'
     },
     {
       id: 'messages',

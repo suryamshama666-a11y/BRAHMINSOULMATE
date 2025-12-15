@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Heart, UserPlus, Users } from 'lucide-react';
+import { Heart, UserPlus, Users, Eye } from 'lucide-react';
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -37,6 +36,14 @@ export default function ConnectionsDropdown({ currentPath }: ConnectionsDropdown
             <Link to="/connections/interested" className="nav-dropdown-item flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
               <Users className="h-4 w-4 mr-2 text-brahmin-primary" />
               Interested in You
+            </Link>
+            <Link to="/connections/who-viewed" className="nav-dropdown-item flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
+              <Eye className="h-4 w-4 mr-2 text-brahmin-primary" />
+              Who Viewed You
+            </Link>
+            <Link to="/connections/you-viewed" className="nav-dropdown-item flex items-center px-3 py-2 text-sm rounded-md hover:bg-gray-100">
+              <Eye className="h-4 w-4 mr-2 text-brahmin-primary" />
+              You Viewed
             </Link>
           </div>
         </NavigationMenuContent>
