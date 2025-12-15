@@ -117,13 +117,13 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 src={conversation.partner_avatar}
                 alt={conversation.partner_name || 'User'}
                 fallback={getAvatarFallback(conversation.partner_name)}
-                className="h-12 w-12 mr-3"
+                className="h-10 w-10 mr-3"
               />
 
               {/* Conversation details */}
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start">
-                  <h3 className="text-sm font-medium text-gray-900 truncate">
+                  <h3 className="text-xs font-medium text-gray-900 truncate">
                     {conversation.partner_name || 'User'}
                   </h3>
                   {conversation.last_message && (
