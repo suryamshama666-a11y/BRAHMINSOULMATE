@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -72,7 +71,7 @@ export default function ProfileImageGallery({ profile }: ProfileImageGalleryProp
               {/* Quick action button */}
               <Button
                 size="icon"
-                className="absolute bottom-4 right-4 bg-white hover:bg-gray-50 shadow-lg transition-all border-2 border-red-500"
+                className="absolute bottom-4 right-4 bg-white hover:bg-gray-50 shadow-lg transition-all"
                 onClick={() => setIsLiked(!isLiked)}
               >
                 <Heart className={`h-4 w-4 transition-all ${

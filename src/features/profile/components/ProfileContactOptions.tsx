@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -64,7 +63,7 @@ export default function ProfileContactOptions({ profile }: ProfileContactOptions
               className={`contact-button flex items-center justify-center h-12 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg font-semibold
                 ${liked 
                   ? 'bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-red-300/50' 
-                  : 'bg-gradient-to-r from-red-100 to-pink-100 hover:from-red-200 hover:to-pink-200 text-red-600 border-2 border-red-200'}`}
+                  : 'bg-gradient-to-r from-red-100 to-pink-100 hover:from-red-200 hover:to-pink-200 text-red-600'}`}
             >
               <Heart className={`h-5 w-5 transition-all duration-300 ${liked ? 'fill-white animate-pulse' : 'fill-red-400'}`} />
               <span className="ml-2">{liked ? 'Liked' : 'Like'}</span>
