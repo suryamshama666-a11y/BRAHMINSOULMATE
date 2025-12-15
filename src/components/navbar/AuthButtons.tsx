@@ -1,52 +1,61 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { LogIn, UserPlus } from 'lucide-react';
 
 const AuthButtons = () => {
   const location = useLocation();
   const currentPath = location.pathname;
+  const isLoginActive = currentPath === '/login';
+  const isRegisterActive = currentPath === '/register';
 
   return (
     <div className="flex items-center space-x-2">
       <Link to="/login">
-        <Button
-          size="sm"
-          className={`
-            transition-all duration-200 rounded-full border-2 border-[#FF4500]
-            ${currentPath === '/login'
-              ? '!bg-[#FF4500] !text-white'
-              : '!bg-white !text-black hover:!bg-[#FF4500] hover:!text-white'
-            }
-          `}
+        <button
+          style={{
+            backgroundColor: isLoginActive ? '#FF4500' : '#FFFFFF',
+            color: isLoginActive ? '#FFFFFF' : '#000000',
+            border: '2px solid #FF4500',
+            borderRadius: '9999px',
+            padding: '6px 12px',
+            fontSize: '12px',
+            fontWeight: 500,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s',
+          }}
         >
-          <LogIn className={`h-4 w-4 mr-2 ${
-            currentPath === '/login' 
-              ? '!text-white' 
-              : '!text-black'
-          }`} />
+          <LogIn 
+            className="h-4 w-4 mr-2" 
+            style={{ color: isLoginActive ? '#FFFFFF' : '#000000' }}
+          />
           <span>Login</span>
-        </Button>
+        </button>
       </Link>
       
       <Link to="/register">
-        <Button
-          size="sm"
-          className={`
-            transition-all duration-200 rounded-full border-2 border-[#FF4500]
-            ${currentPath === '/register'
-              ? '!bg-[#FF4500] !text-white'
-              : '!bg-white !text-black hover:!bg-[#FF4500] hover:!text-white'
-            }
-          `}
+        <button
+          style={{
+            backgroundColor: isRegisterActive ? '#FF4500' : '#FFFFFF',
+            color: isRegisterActive ? '#FFFFFF' : '#000000',
+            border: '2px solid #FF4500',
+            borderRadius: '9999px',
+            padding: '6px 12px',
+            fontSize: '12px',
+            fontWeight: 500,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s',
+          }}
         >
-          <UserPlus className={`h-4 w-4 mr-2 ${
-            currentPath === '/register' 
-              ? '!text-white' 
-              : '!text-black'
-          }`} />
+          <UserPlus 
+            className="h-4 w-4 mr-2" 
+            style={{ color: isRegisterActive ? '#FFFFFF' : '#000000' }}
+          />
           <span>Register</span>
-        </Button>
+        </button>
       </Link>
     </div>
   );
