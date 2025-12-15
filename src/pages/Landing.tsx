@@ -52,17 +52,45 @@ const Landing = () => {
     <div className="min-h-screen overflow-hidden">
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-4">
-        {/* Animated Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-rose-50 to-amber-50">
-          <div className="absolute inset-0 opacity-30" style={{
-            backgroundImage: `radial-gradient(circle at 20% 50%, rgba(251, 146, 60, 0.15) 0%, transparent 50%),
-                             radial-gradient(circle at 80% 20%, rgba(244, 63, 94, 0.12) 0%, transparent 40%),
-                             radial-gradient(circle at 40% 80%, rgba(251, 191, 36, 0.1) 0%, transparent 45%)`
+        {/* Background Image - Traditional Wedding */}
+        <div className="absolute inset-0">
+          {/* Base wedding background image */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: `url('https://images.unsplash.com/photo-1587271449865-5ddc2f5a8b79?q=80&w=2070&auto=format&fit=crop')`,
+            }}
+          />
+          
+          {/* Overlay with warm gradient to blend with content */}
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-900/80 via-rose-900/75 to-amber-900/70" />
+          
+          {/* Sacred fire/yagna kund overlay effect */}
+          <div className="absolute inset-0 opacity-20" style={{
+            backgroundImage: `radial-gradient(circle at 50% 70%, rgba(251, 146, 60, 0.6) 0%, transparent 30%),
+                             radial-gradient(circle at 30% 60%, rgba(255, 154, 0, 0.4) 0%, transparent 25%),
+                             radial-gradient(circle at 70% 65%, rgba(245, 158, 11, 0.5) 0%, transparent 28%)`
           }} />
-          <div className="absolute inset-0 opacity-[0.03]" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23b45309' fill-rule='evenodd'%3E%3Cpath d='M40 0L20 40L40 80L60 40z'/%3E%3C/g%3E%3C/svg%3E")`,
-            backgroundSize: '80px 80px'
+          
+          {/* Decorative mandala pattern overlay */}
+          <div className="absolute inset-0 opacity-[0.06]" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M50 10 L60 40 L90 40 L65 60 L75 90 L50 70 L25 90 L35 60 L10 40 L40 40 Z' fill='%23fbbf24' fill-opacity='0.3'/%3E%3C/svg%3E")`,
+            backgroundSize: '100px 100px'
           }} />
+          
+          {/* Silhouette of bride and groom on sides */}
+          <div 
+            className="absolute left-0 bottom-0 w-1/4 h-3/4 bg-gradient-to-t from-black/40 to-transparent hidden lg:block"
+            style={{
+              clipPath: 'polygon(0 100%, 30% 100%, 50% 60%, 40% 40%, 30% 30%, 0 30%)'
+            }}
+          />
+          <div 
+            className="absolute right-0 bottom-0 w-1/4 h-3/4 bg-gradient-to-t from-black/40 to-transparent hidden lg:block"
+            style={{
+              clipPath: 'polygon(100% 100%, 70% 100%, 50% 60%, 60% 40%, 70% 30%, 100% 30%)'
+            }}
+          />
         </div>
 
         {/* Floating Hearts */}
@@ -77,26 +105,26 @@ const Landing = () => {
         <div className="relative z-10 container mx-auto px-4 py-12 sm:py-20">
           <div className="max-w-4xl mx-auto text-center">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-lg mb-6 sm:mb-8 animate-pop">
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg mb-6 sm:mb-8 animate-pop">
               <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-amber-500" />
               <span className="text-xs sm:text-sm font-medium text-amber-700">Trusted by 50,000+ Families</span>
             </div>
 
             {/* Main Heading */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4 sm:mb-6 leading-tight">
-              <span className="bg-gradient-to-r from-amber-600 via-rose-600 to-orange-600 bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4 sm:mb-6 leading-tight drop-shadow-lg">
+              <span className="bg-gradient-to-r from-amber-300 via-rose-200 to-orange-300 bg-clip-text text-transparent">
                 Find Your Perfect
               </span>
               <br />
-              <span className="text-gray-800">Life Partner</span>
+              <span className="text-white drop-shadow-xl">Life Partner</span>
             </h1>
 
             {/* Subtitle */}
-            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-600 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed font-light px-4">
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-orange-50 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed font-light px-4 drop-shadow-md">
               Connect with like-minded Brahmin singles who share your{' '}
-              <span className="text-amber-600 font-medium">values</span>,{' '}
-              <span className="text-rose-600 font-medium">traditions</span>, and{' '}
-              <span className="text-orange-600 font-medium">dreams</span>.
+              <span className="text-amber-200 font-medium">values</span>,{' '}
+              <span className="text-rose-200 font-medium">traditions</span>, and{' '}
+              <span className="text-orange-200 font-medium">dreams</span>.
             </p>
 
             {/* CTA Buttons */}
@@ -108,24 +136,24 @@ const Landing = () => {
                 </Button>
               </Link>
               <Link to="/login" className="w-full sm:w-auto">
-                <Button variant="outline" className="w-full sm:w-auto px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg rounded-full border-2 border-gray-300 hover:border-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all duration-300">
+                <Button variant="outline" className="w-full sm:w-auto px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg rounded-full border-2 border-white/80 hover:border-white hover:bg-white/20 text-white hover:text-white backdrop-blur-sm transition-all duration-300">
                   Sign In
                 </Button>
               </Link>
             </div>
 
             {/* Trust Indicators */}
-            <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 text-xs sm:text-sm text-gray-500 px-4">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" />
+            <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 text-xs sm:text-sm text-orange-50 px-4">
+              <div className="flex items-center gap-2 bg-black/20 backdrop-blur-sm px-3 py-2 rounded-full">
+                <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 flex-shrink-0" />
                 <span>100% Verified Profiles</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 flex-shrink-0" />
+              <div className="flex items-center gap-2 bg-black/20 backdrop-blur-sm px-3 py-2 rounded-full">
+                <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 flex-shrink-0" />
                 <span>Privacy Protected</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-rose-500 flex-shrink-0" />
+              <div className="flex items-center gap-2 bg-black/20 backdrop-blur-sm px-3 py-2 rounded-full">
+                <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-rose-400 flex-shrink-0" />
                 <span>12,000+ Success Stories</span>
               </div>
             </div>
@@ -134,8 +162,8 @@ const Landing = () => {
 
         {/* Scroll Indicator */}
         <div className="absolute bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          <div className="w-5 h-8 sm:w-6 sm:h-10 border-2 border-gray-400 rounded-full flex justify-center pt-2">
-            <div className="w-1 h-2 sm:h-3 bg-gray-400 rounded-full animate-pulse" />
+          <div className="w-5 h-8 sm:w-6 sm:h-10 border-2 border-white/60 rounded-full flex justify-center pt-2">
+            <div className="w-1 h-2 sm:h-3 bg-white/80 rounded-full animate-pulse" />
           </div>
         </div>
       </section>
