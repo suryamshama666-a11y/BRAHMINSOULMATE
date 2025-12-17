@@ -22,47 +22,8 @@ const YouViewed = () => {
       setLoading(true);
       
       try {
-        let query = supabase
-          .from('profile_views')
-          .select(`
-            id,
-            viewed_at,
-            viewed_profile:viewed_profile_id(
-              id,
-              full_name,
-              age,
-              gender,
-              height,
-              religion,
-              caste,
-              gotra,
-              city,
-              state,
-              education,
-              occupation,
-              subscription_type,
-              last_active,
-              avatar_url
-            )
-          `)
-          .eq('viewer_id', user?.id)
-          .order('viewed_at', { ascending: false });
-
-        if (timeFilter === 'today') {
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          query = query.gte('viewed_at', today.toISOString());
-        } else if (timeFilter === 'week') {
-          const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-          query = query.gte('viewed_at', weekAgo.toISOString());
-        } else if (timeFilter === 'month') {
-          const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-          query = query.gte('viewed_at', monthAgo.toISOString());
-        }
-
-        const { data, error } = await query;
-
-        if (error) throw error;
+        const { profileViewsService } = await import('@/services/api');
+        const data = await profileViewsService.getIViewed(timeFilter);
 
         const formattedProfiles = (data || []).map((view: any) => ({
           id: view.viewed_profile?.id || view.id,
@@ -79,7 +40,7 @@ const YouViewed = () => {
           subscription_type: view.viewed_profile?.subscription_type || 'free',
           lastActive: view.viewed_profile?.last_active || new Date().toISOString(),
           viewedAt: view.viewed_at,
-          avatarUrl: view.viewed_profile?.avatar_url
+          avatarUrl: view.viewed_profile?.avatar_url || view.viewed_profile?.profile_picture
         }));
 
         setViewedProfiles(formattedProfiles);

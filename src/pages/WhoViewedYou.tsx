@@ -22,47 +22,8 @@ const WhoViewedYou = () => {
       setLoading(true);
       
       try {
-        let query = supabase
-          .from('profile_views')
-          .select(`
-            id,
-            viewed_at,
-            viewer:viewer_id(
-              id,
-              full_name,
-              age,
-              gender,
-              height,
-              religion,
-              caste,
-              gotra,
-              city,
-              state,
-              education,
-              occupation,
-              subscription_type,
-              last_active,
-              avatar_url
-            )
-          `)
-          .eq('viewed_profile_id', user?.id)
-          .order('viewed_at', { ascending: false });
-
-        if (timeFilter === 'today') {
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          query = query.gte('viewed_at', today.toISOString());
-        } else if (timeFilter === 'week') {
-          const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-          query = query.gte('viewed_at', weekAgo.toISOString());
-        } else if (timeFilter === 'month') {
-          const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-          query = query.gte('viewed_at', monthAgo.toISOString());
-        }
-
-        const { data, error } = await query;
-
-        if (error) throw error;
+        const { profileViewsService } = await import('@/services/api');
+        const data = await profileViewsService.getWhoViewedMe(timeFilter);
 
         const formattedViewers = (data || []).map((view: any) => ({
           id: view.viewer?.id || view.id,
@@ -79,63 +40,13 @@ const WhoViewedYou = () => {
           subscription_type: view.viewer?.subscription_type || 'free',
           lastActive: view.viewer?.last_active || new Date().toISOString(),
           viewedAt: view.viewed_at,
-          avatarUrl: view.viewer?.avatar_url
+          avatarUrl: view.viewer?.avatar_url || view.viewer?.profile_picture
         }));
 
         setViewers(formattedViewers);
       } catch (error) {
         console.error('Error loading viewers:', error);
-        const mockViewers = [
-          {
-            id: '1',
-            name: 'Anjali Sharma',
-            age: 25,
-            gender: 'female',
-            height: 162,
-            religion: 'Hindu',
-            caste: 'Brahmin',
-            gotra: 'Kashyap',
-            location: 'Delhi, NCR',
-            education: 'MBA',
-            profession: 'Marketing Manager',
-            subscription_type: 'premium',
-            lastActive: '1 hour ago',
-            viewedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            id: '2',
-            name: 'Rahul Gupta',
-            age: 28,
-            gender: 'male',
-            height: 175,
-            religion: 'Hindu',
-            caste: 'Brahmin',
-            gotra: 'Bharadwaj',
-            location: 'Pune, Maharashtra',
-            education: 'B.Tech',
-            profession: 'Software Developer',
-            subscription_type: 'free',
-            lastActive: '3 hours ago',
-            viewedAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            id: '3',
-            name: 'Meera Krishnan',
-            age: 24,
-            gender: 'female',
-            height: 158,
-            religion: 'Hindu',
-            caste: 'Brahmin',
-            gotra: 'Vasishtha',
-            location: 'Chennai, Tamil Nadu',
-            education: 'M.Sc',
-            profession: 'Data Analyst',
-            subscription_type: 'premium',
-            lastActive: '30 minutes ago',
-            viewedAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
-          }
-        ];
-        setViewers(mockViewers);
+        setViewers([]);
       } finally {
         setLoading(false);
       }

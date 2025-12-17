@@ -20,6 +20,7 @@ export { eventsService } from './events.service';
 export { vdatesService } from './vdates.service';
 export { successStoriesService } from './success-stories.service';
 export { forumService } from './forum.service';
+export { profileViewsService } from './profile-views.service';
 
 // Re-export types
 export type { UserProfile } from '@/types';

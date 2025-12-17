@@ -17,6 +17,7 @@ import eventRoutes from './routes/events';
 import vdateRoutes from './routes/vdates';
 import adminRoutes from './routes/admin';
 import utilityRoutes from './routes/utility';
+import profileViewsRoutes from './routes/profile-views';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -102,6 +103,7 @@ app.get('/ready', (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/profile-views', profileViewsRoutes);
 app.use('/api/matching', matchingRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/payments', paymentRoutes);
