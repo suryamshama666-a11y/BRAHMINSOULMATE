@@ -42,6 +42,14 @@ export interface Conversation {
   unread_count: number;
 }
 
+export interface Contact {
+  id: string;
+  name: string;
+  profile_image: string;
+  status: 'online' | 'offline';
+  last_active?: string;
+}
+
 interface ReportUserParams {
   partnerId: string;
   reason: string;
@@ -173,6 +181,47 @@ export function useConversations() {
           : 'An unexpected error occurred while fetching conversations';
         console.error('Conversation fetch error:', err);
         throw err;
+      }
+    },
+    enabled: !!user && !devMode,
+  });
+
+  const { data: contacts = [], isLoading: isLoadingContacts } = useQuery({
+    queryKey: ['contacts'],
+    queryFn: async () => {
+      if (!user || devMode) return [];
+
+      try {
+        // Fetch accepted interest exchanges where user is sender or receiver
+        const { data: exchanges, error: exchangeError } = await supabase
+          .from('interest_exchanges')
+          .select('*')
+          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+          .eq('status', 'accepted');
+
+        if (exchangeError) throw exchangeError;
+        if (!exchanges || exchanges.length === 0) return [];
+
+        const contactIds = exchanges.map(ex => 
+          ex.sender_id === user.id ? ex.receiver_id : ex.sender_id
+        );
+
+        const { data: profiles, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name, profile_picture_url')
+          .in('user_id', contactIds);
+
+        if (profileError) throw profileError;
+
+        return (profiles || []).map(p => ({
+          id: p.user_id,
+          name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown User',
+          profile_image: p.profile_picture_url || '',
+          status: 'offline' as const, // This will be enriched by presence hook
+        }));
+      } catch (err) {
+        console.error('Failed to fetch contacts:', err);
+        return [];
       }
     },
     enabled: !!user && !devMode,
@@ -310,7 +359,9 @@ export function useConversations() {
 
   return {
     conversations,
+    contacts,
     isLoading,
+    isLoadingContacts,
     error,
     toggleShortlist,
     blockUser,

@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, ArrowLeft, Send, Paperclip, Mic } from 'lucide-react';
+import { MessageCircle, X, ArrowLeft, Send, Paperclip, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
-import { useConversations } from '@/features/messages/hooks/useConversations';
+import { useConversations, Contact } from '@/features/messages/hooks/useConversations';
 import { useMessages } from '@/features/messages/hooks/useMessages';
+import { usePresence } from '@/hooks/usePresence';
 import { MessageBubble } from '@/features/messages/components/MessageBubble';
 import { toast } from 'sonner';
 
@@ -17,10 +17,17 @@ interface ConversationItem {
 }
 
 export function CollapsibleChatWidget() {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'messages' | 'contacts'>('messages');
   const [selectedConversation, setSelectedConversation] = useState<ConversationItem | null>(null);
-  const { conversations: rawConversations, isLoading: loadingConversations } = useConversations();
+  const { 
+    conversations: rawConversations, 
+    contacts, 
+    isLoading: loadingConversations,
+    isLoadingContacts 
+  } = useConversations();
+  const { isUserOnline, onlineUsers } = usePresence();
   
   const conversations: ConversationItem[] = rawConversations.map(conv => ({
     id: conv.id,
@@ -31,6 +38,7 @@ export function CollapsibleChatWidget() {
   }));
 
   const totalUnread = conversations.reduce((sum, c) => sum + c.unread_count, 0);
+  const onlineCount = contacts.filter(c => isUserOnline(c.id)).length;
 
   if (!user) return null;
 
@@ -41,16 +49,58 @@ export function CollapsibleChatWidget() {
           {selectedConversation ? (
             <ChatView
               conversation={selectedConversation}
+              isOnline={isUserOnline(selectedConversation.partner_id)}
               onBack={() => setSelectedConversation(null)}
               onClose={() => setIsOpen(false)}
             />
           ) : (
-            <ConversationListView
-              conversations={conversations}
-              isLoading={loadingConversations}
-              onSelect={setSelectedConversation}
-              onClose={() => setIsOpen(false)}
-            />
+            <>
+              <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white shrink-0">
+                <div className="flex gap-4">
+                  <button 
+                    onClick={() => setActiveTab('messages')}
+                    className={`font-semibold text-lg pb-1 border-b-2 transition-all ${activeTab === 'messages' ? 'border-white opacity-100' : 'border-transparent opacity-70'}`}
+                  >
+                    Messages
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('contacts')}
+                    className={`font-semibold text-lg pb-1 border-b-2 transition-all ${activeTab === 'contacts' ? 'border-white opacity-100' : 'border-transparent opacity-70'}`}
+                  >
+                    Contacts
+                  </button>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-white hover:bg-white/20">
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+
+              <div className="flex-1 overflow-hidden flex flex-col">
+                {activeTab === 'messages' ? (
+                  <ConversationListView
+                    conversations={conversations}
+                    isLoading={loadingConversations}
+                    isUserOnline={isUserOnline}
+                    onSelect={setSelectedConversation}
+                  />
+                ) : (
+                  <ContactsListView
+                    contacts={contacts}
+                    isLoading={isLoadingContacts}
+                    isUserOnline={isUserOnline}
+                    onSelectContact={(contact) => {
+                      setSelectedConversation({
+                        id: `conv_${user.id}_${contact.id}`,
+                        partner_id: contact.id,
+                        partner_name: contact.name,
+                        partner_avatar: contact.profile_image,
+                        unread_count: 0
+                      });
+                    }}
+                  />
+                )}
+              </div>
+            </>
           )}
         </div>
       ) : (
@@ -64,6 +114,9 @@ export function CollapsibleChatWidget() {
               {totalUnread > 9 ? '9+' : totalUnread}
             </span>
           )}
+          {onlineCount > 0 && (
+            <span className="absolute -bottom-1 -right-1 h-4 w-4 bg-green-500 border-2 border-white rounded-full"></span>
+          )}
         </button>
       )}
     </div>
@@ -73,43 +126,38 @@ export function CollapsibleChatWidget() {
 function ConversationListView({
   conversations,
   isLoading,
+  isUserOnline,
   onSelect,
-  onClose,
 }: {
   conversations: ConversationItem[];
   isLoading: boolean;
+  isUserOnline: (userId: string) => boolean;
   onSelect: (conv: ConversationItem) => void;
-  onClose: () => void;
 }) {
   return (
-    <>
-      <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white">
-        <h3 className="font-semibold text-lg">Messages</h3>
-        <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20">
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
-      <div className="flex-1 overflow-y-auto">
-        {isLoading ? (
-          <div className="flex justify-center items-center h-full">
-            <div className="h-8 w-8 border-4 border-t-transparent border-orange-500 rounded-full animate-spin"></div>
+    <div className="flex-1 overflow-y-auto">
+      {isLoading ? (
+        <div className="flex justify-center items-center h-full">
+          <div className="h-8 w-8 border-4 border-t-transparent border-orange-500 rounded-full animate-spin"></div>
+        </div>
+      ) : conversations.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+          <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center mb-3">
+            <MessageCircle className="h-8 w-8 text-orange-500" />
           </div>
-        ) : conversations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full p-4 text-center">
-            <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center mb-3">
-              <MessageCircle className="h-8 w-8 text-orange-500" />
-            </div>
-            <p className="text-gray-500 text-sm">No conversations yet</p>
-            <Button
-              variant="link"
-              className="text-orange-500 mt-2"
-              onClick={() => (window.location.href = '/discover')}
-            >
-              Find Matches
-            </Button>
-          </div>
-        ) : (
-          conversations.map((conv) => (
+          <p className="text-gray-500 text-sm">No conversations yet</p>
+          <Button
+            variant="link"
+            className="text-orange-500 mt-2"
+            onClick={() => (window.location.href = '/discover')}
+          >
+            Find Matches
+          </Button>
+        </div>
+      ) : (
+        conversations.map((conv) => {
+          const online = isUserOnline(conv.partner_id);
+          return (
             <div
               key={conv.id}
               onClick={() => onSelect(conv)}
@@ -127,12 +175,14 @@ function ConversationListView({
                     {conv.partner_name.charAt(0).toUpperCase()}
                   </div>
                 )}
-                <span className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-white rounded-full"></span>
+                {online && (
+                  <span className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-white rounded-full"></span>
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h4 className="font-medium text-gray-900 truncate">{conv.partner_name}</h4>
-                  <span className="text-xs text-green-500">Online</span>
+                  {online && <span className="text-[10px] text-green-500 font-medium">Online</span>}
                 </div>
                 <p className="text-xs text-gray-500 truncate">Tap to chat</p>
               </div>
@@ -142,19 +192,98 @@ function ConversationListView({
                 </span>
               )}
             </div>
-          ))
-        )}
-      </div>
-    </>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
+function ContactsListView({
+  contacts,
+  isLoading,
+  isUserOnline,
+  onSelectContact,
+}: {
+  contacts: Contact[];
+  isLoading: boolean;
+  isUserOnline: (userId: string) => boolean;
+  onSelectContact: (contact: Contact) => void;
+}) {
+  // Sort: Online first, then alphabetical
+  const sortedContacts = [...contacts].sort((a, b) => {
+    const aOnline = isUserOnline(a.id);
+    const bOnline = isUserOnline(b.id);
+    if (aOnline && !bOnline) return -1;
+    if (!aOnline && bOnline) return 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  return (
+    <div className="flex-1 overflow-y-auto">
+      {isLoading ? (
+        <div className="flex justify-center items-center h-full">
+          <div className="h-8 w-8 border-4 border-t-transparent border-orange-500 rounded-full animate-spin"></div>
+        </div>
+      ) : contacts.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+          <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center mb-3">
+            <Users className="h-8 w-8 text-orange-500" />
+          </div>
+          <p className="text-gray-500 text-sm font-medium">No active contacts</p>
+          <p className="text-gray-400 text-xs mt-1">Accept interests to start chatting!</p>
+        </div>
+      ) : (
+        sortedContacts.map((contact) => {
+          const online = isUserOnline(contact.id);
+          return (
+            <div
+              key={contact.id}
+              onClick={() => onSelectContact(contact)}
+              className="flex items-center gap-3 p-3 hover:bg-orange-50 cursor-pointer border-b border-gray-100 transition-colors"
+            >
+              <div className="relative">
+                {contact.profile_image ? (
+                  <img
+                    src={contact.profile_image}
+                    alt={contact.name}
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-400 to-indigo-400 flex items-center justify-center text-white font-medium">
+                    {contact.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                {online && (
+                  <span className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-white rounded-full"></span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-medium text-gray-900 truncate">{contact.name}</h4>
+                <div className="flex items-center gap-1">
+                  <div className={`h-1.5 w-1.5 rounded-full ${online ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                  <span className="text-[10px] text-gray-500">{online ? 'Available now' : 'Offline'}</span>
+                </div>
+              </div>
+              <Button size="sm" variant="outline" className="h-7 text-[10px] border-orange-200 text-orange-600 hover:bg-orange-50">
+                Chat
+              </Button>
+            </div>
+          );
+        })
+      )}
+    </div>
   );
 }
 
 function ChatView({
   conversation,
+  isOnline,
   onBack,
   onClose,
 }: {
   conversation: ConversationItem;
+  isOnline: boolean;
   onBack: () => void;
   onClose: () => void;
 }) {
@@ -237,9 +366,9 @@ function ChatView({
 
   return (
     <>
-      <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white">
-        <Button variant="ghost" size="icon" onClick={onBack} className="text-white hover:bg-white/20">
-          <ArrowLeft className="h-5 w-5" />
+      <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white shrink-0">
+        <Button variant="ghost" size="icon" onClick={onBack} className="text-white hover:bg-white/20 h-8 w-8">
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="relative">
           {conversation.partner_avatar ? (
@@ -253,14 +382,16 @@ function ChatView({
               {conversation.partner_name.charAt(0).toUpperCase()}
             </div>
           )}
-          <span className="absolute bottom-0 right-0 h-2 w-2 bg-green-400 border border-white rounded-full"></span>
+          {isOnline && (
+            <span className="absolute bottom-0 right-0 h-2 w-2 bg-green-400 border border-white rounded-full"></span>
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="font-medium text-sm truncate">{conversation.partner_name}</h4>
-          <p className="text-xs text-white/80">Online</p>
+          <p className="text-[10px] text-white/80">{isOnline ? 'Active now' : 'Offline'}</p>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20">
-          <X className="h-5 w-5" />
+        <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20 h-8 w-8">
+          <X className="h-4 w-4" />
         </Button>
       </div>
 
@@ -284,7 +415,7 @@ function ChatView({
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="border-t border-gray-200 p-2 bg-white">
+      <div className="border-t border-gray-200 p-2 bg-white shrink-0">
         <div className="flex items-end gap-2">
           <input
             type="file"
@@ -297,7 +428,7 @@ function ChatView({
             variant="ghost"
             size="icon"
             onClick={() => fileInputRef.current?.click()}
-            className="text-orange-500 hover:text-orange-600 hover:bg-orange-50 h-8 w-8"
+            className="text-orange-500 hover:text-orange-600 hover:bg-orange-50 h-8 w-8 shrink-0"
           >
             <Paperclip className="h-4 w-4" />
           </Button>
@@ -314,7 +445,7 @@ function ChatView({
           <Button
             onClick={handleSendMessage}
             disabled={!message.trim()}
-            className={`h-8 w-8 rounded-full ${
+            className={`h-8 w-8 rounded-full shrink-0 ${
               message.trim()
                 ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
