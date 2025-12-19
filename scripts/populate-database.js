@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import readline from 'readline';
 
 // Supabase configuration
-const supabaseUrl = 'https://pgiivokemegrlevfzezg.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnaWl2b2tlbWVncmxldmZ6ZXpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0MDA4OTYsImV4cCI6MjA2MTk3Njg5Nn0.MBDTfgkKb8m7aNLDM6xRi1zxLyP8hyk2pH90Hd6aZw8';
+const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://ogwfcshjrrbbrndsdqgg.supabase.co';
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nd2Zjc2hqcnJiYnJuZHNkcWdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMzYzNDIsImV4cCI6MjA4MTcxMjM0Mn0.OiM3f2IOyZTjCud7-1bjU-RWn6mQD2mKgTG9ltO3RpU';
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
