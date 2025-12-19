@@ -24,6 +24,18 @@ export function CollapsibleChatWidget() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 ChatWidget Render State:', { 
+      hasUser: !!user, 
+      loading, 
+      bypassEnabled: import.meta.env.VITE_DEV_BYPASS_AUTH === 'true',
+      userId: user?.id,
+      windowWidth: window.innerWidth,
+      isOpen
+    });
+  }, [user, loading, isOpen]);
+
   const { conversations, totalUnread, isLoading: convsLoading } = useConversations();
   const { isUserOnline } = usePresence();
   
@@ -38,10 +50,15 @@ export function CollapsibleChatWidget() {
     }
   }, [user]);
 
-  if (!user && !loading) return null;
+  // Calculate total unread count if not provided by hook
+  const totalUnreadCount = totalUnread ?? (conversations?.reduce((acc: number, conv: any) => acc + (conv.unread_count || 0), 0) || 0);
+
+  // Use bypass mode if enabled, otherwise check for user
+  const isBypass = import.meta.env.VITE_DEV_BYPASS_AUTH === 'true';
+  if (!user && !loading && !isBypass) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-[9999] pointer-events-auto">
+    <div className="fixed bottom-4 right-4 z-[10000] pointer-events-auto">
       <audio ref={audioRef} src="/notification.mp3" preload="auto" />
 
       {isOpen ? (
@@ -165,17 +182,17 @@ export function CollapsibleChatWidget() {
           className="relative group flex items-center justify-center w-14 h-14 bg-gradient-to-br from-orange-500 to-rose-500 rounded-full shadow-xl hover:shadow-2xl hover:scale-110 transition-all duration-300 ring-4 ring-orange-100"
         >
           <MessageSquare className="text-white w-7 h-7" />
-          {totalUnread > 0 && (
+          {totalUnreadCount > 0 && (
             <span className="absolute -top-1 -right-1 flex h-6 w-6">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-6 w-6 bg-orange-600 border-2 border-white text-white text-[10px] font-bold items-center justify-center shadow-lg">
-                {totalUnread}
+                {totalUnreadCount}
               </span>
             </span>
           )}
           {/* Tooltip */}
           <div className="absolute right-full mr-4 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl">
-            {totalUnread > 0 ? `${totalUnread} new messages` : 'Chat with matches'}
+            {totalUnreadCount > 0 ? `${totalUnreadCount} new messages` : 'Chat with matches'}
             <div className="absolute top-1/2 -right-1 -translate-y-1/2 border-8 border-transparent border-l-gray-900" />
           </div>
         </button>
