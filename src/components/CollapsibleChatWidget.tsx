@@ -24,7 +24,7 @@ interface ConversationItem {
 }
 
 export function CollapsibleChatWidget() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'messages' | 'contacts'>('messages');
   const [selectedConversation, setSelectedConversation] = useState<ConversationItem | null>(null);
@@ -34,7 +34,7 @@ export function CollapsibleChatWidget() {
     isLoading: loadingConversations,
     isLoadingContacts 
   } = useConversations();
-  const { isUserOnline, onlineUsers } = usePresence();
+  const { isUserOnline } = usePresence();
   const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
@@ -59,6 +59,13 @@ export function CollapsibleChatWidget() {
 
   const totalUnread = conversations.reduce((sum, c) => sum + c.unread_count, 0);
   const onlineCount = contacts.filter(c => isUserOnline(c.id)).length;
+
+  // Debug logging to verify initialization
+  useEffect(() => {
+    if (user) {
+      console.log('✅ CollapsibleChatWidget: Active for user', user.email);
+    }
+  }, [user]);
 
   // Play sound and flash title on new unread message
   useEffect(() => {
@@ -103,10 +110,11 @@ export function CollapsibleChatWidget() {
     };
   }, [isOpen]);
   
-  if (!user) return null;
+  // Don't render if not logged in or still loading auth
+  if (loading || !user) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="fixed bottom-4 right-4 z-[9999]">
       {isOpen ? (
         <div className="w-80 sm:w-96 h-[500px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
             {selectedConversation ? (
@@ -150,33 +158,33 @@ export function CollapsibleChatWidget() {
                   </div>
                 </div>
 
-              <div className="flex-1 overflow-hidden flex flex-col">
-                {activeTab === 'messages' ? (
-                  <ConversationListView
-                    conversations={conversations}
-                    isLoading={loadingConversations}
-                    isUserOnline={isUserOnline}
-                    onSelect={setSelectedConversation}
-                  />
-                ) : (
-                  <ContactsListView
-                    contacts={contacts}
-                    isLoading={isLoadingContacts}
-                    isUserOnline={isUserOnline}
-                    onSelectContact={(contact) => {
-                      setSelectedConversation({
-                        id: `conv_${user.id}_${contact.id}`,
-                        partner_id: contact.id,
-                        partner_name: contact.name,
-                        partner_avatar: contact.profile_image,
-                        unread_count: 0
-                      });
-                    }}
-                  />
-                )}
-              </div>
-            </>
-          )}
+                <div className="flex-1 overflow-hidden flex flex-col">
+                  {activeTab === 'messages' ? (
+                    <ConversationListView
+                      conversations={conversations}
+                      isLoading={loadingConversations}
+                      isUserOnline={isUserOnline}
+                      onSelect={setSelectedConversation}
+                    />
+                  ) : (
+                    <ContactsListView
+                      contacts={contacts}
+                      isLoading={isLoadingContacts}
+                      isUserOnline={isUserOnline}
+                      onSelectContact={(contact) => {
+                        setSelectedConversation({
+                          id: `conv_${user.id}_${contact.id}`,
+                          partner_id: contact.id,
+                          partner_name: contact.name,
+                          partner_avatar: contact.profile_image,
+                          unread_count: 0
+                        });
+                      }}
+                    />
+                  )}
+                </div>
+              </>
+            )}
         </div>
       ) : (
         <button
@@ -285,7 +293,6 @@ function ContactsListView({
   isUserOnline: (userId: string) => boolean;
   onSelectContact: (contact: Contact) => void;
 }) {
-  // Sort: Online first, then alphabetical
   const sortedContacts = [...contacts].sort((a, b) => {
     const aOnline = isUserOnline(a.id);
     const bOnline = isUserOnline(b.id);
@@ -396,7 +403,6 @@ function ChatView({
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop } = e.currentTarget;
     if (scrollTop === 0 && hasNextPage && !isFetchingNextPage) {
-      // Store current height to maintain scroll position after loading
       const currentScrollHeight = e.currentTarget.scrollHeight;
       fetchNextPage().then(() => {
         if (containerRef.current) {
@@ -419,7 +425,6 @@ function ChatView({
     }
   }, [messages, isPartnerTyping]);
 
-  // Handle typing indicator
   useEffect(() => {
     if (!message.trim()) {
       setTyping(conversation.id, false);
@@ -523,10 +528,6 @@ function ChatView({
                         src={msg.media_url} 
                         alt="Shared" 
                         className="h-full w-full object-cover transition-transform group-hover:scale-110"
-                        onClick={() => {
-                          // Trigger lightbox by finding the message in the main view or just provide a preview here
-                          // For simplicity, we'll just show it
-                        }}
                       />
                     ) : (
                       <video 
@@ -575,23 +576,23 @@ function ChatView({
               {isPartnerTyping ? 'typing...' : isOnline ? 'Active now' : 'Offline'}
             </p>
           </div>
-            <div className="flex items-center gap-1">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setShowMediaGallery(true)} 
-                className="text-white hover:bg-white/20 h-8 w-8"
-              >
-                <Image className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setIsSearching(!isSearching)} 
-                className={`text-white hover:bg-white/20 h-8 w-8 ${isSearching ? 'bg-white/20' : ''}`}
-              >
-                <Search className="h-4 w-4" />
-              </Button>
+          <div className="flex items-center gap-1">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setShowMediaGallery(true)} 
+              className="text-white hover:bg-white/20 h-8 w-8"
+            >
+              <Image className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setIsSearching(!isSearching)} 
+              className={`text-white hover:bg-white/20 h-8 w-8 ${isSearching ? 'bg-white/20' : ''}`}
+            >
+              <Search className="h-4 w-4" />
+            </Button>
             <Button 
               variant="ghost" 
               size="icon" 
