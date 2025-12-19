@@ -225,34 +225,55 @@ async function seed() {
 
     if (profileUserIds.length >= 2) {
       console.log('Creating matches and messages...');
+      const user1 = profileUserIds[0];
+      const user2 = profileUserIds[1];
+
       // Match first two
-      const { error: matchError } = await supabase
+      const { data: existingMatch } = await supabase
         .from('matches')
-        .insert({
-          user1_id: profileUserIds[0],
-          user2_id: profileUserIds[1],
-          status: 'accepted',
-          compatibility_score: 85
-        });
-      
-      if (matchError) {
-        console.error('Error creating match:', matchError.message);
-      } else {
-        console.log('Sample match created.');
+        .select('id')
+        .or(`and(user1_id.eq.${user1},user2_id.eq.${user2}),and(user1_id.eq.${user2},user2_id.eq.${user1})`)
+        .single();
+
+      if (!existingMatch) {
+        const { error: matchError } = await supabase
+          .from('matches')
+          .insert({
+            user1_id: user1,
+            user2_id: user2,
+            status: 'accepted',
+            compatibility_score: 85
+          });
         
-        // Message between them
+        if (matchError) {
+          console.error('Error creating match:', matchError.message);
+        } else {
+          console.log('Sample match created.');
+        }
+      } else {
+        console.log('Match already exists.');
+      }
+          
+      // Check if messages exist
+      const { data: existingMsgs } = await supabase
+        .from('messages')
+        .select('id')
+        .or(`and(sender_id.eq.${user1},receiver_id.eq.${user2}),and(sender_id.eq.${user2},receiver_id.eq.${user1})`)
+        .limit(1);
+
+      if (!existingMsgs || existingMsgs.length === 0) {
         const { error: msgError } = await supabase
           .from('messages')
           .insert([
             {
-              sender_id: profileUserIds[0],
-              receiver_id: profileUserIds[1],
+              sender_id: user1,
+              receiver_id: user2,
               content: 'Hi! I saw your profile and would love to connect.',
               read_at: new Date().toISOString()
             },
             {
-              sender_id: profileUserIds[1],
-              receiver_id: profileUserIds[0],
+              sender_id: user2,
+              receiver_id: user1,
               content: 'Hello! Thanks for reaching out. I liked your profile too.',
               read_at: null
             }
@@ -263,6 +284,8 @@ async function seed() {
         } else {
           console.log('Sample messages created.');
         }
+      } else {
+        console.log('Messages already exist.');
       }
     }
   }
