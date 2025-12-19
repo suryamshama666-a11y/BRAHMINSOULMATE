@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { 
   Menu, X, Bell, MessageCircle, Heart, Search, User,
-  Home, Video, ChevronDown, DollarSign, Info,
+  Home, Video, ChevronDown, DollarSign, Info, Eye,
   HelpCircle, Star, BookOpen, Settings, Users, Calendar
 } from 'lucide-react';
 
