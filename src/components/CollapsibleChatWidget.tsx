@@ -38,36 +38,37 @@ export function CollapsibleChatWidget() {
   const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
+  // Refs for tracking unread count and title flashing
+  const prevUnreadRef = useRef(0);
+  const originalTitleRef = useRef(document.title);
+  const flashIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
   // Initialize audio
   useEffect(() => {
     audioRef.current = new Audio(NOTIFICATION_SOUND_URL);
     audioRef.current.volume = 0.5;
   }, []);
 
-    const prevUnreadRef = useRef(0);
-    const originalTitleRef = useRef(document.title);
-    const flashIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const conversations: ConversationItem[] = rawConversations.map(conv => ({
+    id: conv.id,
+    partner_id: conv.partner_id || '',
+    partner_name: conv.partner_profile?.name || 'Unknown User',
+    partner_avatar: conv.partner_profile?.profile_image,
+    unread_count: conv.unread_count || 0
+  }));
 
-    const conversations: ConversationItem[] = rawConversations.map(conv => ({
-      id: conv.id,
-      partner_id: conv.partner_id || '',
-      partner_name: conv.partner_profile?.name || 'Unknown User',
-      partner_avatar: conv.partner_profile?.profile_image,
-      unread_count: conv.unread_count || 0
-    }));
+  const totalUnread = conversations.reduce((sum, c) => sum + c.unread_count, 0);
+  const onlineCount = contacts.filter(c => isUserOnline(c.id)).length;
 
-    const totalUnread = conversations.reduce((sum, c) => sum + c.unread_count, 0);
-    const onlineCount = contacts.filter(c => isUserOnline(c.id)).length;
-
-    // Play sound and flash title on new unread message
-    useEffect(() => {
+  // Play sound and flash title on new unread message
+  useEffect(() => {
     if (totalUnread > prevUnreadRef.current) {
       // Sound
-      if (!isMuted && isOpen) {
+      if (!isMuted && !isOpen) {
         audioRef.current?.play().catch(e => console.log('Audio play failed:', e));
       }
 
-      // Title Flash if not focused
+      // Title Flash if not focused or widget closed
       if (document.hidden || !isOpen) {
         if (flashIntervalRef.current) clearInterval(flashIntervalRef.current);
         
