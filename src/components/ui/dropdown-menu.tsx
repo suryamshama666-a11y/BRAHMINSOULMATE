@@ -183,17 +183,18 @@ export const DropdownMenuItem: React.FC<DropdownMenuItemProps> = ({
     setIsOpen(false);
   };
 
-  if (asChild && isValidElement(children)) {
-    return cloneElement(children as React.ReactElement<any>, {
-      onClick: (e: React.MouseEvent) => {
-        handleClick(e);
-        if ((children as React.ReactElement<any>).props.onClick) {
-          (children as React.ReactElement<any>).props.onClick(e);
-        }
-      },
-      className: `w-full text-left block text-sm ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${className} ${(children as React.ReactElement<any>).props.className || ''}`,
-    });
-  }
+    if (asChild && isValidElement(children)) {
+      const child = children as React.ReactElement<any>;
+      return cloneElement(child, {
+        onClick: (e: React.MouseEvent) => {
+          handleClick(e);
+          if (child.props.onClick) {
+            child.props.onClick(e);
+          }
+        },
+        className: `w-full text-left text-sm ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${className} ${child.props.className || ''}`,
+      });
+    }
 
   return (
     <button
