@@ -10,10 +10,15 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const razorpay = new Razorpay({
-  key_id: process.env.VITE_RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!
-});
+// Initialize Razorpay lazily or with fallbacks to prevent crash if env vars are missing during startup
+const getRazorpay = () => {
+  return new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID || 'placeholder',
+    key_secret: process.env.RAZORPAY_KEY_SECRET || 'placeholder'
+  });
+};
+
+const razorpay = getRazorpay();
 
 // Subscription plans
 const PLANS: Record<string, { price: number; duration: number; name: string }> = {

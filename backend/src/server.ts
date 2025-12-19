@@ -1,8 +1,13 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Load environment variables
-dotenv.config({ path: path.join(__dirname, '../.env') });
+// Load environment variables as early as possible
+const result = dotenv.config({ path: path.join(process.cwd(), '.env') });
+console.log('Dotenv load result:', result.parsed ? 'Success' : 'Failure');
+console.log('RAZORPAY_KEY_ID:', process.env.RAZORPAY_KEY_ID ? 'Present' : 'Missing');
+if (result.error) {
+  dotenv.config(); // fallback to default
+}
 
 import express from 'express';
 import cors from 'cors';
@@ -44,7 +49,7 @@ app.use(helmet({
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:", "blob:"],
       scriptSrc: ["'self'"],
-      connectSrc: ["'self'", "https://api.razorpay.com", "wss://"],
+        connectSrc: ["'self'", "https://api.razorpay.com", "wss:", "https:"],
     },
   },
 }));

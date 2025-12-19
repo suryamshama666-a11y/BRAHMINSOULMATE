@@ -31,13 +31,22 @@ router.post('/:id/register', authMiddleware, async (req, res) => {
     const { id } = req.params;
 
     // Check capacity
-    const { data: event } = await supabase
+    const { data: event, error: eventError } = await supabase
       .from('events')
-      .select('capacity, (registrations:event_registrations(count))')
+      .select('capacity')
       .eq('id', id)
       .single();
 
-    if (event && event.registrations[0].count >= event.capacity) {
+    if (eventError) throw eventError;
+
+    const { count, error: countError } = await supabase
+      .from('event_registrations')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_id', id);
+
+    if (countError) throw countError;
+
+    if (event && count !== null && count >= event.capacity) {
       return res.status(400).json({ success: false, error: 'Event is full' });
     }
 
