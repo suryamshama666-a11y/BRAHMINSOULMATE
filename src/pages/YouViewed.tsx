@@ -7,6 +7,7 @@ import { Eye, Clock, Filter, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ProfileCard from '@/components/ProfileCard';
 import { useAuth } from '@/contexts/AuthContext';
+import { profileViewsService } from '@/services/api';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 
@@ -22,7 +23,6 @@ const YouViewed = () => {
       setLoading(true);
       
       try {
-        const { profileViewsService } = await import('@/services/api');
         const data = await profileViewsService.getIViewed(timeFilter);
 
         const formattedProfiles = (data || []).map((view: any) => ({
@@ -46,57 +46,45 @@ const YouViewed = () => {
         setViewedProfiles(formattedProfiles);
       } catch (error) {
         console.error('Error loading viewed profiles:', error);
-        const mockProfiles = [
-          {
-            id: '1',
-            name: 'Priya Menon',
-            age: 26,
-            gender: 'female',
-            height: 160,
-            religion: 'Hindu',
-            caste: 'Brahmin',
-            gotra: 'Atri',
-            location: 'Bangalore, Karnataka',
-            education: 'MBA',
-            profession: 'Product Manager',
-            subscription_type: 'premium',
-            lastActive: '2 hours ago',
-            viewedAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            id: '2',
-            name: 'Vikram Joshi',
-            age: 30,
-            gender: 'male',
-            height: 180,
-            religion: 'Hindu',
-            caste: 'Brahmin',
-            gotra: 'Gautam',
-            location: 'Hyderabad, Telangana',
-            education: 'M.Tech',
-            profession: 'Tech Lead',
-            subscription_type: 'premium',
-            lastActive: '1 day ago',
-            viewedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            id: '3',
-            name: 'Sneha Reddy',
-            age: 24,
-            gender: 'female',
-            height: 157,
-            religion: 'Hindu',
-            caste: 'Brahmin',
-            gotra: 'Jamadagni',
-            location: 'Mumbai, Maharashtra',
-            education: 'B.Com, CA',
-            profession: 'Financial Analyst',
-            subscription_type: 'free',
-            lastActive: '5 hours ago',
-            viewedAt: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
-          }
-        ];
-        setViewedProfiles(mockProfiles);
+        if (import.meta.env.DEV) {
+          const mockProfiles = [
+            {
+              id: '1',
+              name: 'Priya Menon',
+              age: 26,
+              gender: 'female',
+              height: 160,
+              religion: 'Hindu',
+              caste: 'Brahmin',
+              gotra: 'Atri',
+              location: 'Bangalore, Karnataka',
+              education: 'MBA',
+              profession: 'Product Manager',
+              subscription_type: 'premium',
+              lastActive: '2 hours ago',
+              viewedAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
+            },
+            {
+              id: '2',
+              name: 'Vikram Joshi',
+              age: 30,
+              gender: 'male',
+              height: 180,
+              religion: 'Hindu',
+              caste: 'Brahmin',
+              gotra: 'Gautam',
+              location: 'Hyderabad, Telangana',
+              education: 'M.Tech',
+              profession: 'Tech Lead',
+              subscription_type: 'premium',
+              lastActive: '1 day ago',
+              viewedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+            }
+          ];
+          setViewedProfiles(mockProfiles);
+        } else {
+          setViewedProfiles([]);
+        }
       } finally {
         setLoading(false);
       }

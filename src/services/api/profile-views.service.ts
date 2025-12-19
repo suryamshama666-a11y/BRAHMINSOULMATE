@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { isDevBypassMode, getDevUser } from '@/config/dev';
 
 export interface ProfileView {
   id: string;
@@ -10,10 +11,18 @@ export interface ProfileView {
 }
 
 class ProfileViewsService {
-  private readonly API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+  private readonly API_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
+  private async getCurrentUser() {
+    if (isDevBypassMode()) {
+      return getDevUser();
+    }
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
+  }
 
   async trackView(viewedProfileId: string): Promise<void> {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await this.getCurrentUser();
     if (!user) throw new Error('Not authenticated');
 
     try {
@@ -63,7 +72,7 @@ class ProfileViewsService {
   }
 
   async getWhoViewedMe(timeFilter: 'all' | 'today' | 'week' | 'month' = 'all'): Promise<ProfileView[]> {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await this.getCurrentUser();
     if (!user) throw new Error('Not authenticated');
 
     try {
@@ -136,7 +145,7 @@ class ProfileViewsService {
   }
 
   async getIViewed(timeFilter: 'all' | 'today' | 'week' | 'month' = 'all'): Promise<ProfileView[]> {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await this.getCurrentUser();
     if (!user) throw new Error('Not authenticated');
 
     try {
@@ -209,7 +218,7 @@ class ProfileViewsService {
   }
 
   async getViewCount(): Promise<number> {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await this.getCurrentUser();
     if (!user) return 0;
 
     try {
@@ -227,3 +236,4 @@ class ProfileViewsService {
 }
 
 export const profileViewsService = new ProfileViewsService();
+

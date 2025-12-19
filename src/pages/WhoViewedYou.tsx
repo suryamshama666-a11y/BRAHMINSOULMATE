@@ -7,6 +7,7 @@ import { Eye, MessageCircle, Heart, Clock, Filter } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ProfileCard from '@/components/ProfileCard';
 import { useAuth } from '@/contexts/AuthContext';
+import { profileViewsService } from '@/services/api';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 
@@ -22,7 +23,6 @@ const WhoViewedYou = () => {
       setLoading(true);
       
       try {
-        const { profileViewsService } = await import('@/services/api');
         const data = await profileViewsService.getWhoViewedMe(timeFilter);
 
         const formattedViewers = (data || []).map((view: any) => ({
@@ -46,7 +46,40 @@ const WhoViewedYou = () => {
         setViewers(formattedViewers);
       } catch (error) {
         console.error('Error loading viewers:', error);
-        setViewers([]);
+        // Fallback to mock data in development if table/API fails
+        if (import.meta.env.DEV) {
+          const mockViewers = [
+            {
+              id: 'm1',
+              name: 'Anjali Sharma',
+              age: 25,
+              gender: 'female',
+              height: 165,
+              religion: 'Hindu',
+              caste: 'Brahmin',
+              location: 'Delhi, Delhi',
+              profession: 'Software Engineer',
+              subscription_type: 'premium',
+              viewedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+            },
+            {
+              id: 'm2',
+              name: 'Rahul Iyer',
+              age: 29,
+              gender: 'male',
+              height: 178,
+              religion: 'Hindu',
+              caste: 'Brahmin',
+              location: 'Chennai, Tamil Nadu',
+              profession: 'Data Scientist',
+              subscription_type: 'free',
+              viewedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+            }
+          ];
+          setViewers(mockViewers);
+        } else {
+          setViewers([]);
+        }
       } finally {
         setLoading(false);
       }
