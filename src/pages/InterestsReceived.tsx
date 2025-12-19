@@ -1,3 +1,4 @@
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Heart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -5,10 +6,21 @@ import { toast } from 'sonner';
 import { interestsService } from '@/services/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ProfileCard from '@/components/ProfileCard';
+import { ListFilters } from '@/components/ListFilters';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 const InterestsReceived = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+
+  const sortOptions = [
+    { value: 'newest', label: 'Newest First' },
+    { value: 'oldest', label: 'Oldest First' },
+    { value: 'match', label: 'Match %' },
+  ];
 
   // Fetch received interests
   const { data: interests = [], isLoading: loading } = useQuery({
@@ -19,6 +31,36 @@ const InterestsReceived = () => {
     },
     enabled: !!user?.id
   });
+
+  const filteredAndSortedInterests = useMemo(() => {
+    let result = interests.filter(i => i.status === 'pending');
+
+    // Search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(
+        (i) =>
+          i.sender?.full_name?.toLowerCase().includes(term) ||
+          i.sender?.occupation?.toLowerCase().includes(term) ||
+          i.sender?.city?.toLowerCase().includes(term)
+      );
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case 'oldest':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'match':
+          return (b.sender?.match_percentage || 0) - (a.sender?.match_percentage || 0);
+        case 'newest':
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+    return result;
+  }, [interests, searchTerm, sortBy]);
 
   // Accept interest mutation
   const acceptMutation = useMutation({
@@ -70,22 +112,39 @@ const InterestsReceived = () => {
     <div className="min-h-screen bg-gradient-to-br from-red-50/30 via-white to-amber-50/40">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-serif font-bold mb-2 flex items-center">
-            <Heart className="h-8 w-8 mr-3 text-red-600" />
-            Interests Received
-          </h1>
-          <p className="text-gray-600">People who are interested in your profile</p>
+          <div className="bg-gradient-to-r from-red-600 to-amber-600 text-white rounded-2xl p-6 shadow-md">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-serif font-bold mb-2 flex items-center">
+                  <Heart className="h-8 w-8 mr-3" />
+                  Interests Received
+                </h1>
+                <p className="text-red-100">People who are interested in your profile</p>
+              </div>
+              <Badge className="bg-white text-gray-800 px-4 py-2 font-semibold shadow-sm">
+                {filteredAndSortedInterests.length} {filteredAndSortedInterests.length === 1 ? 'Interest' : 'Interests'}
+              </Badge>
+            </div>
+          </div>
         </div>
 
-          {pendingInterests.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {pendingInterests.map((interest) => (
+        <ListFilters
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          sortOptions={sortOptions}
+        />
+
+        {filteredAndSortedInterests.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredAndSortedInterests.map((interest) => (
               interest.sender && (
                 <ProfileCard 
                   key={interest.id}
                   profile={{
                     ...interest.sender,
-                    id: interest.id, // Using interest.id as profile.id for the action handler
+                    id: interest.id,
                     name: interest.sender.full_name,
                     status: interest.status,
                     message: interest.message,
@@ -100,9 +159,25 @@ const InterestsReceived = () => {
         ) : (
           <Card className="text-center py-16">
             <CardContent>
-              <Heart className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-xl font-semibold mb-2">No Interests Yet</h3>
-              <p className="text-gray-600">You haven't received any interests yet</p>
+              <div className="bg-gray-50 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Heart className="h-10 w-10 text-gray-300" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">
+                {searchTerm ? 'No matches found' : 'No Interests Yet'}
+              </h3>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                {searchTerm 
+                  ? `We couldn't find any interests matching "${searchTerm}". Try a different search term.`
+                  : "You haven't received any interests yet. Keep your profile updated to attract matches!"}
+              </p>
+              {searchTerm && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSearchTerm('')}
+                >
+                  Clear Search
+                </Button>
+              )}
             </CardContent>
           </Card>
         )}

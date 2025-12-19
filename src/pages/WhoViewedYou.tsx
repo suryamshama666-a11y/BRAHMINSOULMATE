@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { profileViewsService } from '@/services/api';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
+import { ListFilters } from '@/components/ListFilters';
 
 const WhoViewedYou = () => {
   const { user } = useAuth();
@@ -17,6 +18,14 @@ const WhoViewedYou = () => {
   const [viewers, setViewers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+
+  const sortOptions = [
+    { value: 'newest', label: 'Most Recent' },
+    { value: 'oldest', label: 'Oldest First' },
+    { value: 'age-asc', label: 'Age: Youngest First' },
+  ];
 
   useEffect(() => {
     const loadViewers = async () => {
@@ -90,6 +99,36 @@ const WhoViewedYou = () => {
     }
   }, [user, timeFilter]);
 
+  const filteredAndSortedViewers = useMemo(() => {
+    let result = [...viewers];
+
+    // Search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(
+        (v) =>
+          v.name.toLowerCase().includes(term) ||
+          v.location.toLowerCase().includes(term) ||
+          v.profession.toLowerCase().includes(term)
+      );
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case 'oldest':
+          return new Date(a.viewedAt).getTime() - new Date(b.viewedAt).getTime();
+        case 'age-asc':
+          return a.age - b.age;
+        case 'newest':
+        default:
+          return new Date(b.viewedAt).getTime() - new Date(a.viewedAt).getTime();
+      }
+    });
+
+    return result;
+  }, [viewers, searchTerm, sortBy]);
+
   const formatViewTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -144,7 +183,7 @@ const WhoViewedYou = () => {
     <div className="min-h-screen bg-gradient-to-br from-red-50/30 via-white to-amber-50/40">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl p-6">
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl p-6 shadow-md">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <h1 className="text-3xl font-serif font-bold mb-2 flex items-center">
@@ -166,20 +205,28 @@ const WhoViewedYou = () => {
                     <SelectItem value="month">This Month</SelectItem>
                   </SelectContent>
                 </Select>
-                <Badge className="bg-white text-gray-800 px-4 py-2 font-semibold">
-                  {viewers.length} Views
+                <Badge className="bg-white text-gray-800 px-4 py-2 font-semibold shadow-sm">
+                  {filteredAndSortedViewers.length} {filteredAndSortedViewers.length === 1 ? 'View' : 'Views'}
                 </Badge>
               </div>
             </div>
           </div>
         </div>
 
-          {viewers.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {viewers.map((profile) => (
+        <ListFilters
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          sortOptions={sortOptions}
+        />
+
+        {filteredAndSortedViewers.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredAndSortedViewers.map((profile) => (
               <div key={profile.id} className="relative">
                 <div className="absolute top-4 right-4 z-10">
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                  <Badge variant="secondary" className="bg-blue-100/90 text-blue-800 backdrop-blur-sm shadow-sm">
                     <Clock className="h-3 w-3 mr-1" />
                     Viewed {formatViewTime(profile.viewedAt)}
                   </Badge>
@@ -195,14 +242,31 @@ const WhoViewedYou = () => {
         ) : (
           <Card className="text-center py-16">
             <CardContent>
-              <Eye className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-xl font-semibold mb-2">No Profile Views Yet</h3>
-              <p className="text-gray-600 mb-6">Complete your profile to attract more viewers</p>
-              <Link to="/profile/manage">
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  Complete Your Profile
+              <div className="bg-gray-50 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Eye className="h-10 w-10 text-gray-300" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">
+                {searchTerm ? 'No matches found' : 'No Profile Views Yet'}
+              </h3>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                {searchTerm 
+                  ? `We couldn't find any profile views matching "${searchTerm}". Try a different search term.`
+                  : 'Complete your profile to attract more viewers and see who visits your page.'}
+              </p>
+              {searchTerm ? (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSearchTerm('')}
+                >
+                  Clear Search
                 </Button>
-              </Link>
+              ) : (
+                <Link to="/profile/manage">
+                  <Button className="bg-blue-600 hover:bg-blue-700 shadow-md">
+                    Complete Your Profile
+                  </Button>
+                </Link>
+              )}
             </CardContent>
           </Card>
         )}

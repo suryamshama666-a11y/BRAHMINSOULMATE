@@ -1,13 +1,13 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Heart, X, Check, Clock, Send } from 'lucide-react';
+import { Heart, X, Check, Clock, Send, Search } from 'lucide-react';
 import { useInterests } from '@/hooks/useInterests';
 import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
 
 export const InterestManager = () => {
   const {
@@ -18,6 +18,8 @@ export const InterestManager = () => {
     respondToInterest,
     loading
   } = useInterests();
+
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleSendInterest = async (profileId: string) => {
     try {
@@ -49,41 +51,67 @@ export const InterestManager = () => {
     return mockUsers[userId as keyof typeof mockUsers] || { first_name: 'User', last_name: '', profile_picture_url: null };
   };
 
+  const filterInterests = (interests: any[], type: 'sent' | 'received' | 'mutual') => {
+    if (!searchTerm) return interests;
+    const term = searchTerm.toLowerCase();
+    return interests.filter(i => {
+      const userInfo = getUserInfo(type === 'sent' ? i.receiver_id : i.sender_id);
+      return (
+        userInfo.first_name?.toLowerCase().includes(term) ||
+        userInfo.last_name?.toLowerCase().includes(term) ||
+        i.message?.toLowerCase().includes(term)
+      );
+    });
+  };
+
+  const filteredReceived = useMemo(() => filterInterests(receivedInterests, 'received'), [receivedInterests, searchTerm]);
+  const filteredSent = useMemo(() => filterInterests(sentInterests, 'sent'), [sentInterests, searchTerm]);
+  const filteredMutual = useMemo(() => filterInterests(mutualInterests, 'mutual'), [mutualInterests, searchTerm]);
+
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="flex items-center gap-2">
             <Heart className="h-5 w-5 text-red-500" />
             Interest Management
           </CardTitle>
+          <div className="relative w-full max-w-xs">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search by name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 h-9"
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="received">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="received">
-                Received ({receivedInterests.length})
+                Received ({filteredReceived.length})
               </TabsTrigger>
               <TabsTrigger value="sent">
-                Sent ({sentInterests.length})
+                Sent ({filteredSent.length})
               </TabsTrigger>
               <TabsTrigger value="mutual">
-                Mutual ({mutualInterests.length})
+                Mutual ({filteredMutual.length})
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="received" className="space-y-4">
-              {receivedInterests.length === 0 ? (
+              {filteredReceived.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <Heart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No interests received yet</p>
+                  <p>{searchTerm ? 'No matches found' : 'No interests received yet'}</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {receivedInterests.map((interest) => {
+                  {filteredReceived.map((interest) => {
                     const senderInfo = getUserInfo(interest.sender_id);
                     return (
-                      <Card key={interest.id}>
+                      <Card key={interest.id} className="hover:shadow-md transition-shadow">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
@@ -141,17 +169,17 @@ export const InterestManager = () => {
             </TabsContent>
 
             <TabsContent value="sent" className="space-y-4">
-              {sentInterests.length === 0 ? (
+              {filteredSent.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <Send className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No interests sent yet</p>
+                  <p>{searchTerm ? 'No matches found' : 'No interests sent yet'}</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {sentInterests.map((interest) => {
+                  {filteredSent.map((interest) => {
                     const receiverInfo = getUserInfo(interest.receiver_id);
                     return (
-                      <Card key={interest.id}>
+                      <Card key={interest.id} className="hover:shadow-md transition-shadow">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
@@ -195,17 +223,17 @@ export const InterestManager = () => {
             </TabsContent>
 
             <TabsContent value="mutual" className="space-y-4">
-              {mutualInterests.length === 0 ? (
+              {filteredMutual.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <Heart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No mutual interests yet</p>
+                  <p>{searchTerm ? 'No matches found' : 'No mutual interests yet'}</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {mutualInterests.map((interest) => {
+                  {filteredMutual.map((interest) => {
                     const otherUserInfo = getUserInfo(interest.receiver_id);
                     return (
-                      <Card key={interest.id}>
+                      <Card key={interest.id} className="hover:shadow-md transition-shadow">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
