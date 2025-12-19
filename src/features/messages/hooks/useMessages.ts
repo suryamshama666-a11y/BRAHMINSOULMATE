@@ -71,7 +71,10 @@ export function useMessages(conversationId?: string) {
       try {
         let query = supabase
           .from('messages')
-          .select('*')
+          .select(`
+            *,
+            message_reactions (*)
+          `)
           .order('created_at', { ascending: true });
 
         // If it's a generated conversation ID (conv_user1_user2), extract partner ID
@@ -92,9 +95,9 @@ export function useMessages(conversationId?: string) {
           throw new MessageError('Failed to fetch messages', error.code, error);
         }
 
-        return (messages || []).map((message: any): Message => {
+        return (messages || []).map((message: any): Message & { reactions?: MessageReaction[] } => {
           // Ensure we have all required fields with fallbacks
-          const processedMessage: Message = {
+          const processedMessage: Message & { reactions?: MessageReaction[] } = {
             id: message.id || '',
             content: message.content || '',
             created_at: message.created_at || null,
@@ -106,7 +109,8 @@ export function useMessages(conversationId?: string) {
             sender_id: message.sender_id || '',
             status: message.read_at ? 'read' : 
                    message.receiver_id === user.id ? 'delivered' : 'sent',
-            read_at: message.read_at || null
+            read_at: message.read_at || null,
+            reactions: message.message_reactions || []
           };
 
           return processedMessage;
@@ -338,11 +342,17 @@ export function useMessages(conversationId?: string) {
       if (!user) throw new MessageError('Not authenticated');
       
       try {
-        // For now, we'll just show a toast since the message_reactions table doesn't exist yet
-        // In production, you would create this table in Supabase
-        toast.success(`Added ${emoji} reaction`);
-        
-        // Simulated successful reaction
+        const { error } = await supabase
+          .from('message_reactions')
+          .upsert({ 
+            message_id: messageId, 
+            user_id: user.id, 
+            emoji 
+          }, { 
+            onConflict: 'message_id,user_id,emoji' 
+          });
+
+        if (error) throw new MessageError('Failed to add reaction', error.code, error);
         return { success: true };
       } catch (err) {
         console.error('Add reaction error:', err);
@@ -365,11 +375,14 @@ export function useMessages(conversationId?: string) {
       if (!user) throw new MessageError('Not authenticated');
       
       try {
-        // For now, we'll just show a toast since the message_reactions table doesn't exist yet
-        // In production, you would create this table in Supabase
-        toast.success(`Removed ${emoji} reaction`);
-        
-        // Simulated successful reaction removal
+        const { error } = await supabase
+          .from('message_reactions')
+          .delete()
+          .eq('message_id', messageId)
+          .eq('user_id', user.id)
+          .eq('emoji', emoji);
+
+        if (error) throw new MessageError('Failed to remove reaction', error.code, error);
         return { success: true };
       } catch (err) {
         console.error('Remove reaction error:', err);

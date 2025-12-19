@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
-import { Check, CheckCheck, Download, Play, Pause } from 'lucide-react';
-import { Message } from '@/features/messages/hooks/useMessages';
+import { formatDistanceToNow, format } from 'date-fns';
+import { Check, CheckCheck, Download, Play, Pause, SmilePlus, Maximize2 } from 'lucide-react';
+import { Message, MessageReaction } from '@/features/messages/hooks/useMessages';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -9,22 +9,51 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { toast } from 'sonner';
 
 interface MessageBubbleProps {
-  message: Message;
+  message: Message & { reactions?: MessageReaction[] };
   isOwnMessage: boolean;
   searchQuery?: string;
+  onAddReaction?: (emoji: string) => void;
+  onRemoveReaction?: (emoji: string) => void;
+  currentUserId?: string;
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwnMessage, searchQuery }) => {
+export const MessageBubble: React.FC<MessageBubbleProps> = ({ 
+  message, 
+  isOwnMessage, 
+  searchQuery,
+  onAddReaction,
+  onRemoveReaction,
+  currentUserId
+}) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  const [isZoomed, setIsZoomed] = useState(false);
+
+  const REACTION_OPTIONS = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
 
   // Format the message timestamp
   const formattedTime = message.created_at
     ? formatDistanceToNow(new Date(message.created_at), { addSuffix: true })
     : '';
+  
+  const fullTimestamp = message.created_at 
+    ? format(new Date(message.created_at), 'PPP p')
+    : '';
+
+  // Group reactions by emoji
+  const reactionGroups = (message.reactions || []).reduce((acc, curr) => {
+    acc[curr.emoji] = (acc[curr.emoji] || []);
+    acc[curr.emoji].push(curr.user_id);
+    return acc;
+  }, {} as Record<string, string[]>);
 
   // Handle audio playback
   const toggleAudio = () => {
@@ -77,14 +106,44 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwnMess
     switch (message.message_type) {
       case 'image':
         return (
-          <div className="mt-1 rounded-md overflow-hidden">
-            <img 
-              src={message.media_url || ''} 
-              alt={message.content} 
-              className="max-w-full max-h-60 object-contain rounded-md"
-              loading="lazy"
-            />
-          </div>
+          <>
+            <div className="mt-1 rounded-md overflow-hidden relative group/img">
+              <img 
+                src={message.media_url || ''} 
+                alt={message.content} 
+                className="max-w-full max-h-60 object-contain rounded-md cursor-pointer transition-transform hover:scale-[1.02]"
+                loading="lazy"
+                onClick={() => setIsZoomed(true)}
+              />
+              <button 
+                onClick={() => setIsZoomed(true)}
+                className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full opacity-0 group-hover/img:opacity-100 transition-opacity"
+              >
+                <Maximize2 className="h-4 w-4" />
+              </button>
+            </div>
+
+            {isZoomed && (
+              <div 
+                className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 animate-in fade-in duration-200"
+                onClick={() => setIsZoomed(false)}
+              >
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute top-4 right-4 text-white hover:bg-white/20"
+                  onClick={() => setIsZoomed(false)}
+                >
+                  <X className="h-6 w-6" />
+                </Button>
+                <img 
+                  src={message.media_url || ''} 
+                  alt={message.content} 
+                  className="max-w-full max-h-full object-contain animate-in zoom-in-95 duration-300"
+                />
+              </div>
+            )}
+          </>
         );
       
       case 'video':
@@ -202,23 +261,71 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwnMess
 
         {renderMessageContent()}
 
-        <div
-          className={`flex items-center text-xs mt-1 ${
-            isOwnMessage ? 'text-gray-600' : 'text-gray-500'
-          }`}
-        >
-          <span>{formattedTime}</span>
-          {isOwnMessage && (
-            <span className="ml-1">
-              {message.status === 'read' ? (
-                <CheckCheck className="h-3 w-3" />
-              ) : (
-                <Check className="h-3 w-3" />
-              )}
-            </span>
+          <div
+            className={`flex items-center text-xs mt-1 ${
+              isOwnMessage ? 'text-gray-600' : 'text-gray-500'
+            }`}
+          >
+            <span title={fullTimestamp}>{formattedTime}</span>
+            {isOwnMessage && (
+              <span className="ml-1">
+                {message.status === 'read' ? (
+                  <CheckCheck className="h-3 w-3 text-blue-500" />
+                ) : (
+                  <Check className="h-3 w-3" />
+                )}
+              </span>
+            )}
+          </div>
+
+          {/* Reactions display */}
+          {Object.keys(reactionGroups).length > 0 && (
+            <div className={`absolute -bottom-3 ${isOwnMessage ? 'right-0' : 'left-0'} flex flex-wrap gap-0.5 z-10`}>
+              {Object.entries(reactionGroups).map(([emoji, userIds]) => {
+                const hasReacted = currentUserId && userIds.includes(currentUserId);
+                return (
+                  <button
+                    key={emoji}
+                    onClick={() => hasReacted ? onRemoveReaction?.(emoji) : onAddReaction?.(emoji)}
+                    className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full border text-[10px] transition-all
+                      ${hasReacted 
+                        ? 'bg-orange-100 border-orange-300 scale-110' 
+                        : 'bg-white border-gray-200 hover:border-gray-300'}`}
+                  >
+                    <span>{emoji}</span>
+                    {userIds.length > 1 && <span>{userIds.length}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Reaction picker trigger */}
+          {!isOwnMessage && (
+            <div className="absolute -right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full hover:bg-orange-100 text-gray-400 hover:text-orange-500">
+                    <SmilePlus className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent side="right" className="w-auto p-1 rounded-full shadow-lg border-gray-100">
+                  <div className="flex gap-1">
+                    {REACTION_OPTIONS.map(emoji => (
+                      <button
+                        key={emoji}
+                        onClick={() => onAddReaction?.(emoji)}
+                        className="p-1 hover:bg-orange-50 rounded-full transition-transform hover:scale-125"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
           )}
         </div>
       </div>
-    </div>
-  );
+    );
 };

@@ -376,7 +376,15 @@ function ChatView({
   const typingUsers = getTypingUsers(conversation.id);
   const isPartnerTyping = typingUsers.some(uid => uid === conversation.partner_id);
 
-  const { messages, isLoading, sendMessage, markAsRead, uploadMedia } = useMessages(conversation.id);
+  const { 
+    messages, 
+    isLoading, 
+    sendMessage, 
+    markAsRead, 
+    uploadMedia,
+    addReaction,
+    removeReaction
+  } = useMessages(conversation.id);
 
   const filteredMessages = searchQuery.trim() 
     ? messages.filter(msg => msg.content.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -563,6 +571,9 @@ function ChatView({
                 message={msg} 
                 isOwnMessage={msg.sender_id === user.id} 
                 searchQuery={searchQuery}
+                onAddReaction={(emoji) => addReaction({ messageId: msg.id, emoji })}
+                onRemoveReaction={(emoji) => removeReaction({ messageId: msg.id, emoji })}
+                currentUserId={user.id}
               />
             ))}
             {!searchQuery && isPartnerTyping && (
