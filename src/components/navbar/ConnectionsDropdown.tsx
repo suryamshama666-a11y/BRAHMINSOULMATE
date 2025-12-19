@@ -144,35 +144,35 @@ export default function ConnectionsDropdown({
         {connectionItems.map((item, index) => (
           <div key={item.id}>
             <DropdownMenuItem className="focus:bg-[#FFF1E6] focus:text-[#FF4500] p-0">
-              <Link
-                to={item.route}
-                className="flex items-center justify-between w-full px-4 py-3 text-neutral-800 hover:text-[#FF4500] transition-colors"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className={`p-2 rounded-full ${item.color} text-white`}>
-                    <item.icon className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">{item.label}</span>
-                      {item.isNew && (
-                        <Badge className="bg-red-500 text-white text-xs px-1.5 py-0.5">
-                          NEW
-                        </Badge>
-                      )}
+                <Link
+                  to={item.route}
+                  className="flex items-center justify-between w-full px-4 py-3 text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] transition-colors"
+                >
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className={`p-2 rounded-full ${item.color} text-white shrink-0`}>
+                      <item.icon className="h-4 w-4" />
                     </div>
-                    <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>
+                    <div className="flex flex-col min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm truncate">{item.label}</span>
+                        {item.isNew && (
+                          <Badge className="bg-red-500 text-white text-[10px] h-4 px-1.5 py-0">
+                            NEW
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-gray-500 truncate leading-tight">{item.description}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center">
-                  <Badge 
-                    variant={item.isNew ? "default" : "secondary"} 
-                    className={`font-bold ${item.isNew ? 'bg-red-500 text-white' : ''}`}
-                  >
-                    {item.count}
-                  </Badge>
-                </div>
-              </Link>
+                  <div className="flex items-center ml-2 shrink-0">
+                    <Badge 
+                      variant={item.isNew ? "default" : "secondary"} 
+                      className={`font-bold h-5 min-w-[20px] flex items-center justify-center text-[10px] ${item.isNew ? 'bg-red-500 text-white border-transparent' : ''}`}
+                    >
+                      {item.count}
+                    </Badge>
+                  </div>
+                </Link>
             </DropdownMenuItem>
             {index < connectionItems.length - 1 && <DropdownMenuSeparator />}
           </div>
