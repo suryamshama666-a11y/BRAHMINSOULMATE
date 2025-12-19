@@ -1,8 +1,9 @@
+import ProfileCard from '@/components/ProfileCard';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
-import { Heart, Clock, CheckCircle, XCircle, MapPin, GraduationCap, Briefcase } from 'lucide-react';
+import { Heart, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { interestsService } from '@/services/api';
 import { useQuery } from '@tanstack/react-query';
@@ -19,22 +20,6 @@ const MyInterests = () => {
     },
     enabled: !!user?.id
   });
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 60) return `${diffMins} minutes ago`;
-    if (diffHours < 24) return `${diffHours} hours ago`;
-    if (diffDays < 7) return `${diffDays} days ago`;
-    return date.toLocaleDateString();
-  };
-
-
 
   if (loading) {
     return (
@@ -100,67 +85,37 @@ const MyInterests = () => {
 
         {/* Interests Grid */}
         {interests.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {interests.map((interest) => (
-              <Card key={interest.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  {interest.receiver && (
-                    <>
-                      <div className="flex items-center justify-between mb-4">
-                        <Badge 
-                          variant={
-                            interest.status === 'accepted' ? 'default' : 
-                            interest.status === 'declined' ? 'destructive' : 
-                            'secondary'
-                          }
-                          className={
-                            interest.status === 'accepted' ? 'bg-green-100 text-green-800' :
-                            interest.status === 'declined' ? 'bg-red-100 text-red-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          }
-                        >
-                          {interest.status.charAt(0).toUpperCase() + interest.status.slice(1)}
-                        </Badge>
-                      </div>
-
-                      <div className="mb-4">
-                        <h3 className="text-xl font-semibold mb-1">{interest.receiver.full_name}</h3>
-                        <p className="text-gray-600 text-sm">
-                          {interest.receiver.age} years • {interest.receiver.height} cm
-                        </p>
-                      </div>
-
-                      <div className="space-y-2 mb-4">
-                        <div className="flex items-center text-sm text-gray-600">
-                          <MapPin className="h-4 w-4 mr-2" />
-                          {interest.receiver.city}, {interest.receiver.state}
-                        </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <GraduationCap className="h-4 w-4 mr-2" />
-                          {interest.receiver.education}
-                        </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Briefcase className="h-4 w-4 mr-2" />
-                          {interest.receiver.occupation}
-                        </div>
-                      </div>
-
-                      <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-700">{interest.message}</p>
-                        <p className="text-xs text-gray-500 mt-1">Sent {formatDate(interest.created_at)}</p>
-                      </div>
-
-                      {interest.status === 'accepted' && (
-                        <Link to={`/messages?user=${interest.receiver.user_id}`}>
-                          <Button className="w-full mt-4">
-                            Start Conversation
-                          </Button>
-                        </Link>
-                      )}
-                    </>
-                  )}
-                </CardContent>
-              </Card>
+              interest.receiver && (
+                <div key={interest.id} className="relative">
+                  <ProfileCard 
+                    profile={{
+                      ...interest.receiver,
+                      name: interest.receiver.full_name,
+                      status: interest.status,
+                      sentDate: new Date(interest.created_at).toLocaleDateString()
+                    }} 
+                    variant="interest"
+                  />
+                  <div className="absolute top-4 left-4 z-10">
+                    <Badge 
+                      variant={
+                        interest.status === 'accepted' ? 'default' : 
+                        interest.status === 'declined' ? 'destructive' : 
+                        'secondary'
+                      }
+                      className={
+                        interest.status === 'accepted' ? 'bg-green-500 text-white shadow-lg' :
+                        interest.status === 'declined' ? 'bg-red-500 text-white shadow-lg' :
+                        'bg-yellow-500 text-white shadow-lg'
+                      }
+                    >
+                      {interest.status.charAt(0).toUpperCase() + interest.status.slice(1)}
+                    </Badge>
+                  </div>
+                </div>
+              )
             ))}
           </div>
         ) : (
