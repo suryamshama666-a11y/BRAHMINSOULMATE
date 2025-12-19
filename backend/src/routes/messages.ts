@@ -107,7 +107,7 @@ router.get('/conversations', authMiddleware, async (req, res) => {
       if (msg.receiver_id !== userId) partners.add(msg.receiver_id);
     });
 
-    const conversations = [];
+    const conversations: any[] = [];
     for (const partnerId of partners) {
       // Get partner profile
       const { data: profile } = await supabase
