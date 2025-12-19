@@ -14,9 +14,10 @@ import { toast } from 'sonner';
 interface MessageBubbleProps {
   message: Message;
   isOwnMessage: boolean;
+  searchQuery?: string;
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwnMessage }) => {
+export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwnMessage, searchQuery }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
 
@@ -138,7 +139,21 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwnMess
           </div>
         );
       
-      default:
+    default:
+        if (searchQuery && typeof message.content === 'string') {
+          const parts = message.content.split(new RegExp(`(${searchQuery})`, 'gi'));
+          return (
+            <div className="whitespace-pre-wrap break-words">
+              {parts.map((part, i) => (
+                part.toLowerCase() === searchQuery.toLowerCase() ? (
+                  <mark key={i} className="bg-yellow-200 text-gray-900 rounded-sm px-0.5">{part}</mark>
+                ) : (
+                  <span key={i}>{part}</span>
+                )
+              ))}
+            </div>
+          );
+        }
         return <div className="whitespace-pre-wrap break-words">{message.content}</div>;
     }
   };

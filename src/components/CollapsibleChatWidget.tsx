@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, ArrowLeft, Send, Paperclip, Users, Volume2, VolumeX } from 'lucide-react';
+import { MessageCircle, X, ArrowLeft, Send, Paperclip, Users, Volume2, VolumeX, Search, Smile } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAuth } from '@/contexts/AuthContext';
 import { useConversations, Contact } from '@/features/messages/hooks/useConversations';
 import { useMessages } from '@/features/messages/hooks/useMessages';
@@ -43,14 +45,51 @@ export function CollapsibleChatWidget() {
   }, []);
 
   const prevUnreadRef = useRef(0);
+  const originalTitleRef = useRef(document.title);
+  const flashIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Play sound on new unread message
+  // Play sound and flash title on new unread message
   useEffect(() => {
-    if (totalUnread > prevUnreadRef.current && !isMuted && isOpen) {
-      audioRef.current?.play().catch(e => console.log('Audio play failed:', e));
+    if (totalUnread > prevUnreadRef.current) {
+      // Sound
+      if (!isMuted && isOpen) {
+        audioRef.current?.play().catch(e => console.log('Audio play failed:', e));
+      }
+
+      // Title Flash if not focused
+      if (document.hidden || !isOpen) {
+        if (flashIntervalRef.current) clearInterval(flashIntervalRef.current);
+        
+        let isOriginal = false;
+        flashIntervalRef.current = setInterval(() => {
+          document.title = isOriginal 
+            ? originalTitleRef.current 
+            : `(${totalUnread}) New Message!`;
+          isOriginal = !isOriginal;
+        }, 1000);
+      }
     }
     prevUnreadRef.current = totalUnread;
   }, [totalUnread, isMuted, isOpen]);
+
+  // Clear flash when focused or widget opened
+  useEffect(() => {
+    const handleFocus = () => {
+      if (flashIntervalRef.current) {
+        clearInterval(flashIntervalRef.current);
+        flashIntervalRef.current = null;
+        document.title = originalTitleRef.current;
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    if (isOpen) handleFocus();
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      if (flashIntervalRef.current) clearInterval(flashIntervalRef.current);
+    };
+  }, [isOpen]);
   
   const conversations: ConversationItem[] = rawConversations.map(conv => ({
     id: conv.id,
@@ -330,12 +369,20 @@ function ChatView({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { setTyping, getTypingUsers } = useTypingIndicator();
   
   const typingUsers = getTypingUsers(conversation.id);
   const isPartnerTyping = typingUsers.some(uid => uid === conversation.partner_id);
 
   const { messages, isLoading, sendMessage, markAsRead, uploadMedia } = useMessages(conversation.id);
+
+  const filteredMessages = searchQuery.trim() 
+    ? messages.filter(msg => msg.content.toLowerCase().includes(searchQuery.toLowerCase()))
+    : messages;
+
+  const COMMON_EMOJIS = ['😊', '😂', '❤️', '👍', '🙏', '🔥', '✨', '🙌', '😍', '😎'];
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -422,45 +469,76 @@ function ChatView({
 
   return (
     <>
-      <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white shrink-0">
-        <Button variant="ghost" size="icon" onClick={onBack} className="text-white hover:bg-white/20 h-8 w-8">
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="relative">
-          {conversation.partner_avatar ? (
-            <img
-              src={conversation.partner_avatar}
-              alt={conversation.partner_name}
-              className="h-8 w-8 rounded-full object-cover border-2 border-white"
-            />
-          ) : (
-            <div className="h-8 w-8 rounded-full bg-white/30 flex items-center justify-center text-white font-medium">
-              {conversation.partner_name.charAt(0).toUpperCase()}
+      <div className="flex flex-col shrink-0">
+        <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white">
+          <Button variant="ghost" size="icon" onClick={onBack} className="text-white hover:bg-white/20 h-8 w-8">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div className="relative">
+            {conversation.partner_avatar ? (
+              <img
+                src={conversation.partner_avatar}
+                alt={conversation.partner_name}
+                className="h-8 w-8 rounded-full object-cover border-2 border-white"
+              />
+            ) : (
+              <div className="h-8 w-8 rounded-full bg-white/30 flex items-center justify-center text-white font-medium">
+                {conversation.partner_name.charAt(0).toUpperCase()}
+              </div>
+            )}
+            {isOnline && (
+              <span className="absolute bottom-0 right-0 h-2 w-2 bg-green-400 border border-white rounded-full"></span>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-medium text-sm truncate">{conversation.partner_name}</h4>
+            <p className="text-[10px] text-white/80">
+              {isPartnerTyping ? 'typing...' : isOnline ? 'Active now' : 'Offline'}
+            </p>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setIsSearching(!isSearching)} 
+              className={`text-white hover:bg-white/20 h-8 w-8 ${isSearching ? 'bg-white/20' : ''}`}
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onToggleMute} 
+              className="text-white hover:bg-white/20 h-8 w-8"
+            >
+              {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20 h-8 w-8">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        {isSearching && (
+          <div className="px-3 py-2 bg-orange-50 border-b border-orange-100 animate-in slide-in-from-top duration-200">
+            <div className="relative">
+              <Input
+                placeholder="Search messages..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-8 text-xs bg-white border-orange-200 focus:border-orange-500 pr-8"
+                autoFocus
+              />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
             </div>
-          )}
-          {isOnline && (
-            <span className="absolute bottom-0 right-0 h-2 w-2 bg-green-400 border border-white rounded-full"></span>
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-sm truncate">{conversation.partner_name}</h4>
-          <p className="text-[10px] text-white/80">
-            {isPartnerTyping ? 'typing...' : isOnline ? 'Active now' : 'Offline'}
-          </p>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={onToggleMute} 
-            className="text-white hover:bg-white/20 h-8 w-8"
-          >
-            {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-          </Button>
-          <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20 h-8 w-8">
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 bg-gradient-to-b from-orange-50 to-amber-50">
@@ -468,19 +546,26 @@ function ChatView({
           <div className="flex justify-center items-center h-full">
             <div className="h-6 w-6 border-3 border-t-transparent border-orange-500 rounded-full animate-spin"></div>
           </div>
-        ) : messages.length === 0 ? (
+        ) : filteredMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center mb-2">
-              <Send className="h-6 w-6 text-orange-500" />
+              {searchQuery ? <Search className="h-6 w-6 text-orange-500" /> : <Send className="h-6 w-6 text-orange-500" />}
             </div>
-            <p className="text-gray-500 text-sm">Say hello to {conversation.partner_name}!</p>
+            <p className="text-gray-500 text-sm">
+              {searchQuery ? `No messages found for "${searchQuery}"` : `Say hello to ${conversation.partner_name}!`}
+            </p>
           </div>
         ) : (
           <>
-            {messages.map((msg) => (
-              <MessageBubble key={msg.id} message={msg} isOwnMessage={msg.sender_id === user.id} />
+            {filteredMessages.map((msg) => (
+              <MessageBubble 
+                key={msg.id} 
+                message={msg} 
+                isOwnMessage={msg.sender_id === user.id} 
+                searchQuery={searchQuery}
+              />
             ))}
-            {isPartnerTyping && (
+            {!searchQuery && isPartnerTyping && (
               <div className="flex items-center gap-1 text-gray-400 text-[10px] ml-2 mt-1 italic animate-pulse">
                 <span className="h-1.5 w-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
                 <span className="h-1.5 w-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
@@ -502,21 +587,47 @@ function ChatView({
             className="hidden"
             accept="image/*,video/*,audio/*,application/pdf"
           />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => fileInputRef.current?.click()}
-            className="text-orange-500 hover:text-orange-600 hover:bg-orange-50 h-8 w-8 shrink-0"
-          >
-            <Paperclip className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              className="text-orange-500 hover:text-orange-600 hover:bg-orange-50 h-8 w-8"
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-orange-500 hover:text-orange-600 hover:bg-orange-50 h-8 w-8"
+                >
+                  <Smile className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent side="top" align="start" className="w-auto p-2">
+                <div className="grid grid-cols-5 gap-1">
+                  {COMMON_EMOJIS.map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => setMessage(prev => prev + emoji)}
+                      className="text-xl p-1 hover:bg-orange-50 rounded transition-colors"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
           <div className="flex-1">
             <Textarea
               placeholder="Type a message..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyPress}
-              className="min-h-[36px] max-h-[80px] resize-none text-sm border-gray-200 focus:border-orange-400 focus:ring-orange-400"
+              className="min-h-[36px] max-h-[80px] resize-none text-sm border-gray-200 focus:border-orange-400 focus:ring-orange-400 py-2"
               rows={1}
             />
           </div>
