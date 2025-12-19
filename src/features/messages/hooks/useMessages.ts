@@ -69,11 +69,24 @@ export function useMessages(conversationId?: string) {
       if (!user || !conversationId) return [];
 
       try {
-        const { data: messages, error } = await supabase
+        let query = supabase
           .from('messages')
           .select('*')
-          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
           .order('created_at', { ascending: true });
+
+        // If it's a generated conversation ID (conv_user1_user2), extract partner ID
+        if (conversationId.startsWith('conv_')) {
+          const parts = conversationId.split('_');
+          const partnerId = parts.find(p => p !== 'conv' && p !== user.id);
+          if (partnerId) {
+            query = query.or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`);
+          }
+        } else {
+          // Fallback if it's a real UUID
+          query = query.eq('conversation_id', conversationId);
+        }
+
+        const { data: messages, error } = await query;
 
         if (error) {
           throw new MessageError('Failed to fetch messages', error.code, error);
@@ -287,17 +300,21 @@ export function useMessages(conversationId?: string) {
   });
 
   const { mutate: markAsRead } = useMutation({
-    mutationFn: async (messageId: string) => {
+    mutationFn: async (messageIds: string) => {
       if (!user) throw new MessageError('Not authenticated');
 
       try {
+        const idList = messageIds.split(',');
         const { error } = await supabase
           .from('messages')
-          .update({ read: true })
-          .eq('id', messageId)
+          .update({ 
+            read_at: new Date().toISOString(),
+            status: 'read'
+          })
+          .in('id', idList)
           .eq('receiver_id', user.id);
 
-        if (error) throw new MessageError('Failed to mark message as read', error.code, error);
+        if (error) throw new MessageError('Failed to mark messages as read', error.code, error);
       } catch (err) {
         console.error('Mark as read error:', err);
         throw err;
@@ -305,6 +322,7 @@ export function useMessages(conversationId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
     onError: (error: unknown) => {
       const errorMessage = error instanceof MessageError 

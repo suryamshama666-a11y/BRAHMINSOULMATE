@@ -1,12 +1,17 @@
-import { MessageCircle, X, ArrowLeft, Send, Paperclip, Users } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { MessageCircle, X, ArrowLeft, Send, Paperclip, Users, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { useConversations, Contact } from '@/features/messages/hooks/useConversations';
 import { useMessages } from '@/features/messages/hooks/useMessages';
 import { usePresence } from '@/hooks/usePresence';
+import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { MessageBubble } from '@/features/messages/components/MessageBubble';
 import { toast } from 'sonner';
+
+// Notification sound (Short Ding)
+const NOTIFICATION_SOUND_URL = 'https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3';
 
 interface ConversationItem {
   id: string;
@@ -28,6 +33,24 @@ export function CollapsibleChatWidget() {
     isLoadingContacts 
   } = useConversations();
   const { isUserOnline, onlineUsers } = usePresence();
+  const [isMuted, setIsMuted] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // Initialize audio
+  useEffect(() => {
+    audioRef.current = new Audio(NOTIFICATION_SOUND_URL);
+    audioRef.current.volume = 0.5;
+  }, []);
+
+  const prevUnreadRef = useRef(0);
+
+  // Play sound on new unread message
+  useEffect(() => {
+    if (totalUnread > prevUnreadRef.current && !isMuted && isOpen) {
+      audioRef.current?.play().catch(e => console.log('Audio play failed:', e));
+    }
+    prevUnreadRef.current = totalUnread;
+  }, [totalUnread, isMuted, isOpen]);
   
   const conversations: ConversationItem[] = rawConversations.map(conv => ({
     id: conv.id,
@@ -46,34 +69,46 @@ export function CollapsibleChatWidget() {
     <div className="fixed bottom-4 right-4 z-50">
       {isOpen ? (
         <div className="w-80 sm:w-96 h-[500px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
-          {selectedConversation ? (
-            <ChatView
-              conversation={selectedConversation}
-              isOnline={isUserOnline(selectedConversation.partner_id)}
-              onBack={() => setSelectedConversation(null)}
-              onClose={() => setIsOpen(false)}
-            />
-          ) : (
-            <>
-              <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white shrink-0">
-                <div className="flex gap-4">
-                  <button 
-                    onClick={() => setActiveTab('messages')}
-                    className={`font-semibold text-lg pb-1 border-b-2 transition-all ${activeTab === 'messages' ? 'border-white opacity-100' : 'border-transparent opacity-70'}`}
-                  >
-                    Messages
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab('contacts')}
-                    className={`font-semibold text-lg pb-1 border-b-2 transition-all ${activeTab === 'contacts' ? 'border-white opacity-100' : 'border-transparent opacity-70'}`}
-                  >
-                    Contacts
-                  </button>
+            {selectedConversation ? (
+              <ChatView
+                conversation={selectedConversation}
+                isOnline={isUserOnline(selectedConversation.partner_id)}
+                isMuted={isMuted}
+                onToggleMute={() => setIsMuted(!isMuted)}
+                onBack={() => setSelectedConversation(null)}
+                onClose={() => setIsOpen(false)}
+              />
+            ) : (
+              <>
+                <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white shrink-0">
+                  <div className="flex gap-4">
+                    <button 
+                      onClick={() => setActiveTab('messages')}
+                      className={`font-semibold text-lg pb-1 border-b-2 transition-all ${activeTab === 'messages' ? 'border-white opacity-100' : 'border-transparent opacity-70'}`}
+                    >
+                      Messages
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('contacts')}
+                      className={`font-semibold text-lg pb-1 border-b-2 transition-all ${activeTab === 'contacts' ? 'border-white opacity-100' : 'border-transparent opacity-70'}`}
+                    >
+                      Contacts
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => setIsMuted(!isMuted)} 
+                      className="text-white hover:bg-white/20 h-8 w-8"
+                    >
+                      {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-white hover:bg-white/20 h-8 w-8">
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-white hover:bg-white/20">
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
 
               <div className="flex-1 overflow-hidden flex flex-col">
                 {activeTab === 'messages' ? (
@@ -279,11 +314,15 @@ function ContactsListView({
 function ChatView({
   conversation,
   isOnline,
+  isMuted,
+  onToggleMute,
   onBack,
   onClose,
 }: {
   conversation: ConversationItem;
   isOnline: boolean;
+  isMuted: boolean;
+  onToggleMute: () => void;
   onBack: () => void;
   onClose: () => void;
 }) {
@@ -291,6 +330,10 @@ function ChatView({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState('');
+  const { setTyping, getTypingUsers } = useTypingIndicator();
+  
+  const typingUsers = getTypingUsers(conversation.id);
+  const isPartnerTyping = typingUsers.some(uid => uid === conversation.partner_id);
 
   const { messages, isLoading, sendMessage, markAsRead, uploadMedia } = useMessages(conversation.id);
 
@@ -298,7 +341,19 @@ function ChatView({
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages]);
+  }, [messages, isPartnerTyping]);
+
+  // Handle typing indicator
+  useEffect(() => {
+    if (!message.trim()) {
+      setTyping(conversation.id, false);
+      return;
+    }
+
+    setTyping(conversation.id, true);
+    const timeout = setTimeout(() => setTyping(conversation.id, false), 3000);
+    return () => clearTimeout(timeout);
+  }, [message, conversation.id]);
 
   useEffect(() => {
     if (messages.length > 0 && conversation.partner_id) {
@@ -322,6 +377,7 @@ function ChatView({
       message_type: 'text',
     });
     setMessage('');
+    setTyping(conversation.id, false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -388,11 +444,23 @@ function ChatView({
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="font-medium text-sm truncate">{conversation.partner_name}</h4>
-          <p className="text-[10px] text-white/80">{isOnline ? 'Active now' : 'Offline'}</p>
+          <p className="text-[10px] text-white/80">
+            {isPartnerTyping ? 'typing...' : isOnline ? 'Active now' : 'Offline'}
+          </p>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20 h-8 w-8">
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onToggleMute} 
+            className="text-white hover:bg-white/20 h-8 w-8"
+          >
+            {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          </Button>
+          <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20 h-8 w-8">
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 bg-gradient-to-b from-orange-50 to-amber-50">
@@ -408,9 +476,19 @@ function ChatView({
             <p className="text-gray-500 text-sm">Say hello to {conversation.partner_name}!</p>
           </div>
         ) : (
-          messages.map((msg) => (
-            <MessageBubble key={msg.id} message={msg} isOwnMessage={msg.sender_id === user.id} />
-          ))
+          <>
+            {messages.map((msg) => (
+              <MessageBubble key={msg.id} message={msg} isOwnMessage={msg.sender_id === user.id} />
+            ))}
+            {isPartnerTyping && (
+              <div className="flex items-center gap-1 text-gray-400 text-[10px] ml-2 mt-1 italic animate-pulse">
+                <span className="h-1.5 w-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                <span className="h-1.5 w-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                <span className="h-1.5 w-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                <span className="ml-1">{conversation.partner_name} is typing...</span>
+              </div>
+            )}
+          </>
         )}
         <div ref={messagesEndRef} />
       </div>
