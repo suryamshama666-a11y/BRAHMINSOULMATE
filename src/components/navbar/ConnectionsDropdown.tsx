@@ -115,23 +115,23 @@ export default function ConnectionsDropdown({
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          size="nav"
-          className="relative flex items-center space-x-2 rounded-md transition-colors font-medium text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20 focus:outline-none focus:ring-1 focus:ring-[#FF4500]"
+          size="sm"
+          className="flex items-center space-x-2 px-3 py-2 rounded-md transition-colors focus:outline-none focus:ring-1 focus:ring-[#FF4500] text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20 font-medium"
         >
-          <Users className="h-5 w-5" />
-          <span>Connections</span>
-          <ChevronDown className="h-4 w-4" />
+          <Users className="h-4 w-4" />
+          <span className="hidden lg:block">Connections</span>
+          <ChevronDown className="h-3 w-3" />
           {totalNotifications > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs bg-red-500 text-white">
+            <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-[10px] bg-red-500 text-white flex items-center justify-center">
               {totalNotifications > 99 ? '99+' : totalNotifications}
             </Badge>
           )}
         </Button>
       </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="w-80 bg-white rounded-lg shadow-xl border-2 border-neutral-200 z-50 overflow-visible"
-          >
+      <DropdownMenuContent
+        align="end"
+        className="w-80 bg-white rounded-lg shadow-xl border-2 border-neutral-200 z-50 overflow-visible"
+      >
           <DropdownMenuLabel className="px-4 py-3 border-b">
             <div className="flex items-center justify-between">
               <span className="font-semibold text-neutral-900">My Connections</span>

@@ -157,22 +157,22 @@ export default function OriginalNavbar() {
                   <ChevronDown className="h-3 w-3" />
                 </div>
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="start"
-                className="w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-[9999]"
-              >
-                {moreLinks.map(({ path, label, icon: Icon }) => (
-                  <DropdownMenuItem key={path} className="focus:bg-[#FFF1E6] focus:text-[#FF4500] cursor-pointer">
-                    <Link
-                      to={path}
-                      className="flex items-center space-x-2 px-2 py-1.5 w-full text-neutral-800 hover:text-[#FF4500]"
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span>{label}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
+                <DropdownMenuContent
+                  align="start"
+                  className="w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-[9999]"
+                >
+                  {moreLinks.map(({ path, label, icon: Icon }, index) => (
+                    <DropdownMenuItem key={`${path}-${index}`} className="focus:bg-[#FFF1E6] focus:text-[#FF4500] cursor-pointer">
+                      <Link
+                        to={path}
+                        className="flex items-center space-x-2 px-2 py-1.5 w-full text-neutral-800 hover:text-[#FF4500]"
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span>{label}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
             </DropdownMenu>
           </div>
 
