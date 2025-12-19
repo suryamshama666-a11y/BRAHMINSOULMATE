@@ -15,6 +15,8 @@ import {
   HelpCircle, Star, BookOpen, Settings, Users, Calendar
 } from 'lucide-react';
 
+import ConnectionsDropdown from './navbar/ConnectionsDropdown';
+
 export default function OriginalNavbar() {
   const { user, profile } = useAuth();
   const isAuthenticated = !!user;
@@ -33,13 +35,6 @@ export default function OriginalNavbar() {
     { path: '/messages', label: 'Messages', icon: MessageCircle },
     { path: '/profile', label: 'Profile', icon: User },
     { path: '/v-dates', label: 'V-Dates', icon: Video },
-  ];
-
-  const connectionsLinks = [
-    { name: 'My Favorites', href: '/my-favorites', icon: Star },
-    { name: 'My Interests', href: '/my-interests', icon: Heart },
-    { name: 'Interested in Me', href: '/interests-received', icon: Heart },
-    { name: 'Who Viewed You', href: '/connections/who-viewed', icon: Eye },
   ];
 
   const moreLinks = [
@@ -148,35 +143,7 @@ export default function OriginalNavbar() {
             </Link>
 
             {/* Connections Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <div
-                  role="button"
-                  tabIndex={0}
-                  className="flex items-center space-x-1 px-3 py-2 rounded-md transition-colors text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20 focus:outline-none focus:ring-1 focus:ring-[#FF4500] cursor-pointer text-sm font-medium"
-                >
-                  <Users className="h-4 w-4" />
-                  <span>Connections</span>
-                  <ChevronDown className="h-3 w-3" />
-                </div>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="start"
-                className="w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-[9999]"
-              >
-                {connectionsLinks.map(({ path, label, icon: Icon }) => (
-                  <DropdownMenuItem key={path} className="focus:bg-[#FFF1E6] focus:text-[#FF4500] cursor-pointer">
-                    <Link
-                      to={path}
-                      className="flex items-center space-x-2 px-2 py-1.5 w-full text-neutral-800 hover:text-[#FF4500]"
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span>{label}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <ConnectionsDropdown />
 
             {/* More Dropdown */}
             <DropdownMenu>
