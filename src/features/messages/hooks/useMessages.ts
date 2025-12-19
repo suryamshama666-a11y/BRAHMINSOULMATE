@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import { useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -27,6 +27,7 @@ export interface Message {
   sender_id: string;
   status: MessageStatus;
   read_at?: string | null;
+  conversation_id?: string;
 }
 
 export interface MessageReaction {
@@ -59,13 +60,22 @@ export interface ReactionParams {
   emoji: string;
 }
 
+const MESSAGES_PER_PAGE = 20;
+
 export function useMessages(conversationId?: string) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  const { data: messages = [], isLoading, error } = useQuery({
+  const { 
+    data, 
+    isLoading, 
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage 
+  } = useInfiniteQuery({
     queryKey: ['messages', conversationId],
-    queryFn: async () => {
+    queryFn: async ({ pageParam = 0 }) => {
       if (!user || !conversationId) return [];
 
       try {
@@ -75,7 +85,8 @@ export function useMessages(conversationId?: string) {
             *,
             message_reactions (*)
           `)
-          .order('created_at', { ascending: true });
+          .order('created_at', { ascending: false })
+          .range(pageParam, pageParam + MESSAGES_PER_PAGE - 1);
 
         // If it's a generated conversation ID (conv_user1_user2), extract partner ID
         if (conversationId.startsWith('conv_')) {
@@ -96,7 +107,6 @@ export function useMessages(conversationId?: string) {
         }
 
         return (messages || []).map((message: any): Message & { reactions?: MessageReaction[] } => {
-          // Ensure we have all required fields with fallbacks
           const processedMessage: Message & { reactions?: MessageReaction[] } = {
             id: message.id || '',
             content: message.content || '',
@@ -116,16 +126,17 @@ export function useMessages(conversationId?: string) {
           return processedMessage;
         });
       } catch (err) {
-        const errorMessage = err instanceof MessageError 
-          ? err.message 
-          : 'An unexpected error occurred while fetching messages';
         console.error('Message fetch error:', err);
-        toast.error(errorMessage);
         throw err;
       }
     },
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.length === MESSAGES_PER_PAGE ? allPages.length * MESSAGES_PER_PAGE : undefined;
+    },
     enabled: !!user && !!conversationId,
   });
+
+  const messages = data?.pages.flatMap(page => page).reverse() || [];
 
   // Real-time subscription
   useEffect(() => {
@@ -136,14 +147,24 @@ export function useMessages(conversationId?: string) {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*', // Listen to all changes for better real-time (reactions, read status, etc)
           schema: 'public',
           table: 'messages',
-          filter: `receiver_id=eq.${user.id}`,
         },
         () => {
           queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
           queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'message_reactions',
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
         }
       )
       .subscribe();
@@ -184,12 +205,47 @@ export function useMessages(conversationId?: string) {
       queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
-    onError: (error: unknown) => {
-      const errorMessage = error instanceof MessageError 
-        ? error.message 
-        : 'Failed to send message';
-      toast.error(errorMessage);
+  });
+
+  const { mutate: editMessage } = useMutation({
+    mutationFn: async ({ messageId, content }: { messageId: string; content: string }) => {
+      if (!user) throw new MessageError('Not authenticated');
+
+      const { error } = await supabase
+        .from('messages')
+        .update({ content, updated_at: new Date().toISOString() })
+        .eq('id', messageId)
+        .eq('sender_id', user.id);
+
+      if (error) throw new MessageError('Failed to edit message', error.code, error);
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to edit message');
+    }
+  });
+
+  const { mutate: deleteMessage } = useMutation({
+    mutationFn: async (messageId: string) => {
+      if (!user) throw new MessageError('Not authenticated');
+
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId)
+        .eq('sender_id', user.id);
+
+      if (error) throw new MessageError('Failed to delete message', error.code, error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to delete message');
+    }
   });
 
   const { mutate: uploadFile } = useMutation({

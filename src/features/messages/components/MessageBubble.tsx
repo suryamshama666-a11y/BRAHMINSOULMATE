@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { formatDistanceToNow, format } from 'date-fns';
-import { Check, CheckCheck, Download, Play, Pause, SmilePlus, Maximize2 } from 'lucide-react';
+import { Check, CheckCheck, Download, Play, Pause, SmilePlus, Maximize2, X, MoreVertical, Edit2, Trash2, CheckCircle2 } from 'lucide-react';
 import { Message, MessageReaction } from '@/features/messages/hooks/useMessages';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,11 +18,13 @@ import {
 import { toast } from 'sonner';
 
 interface MessageBubbleProps {
-  message: Message & { reactions?: MessageReaction[] };
+  message: Message & { reactions?: MessageReaction[]; updated_at?: string | null };
   isOwnMessage: boolean;
   searchQuery?: string;
   onAddReaction?: (emoji: string) => void;
   onRemoveReaction?: (emoji: string) => void;
+  onEdit?: (content: string) => void;
+  onDelete?: () => void;
   currentUserId?: string;
 }
 
@@ -31,11 +34,15 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   searchQuery,
   onAddReaction,
   onRemoveReaction,
+  onEdit,
+  onDelete,
   currentUserId
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(message.content);
 
   const REACTION_OPTIONS = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
 
@@ -47,6 +54,20 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   const fullTimestamp = message.created_at 
     ? format(new Date(message.created_at), 'PPP p')
     : '';
+
+  const isEdited = !!(message as any).updated_at;
+
+  const handleEdit = () => {
+    if (editContent.trim() && editContent !== message.content) {
+      onEdit?.(editContent);
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditContent(message.content);
+    setIsEditing(false);
+  };
 
   // Group reactions by emoji
   const reactionGroups = (message.reactions || []).reduce((acc, curr) => {
@@ -103,6 +124,27 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   // Determine message content based on type
   const renderMessageContent = () => {
+    if (isEditing) {
+      return (
+        <div className="flex flex-col gap-2 min-w-[200px]">
+          <Textarea
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            className="text-sm min-h-[60px] focus:ring-orange-400"
+            autoFocus
+          />
+          <div className="flex justify-end gap-2">
+            <Button size="sm" variant="ghost" onClick={handleCancelEdit} className="h-7 text-xs">
+              Cancel
+            </Button>
+            <Button size="sm" onClick={handleEdit} className="h-7 text-xs bg-orange-500 hover:bg-orange-600 text-white">
+              Save
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
     switch (message.message_type) {
       case 'image':
         return (
@@ -218,7 +260,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   };
 
   return (
-    <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-4`}>
+    <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-4 group`}>
       <div
         className={`relative max-w-[80%] md:max-w-[70%] px-4 py-2 rounded-lg ${
           isOwnMessage
@@ -226,47 +268,59 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             : 'bg-white bg-opacity-90 backdrop-blur-sm border border-orange-100 text-gray-800 shadow-sm'
         }`}
       >
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6 hover:bg-black/5"
               >
-                <circle cx="12" cy="12" r="1" />
-                <circle cx="19" cy="12" r="1" />
-                <circle cx="5" cy="12" r="1" />
-              </svg>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align={isOwnMessage ? 'end' : 'start'}>
-            <DropdownMenuItem onClick={copyToClipboard}>Copy</DropdownMenuItem>
-            {message.media_url && (
-              <DropdownMenuItem onClick={handleDownload}>Download</DropdownMenuItem>
-            )}
-            {isOwnMessage && <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>}
-          </DropdownMenuContent>
-        </DropdownMenu>
+                <MoreVertical className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align={isOwnMessage ? 'end' : 'start'}>
+              <DropdownMenuItem onClick={copyToClipboard}>
+                Copy
+              </DropdownMenuItem>
+              {message.message_type === 'text' && isOwnMessage && (
+                <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                  <Edit2 className="h-3 w-3 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+              )}
+              {message.media_url && (
+                <DropdownMenuItem onClick={handleDownload}>
+                  <Download className="h-3 w-3 mr-2" />
+                  Download
+                </DropdownMenuItem>
+              )}
+              {isOwnMessage && (
+                <DropdownMenuItem 
+                  className="text-red-600" 
+                  onClick={() => {
+                    if (confirm('Are you sure you want to delete this message?')) {
+                      onDelete?.();
+                    }
+                  }}
+                >
+                  <Trash2 className="h-3 w-3 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
         {renderMessageContent()}
 
           <div
-            className={`flex items-center text-xs mt-1 ${
-              isOwnMessage ? 'text-gray-600' : 'text-gray-500'
+            className={`flex items-center text-[10px] mt-1 ${
+              isOwnMessage ? 'text-gray-500' : 'text-gray-400'
             }`}
           >
             <span title={fullTimestamp}>{formattedTime}</span>
+            {isEdited && <span className="ml-1 flex items-center"><CheckCircle2 className="h-2 w-2 mr-0.5" />Edited</span>}
             {isOwnMessage && (
               <span className="ml-1">
                 {message.status === 'read' ? (

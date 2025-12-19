@@ -1,80 +1,77 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from './useSupabaseAuth';
 
 interface TypingStatus {
   userId: string;
-  timestamp: number;
+  isTyping: boolean;
 }
 
 export const useTypingIndicator = () => {
   const { user } = useSupabaseAuth();
-  const [typingUsers, setTypingUsers] = useState<Map<string, TypingStatus[]>>(new Map());
+  const [typingUsers, setTypingUsers] = useState<Record<string, string[]>>({});
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
     if (!user) return;
 
-    // Subscribe to typing status changes
-    const channel = supabase.channel('typing_status')
+    const channel = supabase.channel('typing_status', {
+      config: {
+        presence: {
+          key: user.id,
+        },
+      },
+    });
+
+    channel
       .on('presence', { event: 'sync' }, () => {
-        // Handle presence sync
-      })
-      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        // Handle user joining
-        const [conversationId, userId] = key.split(':');
-        setTypingUsers(prev => {
-          const newMap = new Map(prev);
-          const currentTyping = newMap.get(conversationId) || [];
-          const newStatus: TypingStatus = {
-            userId,
-            timestamp: Date.now()
-          };
-          newMap.set(conversationId, [...currentTyping, newStatus]);
-          return newMap;
+        const state = channel.presenceState();
+        const newTypingMap: Record<string, string[]> = {};
+
+        Object.entries(state).forEach(([userId, presences]: [string, any]) => {
+          presences.forEach((p: any) => {
+            if (p.isTyping && p.conversationId) {
+              if (!newTypingMap[p.conversationId]) {
+                newTypingMap[p.conversationId] = [];
+              }
+              if (!newTypingMap[p.conversationId].includes(userId)) {
+                newTypingMap[p.conversationId].push(userId);
+              }
+            }
+          });
         });
-      })
-      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        // Handle user leaving
-        const [conversationId, userId] = key.split(':');
-        setTypingUsers(prev => {
-          const newMap = new Map(prev);
-          const currentTyping = newMap.get(conversationId) || [];
-          newMap.set(
-            conversationId,
-            currentTyping.filter(status => status.userId !== userId)
-          );
-          return newMap;
-        });
+
+        setTypingUsers(newTypingMap);
       })
       .subscribe();
+
+    channelRef.current = channel;
 
     return () => {
       supabase.removeChannel(channel);
     };
   }, [user]);
 
-  const setTyping = async (conversationId: string, isTyping: boolean) => {
-    if (!user || !conversationId) return;
-
-    const presenceKey = `${conversationId}:${user.id}`;
-    const channel = supabase.channel('typing_status');
+  const setTyping = useCallback(async (conversationId: string, isTyping: boolean) => {
+    if (!user || !channelRef.current) return;
 
     if (isTyping) {
-      await channel.track({ presenceKey, isTyping: true });
+      await channelRef.current.track({
+        conversationId,
+        isTyping: true,
+        typing_at: new Date().toISOString()
+      });
     } else {
-      await channel.untrack();
+      await channelRef.current.track({
+        conversationId,
+        isTyping: false,
+        typing_at: new Date().toISOString()
+      });
     }
-  };
+  }, [user]);
 
   const getTypingUsers = (conversationId: string): string[] => {
-    if (!conversationId) return [];
-
-    const statuses = typingUsers.get(conversationId) || [];
-    // Remove stale typing indicators (older than 3 seconds)
-    const currentTime = Date.now();
-    return statuses
-      .filter(status => currentTime - status.timestamp < 3000)
-      .map(status => status.userId);
+    return typingUsers[conversationId] || [];
   };
 
   return {
