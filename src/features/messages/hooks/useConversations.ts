@@ -181,11 +181,47 @@ export function useConversations() {
   const { mutateAsync: toggleShortlist } = useMutation({
     mutationFn: async (partnerId: string) => {
       if (!user) throw new ConversationError('Not authenticated');
-      toast.success('Shortlist status updated');
-      return { success: true };
+      
+      try {
+        // Check if already shortlisted
+        const { data: existing, error: checkError } = await supabase
+          .from('shortlists')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('target_profile_id', partnerId)
+          .maybeSingle();
+
+        if (checkError) throw checkError;
+
+        if (existing) {
+          // Remove from shortlist
+          const { error: deleteError } = await supabase
+            .from('shortlists')
+            .delete()
+            .eq('id', existing.id);
+          if (deleteError) throw deleteError;
+          toast.success('Removed from shortlist');
+        } else {
+          // Add to shortlist
+          const { error: insertError } = await supabase
+            .from('shortlists')
+            .insert({
+              user_id: user.id,
+              target_profile_id: partnerId
+            });
+          if (insertError) throw insertError;
+          toast.success('Added to shortlist');
+        }
+
+        return { success: true };
+      } catch (err) {
+        console.error('Shortlist toggle error:', err);
+        throw err;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['shortlists'] });
     },
     onError: (error: unknown) => {
       const errorMessage = error instanceof ConversationError 

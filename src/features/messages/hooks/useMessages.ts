@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -87,10 +88,10 @@ export function useMessages(conversationId?: string) {
             media_url: message.media_url || null,
             message_type: (message.message_type || 'text') as MessageType,
             content_type: (message.message_type || 'text') as MessageType,
-            read: message.read || false,
+            read: !!message.read_at,
             receiver_id: message.receiver_id || '',
             sender_id: message.sender_id || '',
-            status: message.read ? 'read' : 
+            status: message.read_at ? 'read' : 
                    message.receiver_id === user.id ? 'delivered' : 'sent',
             read_at: message.read_at || null
           };
@@ -109,6 +110,32 @@ export function useMessages(conversationId?: string) {
     enabled: !!user && !!conversationId,
   });
 
+  // Real-time subscription
+  useEffect(() => {
+    if (!user || !conversationId) return;
+
+    const channel = supabase
+      .channel(`messages:${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${user.id}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
+          queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, conversationId, queryClient]);
+
   const { mutate: sendMessage } = useMutation({
     mutationFn: async (params: SendMessageParams) => {
       if (!user) throw new MessageError('Not authenticated');
@@ -121,7 +148,7 @@ export function useMessages(conversationId?: string) {
           message_type: params.message_type || 'text',
           media_url: params.media_url || null,
           created_at: new Date().toISOString(),
-          read: false,
+          conversation_id: conversationId // Add conversation_id if available
         };
 
         const { data, error } = await supabase
@@ -138,7 +165,7 @@ export function useMessages(conversationId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
-      toast.success('Message sent');
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
     onError: (error: unknown) => {
       const errorMessage = error instanceof MessageError 

@@ -31,6 +31,7 @@ export default function VoiceCallPage() {
     connectionQuality,
     participants,
     chatMessages,
+    meetingUrl,
     toggleAudio,
     endCall,
     sendChatMessage,

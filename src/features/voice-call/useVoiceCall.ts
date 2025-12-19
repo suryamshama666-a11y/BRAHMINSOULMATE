@@ -2,6 +2,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Profile } from '@/data/profiles';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 export type CallState = 'connecting' | 'connected' | 'ended';
 export type ConnectionQuality = 'excellent' | 'good' | 'poor';
@@ -22,6 +24,7 @@ export interface Participant {
 }
 
 export const useVoiceCall = (userId: string, profile: Profile | undefined) => {
+  const { user } = useAuth();
   const [callState, setCallState] = useState<CallState>('connecting');
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [callDuration, setCallDuration] = useState(0);
@@ -29,13 +32,14 @@ export const useVoiceCall = (userId: string, profile: Profile | undefined) => {
   const [recordingEnabled, setRecordingEnabled] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [meetingUrl, setMeetingUrl] = useState<string | null>(null);
 
   // Initialize participants
   useEffect(() => {
     if (profile) {
       setParticipants([
         {
-          id: 'current-user',
+          id: user?.id || 'current-user',
           name: 'You',
           avatar: '',
           audioEnabled: true,
@@ -50,19 +54,45 @@ export const useVoiceCall = (userId: string, profile: Profile | undefined) => {
         }
       ]);
     }
-  }, [userId, profile]);
+  }, [userId, profile, user]);
 
-  // Simulate connection
+  // Fetch meeting URL from Supabase (vdates table)
   useEffect(() => {
-    const connectionTimer = setTimeout(() => {
-      setCallState('connected');
-      toast.success(`Voice call connected with ${profile?.name || 'user'}`, {
-        description: 'High-quality audio call with privacy protection'
-      });
-    }, 1500);
+    if (!profile || !user) return;
 
-    return () => clearTimeout(connectionTimer);
-  }, [profile]);
+    const fetchMeeting = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('vdates')
+          .select('meeting_url, status')
+          .or(`host_id.eq.${user.id},participant_id.eq.${user.id}`)
+          .eq('status', 'scheduled')
+          .single();
+
+        if (error) {
+          // If no meeting found, fallback to a dynamic Jitsi URL for the demo
+          const roomName = `brahmin-soulmate-voice-${[user.id, profile.id || profile.userId].sort().join('-')}`;
+          setMeetingUrl(`https://meet.jit.si/${roomName}#config.startWithVideoMuted=true&config.prejoinPageEnabled=false`);
+          setCallState('connected');
+          return;
+        }
+
+        if (data?.meeting_url) {
+          // Add audio-only flags to Jitsi URL
+          const jitsiUrl = data.meeting_url.includes('meet.jit.si') 
+            ? `${data.meeting_url}#config.startWithVideoMuted=true&config.prejoinPageEnabled=false`
+            : data.meeting_url;
+          
+          setMeetingUrl(jitsiUrl);
+          setCallState('connected');
+        }
+      } catch (err) {
+        console.error('Error fetching voice call meeting:', err);
+      }
+    };
+
+    fetchMeeting();
+  }, [profile, user]);
 
   // Call duration timer
   useEffect(() => {
@@ -70,18 +100,7 @@ export const useVoiceCall = (userId: string, profile: Profile | undefined) => {
     
     if (callState === 'connected') {
       durationTimer = window.setInterval(() => {
-        setCallDuration(prev => {
-          const newDuration = prev + 1;
-          
-          // Safety warnings
-          if (newDuration === 1800) { // 30 minutes
-            toast.warning('Call has been active for 30 minutes');
-          } else if (newDuration === 3600) { // 60 minutes
-            toast.warning('Extended call - monitored for safety');
-          }
-          
-          return newDuration;
-        });
+        setCallDuration(prev => prev + 1);
       }, 1000);
     }
     
@@ -107,9 +126,7 @@ export const useVoiceCall = (userId: string, profile: Profile | undefined) => {
     setRecordingEnabled(prev => {
       const newState = !prev;
       if (newState) {
-        toast.success('Call recording started', {
-          description: 'Both parties have consented to recording'
-        });
+        toast.success('Call recording started');
       } else {
         toast.info('Call recording stopped');
       }
@@ -119,12 +136,8 @@ export const useVoiceCall = (userId: string, profile: Profile | undefined) => {
 
   const endCall = useCallback(() => {
     setCallState('ended');
-    if (recordingEnabled) {
-      toast.info('Call ended - Recording saved securely');
-    } else {
-      toast.info('Voice call ended');
-    }
-  }, [recordingEnabled]);
+    toast.info('Voice call ended');
+  }, []);
 
   const sendChatMessage = useCallback((message: string) => {
     const newMessage: ChatMessage = {
@@ -144,6 +157,7 @@ export const useVoiceCall = (userId: string, profile: Profile | undefined) => {
     recordingEnabled,
     participants,
     chatMessages,
+    meetingUrl,
     toggleAudio,
     toggleRecording,
     endCall,

@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from './useSupabaseAuth';
 import { toast } from 'sonner';
 
@@ -18,6 +19,7 @@ export interface InterestExchange {
   status: 'pending' | 'accepted' | 'rejected';
   message: string;
   created_at: string;
+  updated_at: string;
 }
 
 export const useInterests = () => {
@@ -28,44 +30,87 @@ export const useInterests = () => {
   const [mutualInterests, setMutualInterests] = useState<InterestExchange[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Mock interests data since table doesn't exist
-  const mockInterests: UserInterest[] = [
-    { id: '1', user_id: user?.id || '', interest_name: 'Photography', category: 'Hobbies', created_at: new Date().toISOString() },
-    { id: '2', user_id: user?.id || '', interest_name: 'Cooking', category: 'Hobbies', created_at: new Date().toISOString() },
-    { id: '3', user_id: user?.id || '', interest_name: 'Travel', category: 'Lifestyle', created_at: new Date().toISOString() },
-    { id: '4', user_id: user?.id || '', interest_name: 'Reading', category: 'Entertainment', created_at: new Date().toISOString() },
-    { id: '5', user_id: user?.id || '', interest_name: 'Music', category: 'Entertainment', created_at: new Date().toISOString() }
-  ];
-
-  const mockSentInterests: InterestExchange[] = [
-    { id: 'sent-1', sender_id: user?.id || '', receiver_id: 'user-2', status: 'pending', message: 'I would like to connect with you.', created_at: new Date().toISOString() },
-    { id: 'sent-2', sender_id: user?.id || '', receiver_id: 'user-3', status: 'accepted', message: 'I find your profile interesting.', created_at: new Date().toISOString() }
-  ];
-
-  const mockReceivedInterests: InterestExchange[] = [
-    { id: 'received-1', sender_id: 'user-4', receiver_id: user?.id || '', status: 'pending', message: 'Hello, I would like to know you better.', created_at: new Date().toISOString() },
-    { id: 'received-2', sender_id: 'user-5', receiver_id: user?.id || '', status: 'pending', message: 'Your profile caught my attention.', created_at: new Date().toISOString() }
-  ];
-
   const fetchInterests = async () => {
     if (!user) return;
     
     setLoading(true);
     try {
-      // Simulate API delay
-      setTimeout(() => {
-        setInterests(mockInterests);
-        setSentInterests(mockSentInterests);
-        setReceivedInterests(mockReceivedInterests);
-        setMutualInterests(mockSentInterests.filter(i => i.status === 'accepted'));
-        setLoading(false);
-      }, 500);
+      // Fetch user's own interests
+      const { data: userInterests, error: interestError } = await supabase
+        .from('user_interests')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (interestError) throw interestError;
+      setInterests(userInterests || []);
+
+      // Fetch sent interest exchanges
+      const { data: sent, error: sentError } = await supabase
+        .from('interest_exchanges')
+        .select('*')
+        .eq('sender_id', user.id);
+
+      if (sentError) throw sentError;
+      setSentInterests(sent || []);
+
+      // Fetch received interest exchanges
+      const { data: received, error: receivedError } = await supabase
+        .from('interest_exchanges')
+        .select('*')
+        .eq('receiver_id', user.id);
+
+      if (receivedError) throw receivedError;
+      setReceivedInterests(received || []);
+
+      // Filter mutual interests (where status is accepted)
+      const mutual = [
+        ...(sent || []).filter(i => i.status === 'accepted'),
+        ...(received || []).filter(i => i.status === 'accepted')
+      ];
+      setMutualInterests(mutual);
+
     } catch (error) {
       console.error('Error fetching interests:', error);
       toast.error('Failed to load interests');
+    } finally {
       setLoading(false);
     }
   };
+
+  // Real-time subscription for interest exchanges
+  useEffect(() => {
+    if (!user) return;
+
+    fetchInterests();
+
+    const channel = supabase
+      .channel('interest_exchanges_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'interest_exchanges',
+          filter: `sender_id=eq.${user.id}`,
+        },
+        () => fetchInterests()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'interest_exchanges',
+          filter: `receiver_id=eq.${user.id}`,
+        },
+        () => fetchInterests()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   const addInterest = async (interestData: { interest_name: string; category: string }) => {
     if (!user) {
@@ -74,17 +119,21 @@ export const useInterests = () => {
     }
 
     try {
-      const newInterest: UserInterest = {
-        id: `interest-${Date.now()}`,
-        user_id: user.id,
-        interest_name: interestData.interest_name,
-        category: interestData.category,
-        created_at: new Date().toISOString()
-      };
+      const { data, error } = await supabase
+        .from('user_interests')
+        .insert({
+          user_id: user.id,
+          interest_name: interestData.interest_name,
+          category: interestData.category
+        })
+        .select()
+        .single();
 
-      setInterests(prev => [...prev, newInterest]);
+      if (error) throw error;
+
+      setInterests(prev => [...prev, data]);
       toast.success('Interest added successfully!');
-      return { success: true, interest: newInterest };
+      return { success: true, interest: data };
     } catch (error: any) {
       console.error('Error adding interest:', error);
       toast.error('Failed to add interest');
@@ -99,6 +148,14 @@ export const useInterests = () => {
     }
 
     try {
+      const { error } = await supabase
+        .from('user_interests')
+        .delete()
+        .eq('id', interestId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
       setInterests(prev => prev.filter(interest => interest.id !== interestId));
       toast.success('Interest removed successfully!');
       return { success: true };
@@ -116,18 +173,21 @@ export const useInterests = () => {
     }
 
     try {
-      const newInterest: InterestExchange = {
-        id: `sent-${Date.now()}`,
-        sender_id: user.id,
-        receiver_id: receiverId,
-        status: 'pending',
-        message,
-        created_at: new Date().toISOString()
-      };
+      const { data, error } = await supabase
+        .from('interest_exchanges')
+        .insert({
+          sender_id: user.id,
+          receiver_id: receiverId,
+          message,
+          status: 'pending'
+        })
+        .select()
+        .single();
 
-      setSentInterests(prev => [...prev, newInterest]);
+      if (error) throw error;
+
       toast.success('Interest sent successfully!');
-      return { success: true, interest: newInterest };
+      return { success: true, interest: data };
     } catch (error: any) {
       console.error('Error sending interest:', error);
       toast.error('Failed to send interest');
@@ -142,33 +202,24 @@ export const useInterests = () => {
     }
 
     try {
-      setReceivedInterests(prev => 
-        prev.map(interest => 
-          interest.id === interestId 
-            ? { ...interest, status: response }
-            : interest
-        )
-      );
+      const { data, error } = await supabase
+        .from('interest_exchanges')
+        .update({ status: response, updated_at: new Date().toISOString() })
+        .eq('id', interestId)
+        .eq('receiver_id', user.id)
+        .select()
+        .single();
 
-      if (response === 'accepted') {
-        const acceptedInterest = receivedInterests.find(i => i.id === interestId);
-        if (acceptedInterest) {
-          setMutualInterests(prev => [...prev, { ...acceptedInterest, status: 'accepted' }]);
-        }
-      }
+      if (error) throw error;
 
       toast.success(`Interest ${response} successfully!`);
-      return { success: true };
+      return { success: true, interest: data };
     } catch (error: any) {
       console.error('Error responding to interest:', error);
       toast.error('Failed to respond to interest');
       return { success: false, error: error.message };
     }
   };
-
-  useEffect(() => {
-    fetchInterests();
-  }, [user]);
 
   return {
     interests,
