@@ -412,11 +412,12 @@ const Dashboard = () => {
                             <MessageCircle className="h-5 w-5" />
                           </Link>
                         </div>
+                        </div>
                       </div>
-                      {index < matches.length - 1 && (
-                        <div className="h-px bg-gradient-to-r from-transparent via-amber-200 to-transparent my-2" />
-                      )}
                     </div>
+                    {index < matches.length - 1 && (
+                      <div className="h-px bg-gradient-to-r from-transparent via-amber-200 to-transparent my-2" />
+                    )}
                   </div>
                 ))}
                 {matches.length === 0 && (
