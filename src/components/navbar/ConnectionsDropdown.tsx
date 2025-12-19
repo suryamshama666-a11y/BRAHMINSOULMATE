@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { 
   Users, Heart, Star, UserPlus, Eye, MessageCircle, 
-  ChevronDown, Clock, CheckCircle 
+  ChevronDown 
 } from 'lucide-react';
 
 type ConnectionsData = {
@@ -181,43 +181,6 @@ export default function ConnectionsDropdown({
             {index < connectionItems.length - 1 && <DropdownMenuSeparator />}
           </div>
         ))}
-
-        <DropdownMenuSeparator />
-        
-        {/* Quick Actions */}
-        <div className="p-3 bg-gray-50">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-gray-600 uppercase tracking-wider">
-              Quick Actions
-            </span>
-          </div>
-            <div className="grid grid-cols-1 gap-2">
-              <Link to="/search">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-xs h-8 hover:bg-green-50 hover:border-green-300"
-                >
-                  <UserPlus className="h-3 w-3 mr-1" />
-                  Find More
-                </Button>
-              </Link>
-            </div>
-        </div>
-
-        {/* Status Indicator */}
-        <div className="px-4 py-2 bg-green-50 border-t">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <span className="text-sm font-medium text-green-800">Online Now</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-xs text-green-600">Active</span>
-            </div>
-          </div>
-        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
