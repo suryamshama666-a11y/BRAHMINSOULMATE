@@ -87,16 +87,57 @@ export default function PaymentForm({ planName, planPrice, onSuccess, onCancel }
     setIsProcessing(true);
 
     try {
+      // Create order on backend
+      const orderResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/payments/create-order`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('sb-ogwfcshjrrbbrndsdqgg-auth-token')}`
+        },
+        body: JSON.stringify({
+          plan_id: planName.toLowerCase().replace(' ', '_'),
+          amount: planPrice,
+          currency: 'INR'
+        })
+      });
+
+      const orderData = await orderResponse.json();
+      if (!orderData.id) throw new Error(orderData.error || 'Failed to create order');
+
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_xxxxxxxxxxxx',
-        amount: planPrice * 100,
-        currency: 'INR',
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: orderData.amount,
+        currency: orderData.currency,
         name: 'Brahmin Soulmate Connect',
         description: `${planName} Subscription`,
-        handler: function (response: any) {
-          toast.success('Payment successful!');
-          console.log('Payment ID:', response.razorpay_payment_id);
-          if (onSuccess) onSuccess();
+        order_id: orderData.id,
+        handler: async function (response: any) {
+          try {
+            const verifyResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/payments/verify`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('sb-ogwfcshjrrbbrndsdqgg-auth-token')}`
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            });
+
+            const verifyData = await verifyResponse.json();
+            if (verifyData.success) {
+              toast.success('Payment verified and subscription activated!');
+              if (onSuccess) onSuccess();
+            } else {
+              throw new Error(verifyData.error || 'Verification failed');
+            }
+          } catch (error: any) {
+            toast.error(`Verification error: ${error.message}`);
+          } finally {
+            setIsProcessing(false);
+          }
         },
         prefill: {
           name: '',
@@ -119,8 +160,8 @@ export default function PaymentForm({ planName, planPrice, onSuccess, onCancel }
         setIsProcessing(false);
       });
       rzp.open();
-    } catch (error) {
-      toast.error('Failed to initialize payment. Please try again.');
+    } catch (error: any) {
+      toast.error(`Failed to initialize payment: ${error.message}`);
       setIsProcessing(false);
     }
   };

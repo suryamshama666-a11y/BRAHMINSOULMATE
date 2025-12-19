@@ -45,4 +45,34 @@ router.put('/', authMiddleware, async (req, res) => {
   }
 });
 
+// Search profiles
+router.get('/search/all', async (req, res) => {
+  try {
+    const { gender, min_age, max_age, city, religion, caste, viewerId } = req.query;
+    
+    let query = supabase
+      .from('profiles')
+      .select('*');
+
+    if (gender) query = query.eq('gender', gender);
+    if (min_age) query = query.gte('age', min_age);
+    if (max_age) query = query.lte('age', max_age);
+    if (city) query = query.ilike('location->city', `%${city}%`);
+    if (religion) query = query.eq('religion', religion);
+    if (caste) query = query.eq('caste', caste);
+
+    const { data: profiles, error } = await query.limit(20);
+
+    if (error) throw error;
+
+    // If viewerId is provided, we could calculate compatibility here
+    // but for simplicity and performance, we'll let the frontend handle it per card
+    // or just return the profiles
+    
+    res.json({ success: true, profiles });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 export default router;
