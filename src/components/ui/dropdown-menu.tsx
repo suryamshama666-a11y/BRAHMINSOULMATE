@@ -141,15 +141,17 @@ export const DropdownMenuContent: React.FC<DropdownMenuContentProps> = ({
     end: 'right-0',
   };
 
+  const hasWidth = className.includes('w-');
+
   return (
     <div
       ref={contentRef}
-      className={`absolute z-50 mt-2 w-56 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border border-gray-200 ${alignmentClasses[align]} ${className}`}
+      className={`absolute z-50 mt-2 ${!hasWidth ? 'w-56' : ''} rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border border-gray-200 ${alignmentClasses[align]} ${className}`}
       role="menu"
       aria-orientation="vertical"
       tabIndex={-1}
     >
-      <div className="py-1">{children}</div>
+      <div className="py-1 w-full">{children}</div>
     </div>
   );
 };
@@ -160,24 +162,38 @@ interface DropdownMenuItemProps {
   onClick?: () => void;
   className?: string;
   disabled?: boolean;
+  asChild?: boolean;
 }
 
 export const DropdownMenuItem: React.FC<DropdownMenuItemProps> = ({ 
   children, 
   onClick, 
   className = '',
-  disabled = false
+  disabled = false,
+  asChild = false
 }) => {
   const context = useContext(DropdownContext);
   if (!context) throw new Error('DropdownMenuItem must be used within a DropdownMenu');
 
   const { setIsOpen } = context;
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
     if (disabled) return;
     if (onClick) onClick();
     setIsOpen(false);
   };
+
+  if (asChild && isValidElement(children)) {
+    return cloneElement(children as React.ReactElement<any>, {
+      onClick: (e: React.MouseEvent) => {
+        handleClick(e);
+        if ((children as React.ReactElement<any>).props.onClick) {
+          (children as React.ReactElement<any>).props.onClick(e);
+        }
+      },
+      className: `w-full text-left block text-sm ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${className} ${(children as React.ReactElement<any>).props.className || ''}`,
+    });
+  }
 
   return (
     <button

@@ -143,20 +143,20 @@ export default function ConnectionsDropdown({
 
         {connectionItems.map((item, index) => (
           <div key={item.id}>
-            <DropdownMenuItem className="focus:bg-[#FFF1E6] focus:text-[#FF4500] p-0">
+            <DropdownMenuItem asChild className="focus:bg-[#FFF1E6] focus:text-[#FF4500]">
                 <Link
                   to={item.route}
                   className="flex items-center justify-between w-full px-4 py-3 text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] transition-colors"
                 >
-                  <div className="flex items-center gap-3 overflow-hidden">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div className={`p-2 rounded-full ${item.color} text-white shrink-0`}>
                       <item.icon className="h-4 w-4" />
                     </div>
                     <div className="flex flex-col min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm truncate">{item.label}</span>
+                        <span className="font-semibold text-sm whitespace-nowrap">{item.label}</span>
                         {item.isNew && (
-                          <Badge className="bg-red-500 text-white text-[10px] h-4 px-1.5 py-0">
+                          <Badge className="bg-red-500 text-white text-[10px] h-4 px-1.5 py-0 shrink-0">
                             NEW
                           </Badge>
                         )}
