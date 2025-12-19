@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, ArrowLeft, Send, Paperclip, Users, Volume2, VolumeX, Search, Smile } from 'lucide-react';
+import { MessageCircle, X, ArrowLeft, Send, Paperclip, Users, Volume2, VolumeX, Search, Smile, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -370,6 +370,7 @@ function ChatView({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [showMediaGallery, setShowMediaGallery] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { setTyping, getTypingUsers } = useTypingIndicator();
   
@@ -383,8 +384,27 @@ function ChatView({
     markAsRead, 
     uploadMedia,
     addReaction,
-    removeReaction
+    removeReaction,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
   } = useMessages(conversation.id);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop } = e.currentTarget;
+    if (scrollTop === 0 && hasNextPage && !isFetchingNextPage) {
+      // Store current height to maintain scroll position after loading
+      const currentScrollHeight = e.currentTarget.scrollHeight;
+      fetchNextPage().then(() => {
+        if (containerRef.current) {
+          const newScrollHeight = containerRef.current.scrollHeight;
+          containerRef.current.scrollTop = newScrollHeight - currentScrollHeight;
+        }
+      });
+    }
+  };
 
   const filteredMessages = searchQuery.trim() 
     ? messages.filter(msg => msg.content.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -475,8 +495,58 @@ function ChatView({
 
   if (!user) return null;
 
+  const mediaMessages = messages.filter(msg => msg.message_type === 'image' || msg.message_type === 'video');
+
   return (
     <>
+      {showMediaGallery && (
+        <div className="absolute inset-0 z-20 bg-white flex flex-col animate-in slide-in-from-right duration-300">
+          <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white shrink-0">
+            <Button variant="ghost" size="icon" onClick={() => setShowMediaGallery(false)} className="text-white hover:bg-white/20 h-8 w-8">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h4 className="font-medium text-sm flex-1">Media Gallery</h4>
+          </div>
+          <div className="flex-1 overflow-y-auto p-2">
+            {mediaMessages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                <Image className="h-10 w-10 text-gray-300 mb-2" />
+                <p className="text-gray-500 text-sm">No media shared yet</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-1">
+                {mediaMessages.map((msg) => (
+                  <div key={msg.id} className="aspect-square relative group cursor-pointer overflow-hidden rounded-md bg-gray-100">
+                    {msg.message_type === 'image' ? (
+                      <img 
+                        src={msg.media_url} 
+                        alt="Shared" 
+                        className="h-full w-full object-cover transition-transform group-hover:scale-110"
+                        onClick={() => {
+                          // Trigger lightbox by finding the message in the main view or just provide a preview here
+                          // For simplicity, we'll just show it
+                        }}
+                      />
+                    ) : (
+                      <video 
+                        src={msg.media_url} 
+                        className="h-full w-full object-cover"
+                      />
+                    )}
+                    {msg.message_type === 'video' && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <div className="h-6 w-6 rounded-full bg-white/80 flex items-center justify-center">
+                          <div className="w-0 h-0 border-t-[4px] border-t-transparent border-l-[6px] border-l-orange-500 border-b-[4px] border-b-transparent ml-0.5"></div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       <div className="flex flex-col shrink-0">
         <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white">
           <Button variant="ghost" size="icon" onClick={onBack} className="text-white hover:bg-white/20 h-8 w-8">
@@ -504,15 +574,23 @@ function ChatView({
               {isPartnerTyping ? 'typing...' : isOnline ? 'Active now' : 'Offline'}
             </p>
           </div>
-          <div className="flex items-center gap-1">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => setIsSearching(!isSearching)} 
-              className={`text-white hover:bg-white/20 h-8 w-8 ${isSearching ? 'bg-white/20' : ''}`}
-            >
-              <Search className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setShowMediaGallery(true)} 
+                className="text-white hover:bg-white/20 h-8 w-8"
+              >
+                <Image className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setIsSearching(!isSearching)} 
+                className={`text-white hover:bg-white/20 h-8 w-8 ${isSearching ? 'bg-white/20' : ''}`}
+              >
+                <Search className="h-4 w-4" />
+              </Button>
             <Button 
               variant="ghost" 
               size="icon" 
@@ -549,40 +627,53 @@ function ChatView({
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 bg-gradient-to-b from-orange-50 to-amber-50">
+      <div 
+        ref={containerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto p-3 bg-gradient-to-b from-orange-50 to-amber-50"
+      >
         {isLoading && messages.length === 0 ? (
           <div className="flex justify-center items-center h-full">
             <div className="h-6 w-6 border-3 border-t-transparent border-orange-500 rounded-full animate-spin"></div>
           </div>
-        ) : filteredMessages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center mb-2">
-              {searchQuery ? <Search className="h-6 w-6 text-orange-500" /> : <Send className="h-6 w-6 text-orange-500" />}
-            </div>
-            <p className="text-gray-500 text-sm">
-              {searchQuery ? `No messages found for "${searchQuery}"` : `Say hello to ${conversation.partner_name}!`}
-            </p>
-          </div>
         ) : (
           <>
-            {filteredMessages.map((msg) => (
-              <MessageBubble 
-                key={msg.id} 
-                message={msg} 
-                isOwnMessage={msg.sender_id === user.id} 
-                searchQuery={searchQuery}
-                onAddReaction={(emoji) => addReaction({ messageId: msg.id, emoji })}
-                onRemoveReaction={(emoji) => removeReaction({ messageId: msg.id, emoji })}
-                currentUserId={user.id}
-              />
-            ))}
-            {!searchQuery && isPartnerTyping && (
-              <div className="flex items-center gap-1 text-gray-400 text-[10px] ml-2 mt-1 italic animate-pulse">
-                <span className="h-1.5 w-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                <span className="h-1.5 w-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                <span className="h-1.5 w-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                <span className="ml-1">{conversation.partner_name} is typing...</span>
+            {isFetchingNextPage && (
+              <div className="flex justify-center py-2">
+                <div className="h-4 w-4 border-2 border-t-transparent border-orange-500 rounded-full animate-spin"></div>
               </div>
+            )}
+            {filteredMessages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center mb-2">
+                  {searchQuery ? <Search className="h-6 w-6 text-orange-500" /> : <Send className="h-6 w-6 text-orange-500" />}
+                </div>
+                <p className="text-gray-500 text-sm">
+                  {searchQuery ? `No messages found for "${searchQuery}"` : `Say hello to ${conversation.partner_name}!`}
+                </p>
+              </div>
+            ) : (
+              <>
+                {filteredMessages.map((msg) => (
+                  <MessageBubble 
+                    key={msg.id} 
+                    message={msg} 
+                    isOwnMessage={msg.sender_id === user.id} 
+                    searchQuery={searchQuery}
+                    onAddReaction={(emoji) => addReaction({ messageId: msg.id, emoji })}
+                    onRemoveReaction={(emoji) => removeReaction({ messageId: msg.id, emoji })}
+                    currentUserId={user.id}
+                  />
+                ))}
+                {!searchQuery && isPartnerTyping && (
+                  <div className="flex items-center gap-1 text-gray-400 text-[10px] ml-2 mt-1 italic animate-pulse">
+                    <span className="h-1.5 w-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                    <span className="h-1.5 w-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                    <span className="h-1.5 w-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                    <span className="ml-1">{conversation.partner_name} is typing...</span>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
