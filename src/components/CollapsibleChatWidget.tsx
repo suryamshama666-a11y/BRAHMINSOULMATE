@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useConversations } from '@/features/messages/hooks/useConversations';
-import { MessageSquare, X, ChevronDown, Send, Search, User, MoreVertical, Paperclip, Smile, Settings, BellOff, Bell, ArrowLeft, MoreHorizontal, Circle } from 'lucide-react';
+import { MessageSquare, X, ChevronDown, Send, Search, User, Users, MoreVertical, Paperclip, Smile, Settings, BellOff, Bell, ArrowLeft, MoreHorizontal, Circle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -33,22 +33,17 @@ export function CollapsibleChatWidget() {
   const flashIntervalRef = useRef<any>(null);
 
   useEffect(() => {
-    console.log('💬 ChatWidget Render State:', { 
-      hasUser: !!user, 
-      loading, 
-      userId: user?.id,
-      pathname: window.location.pathname 
-    });
-  }, [user, loading]);
+    if (user) {
+      console.log('💬 ChatWidget initialized for user:', user.id);
+    }
+  }, [user]);
 
-  // Force show for testing
-  const displayUser = user || { id: 'test-user', email: 'test@example.com' };
+  if (!user && !loading) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-[10000] pointer-events-auto" style={{ display: 'block', visibility: 'visible', opacity: 1, border: '5px solid red' }}>
+    <div className="fixed bottom-4 right-4 z-[9999] pointer-events-auto">
       <audio ref={audioRef} src="/notification.mp3" preload="auto" />
 
-      
       {isOpen ? (
         <div className="w-80 sm:w-96 h-[500px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
             {selectedConversation ? (
@@ -205,6 +200,7 @@ function ChatView({
   onBack: () => void;
   onClose: () => void;
 }) {
+  const { user } = useAuth();
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -212,13 +208,15 @@ function ChatView({
 
   // Fetch messages
   useEffect(() => {
+    if (!user) return;
+
     const fetchMessages = async () => {
       setIsLoading(true);
       try {
         const { data, error } = await supabase
           .from('messages')
           .select('*')
-          .or(`and(sender_id.eq.${conversation.id},receiver_id.eq.${conversation.partner_id}),and(sender_id.eq.${conversation.partner_id},receiver_id.eq.${conversation.id})`)
+          .or(`and(sender_id.eq.${user.id},receiver_id.eq.${conversation.partner_id}),and(sender_id.eq.${conversation.partner_id},receiver_id.eq.${user.id})`)
           .order('created_at', { ascending: true });
 
         if (error) throw error;
@@ -239,7 +237,7 @@ function ChatView({
         event: 'INSERT', 
         schema: 'public', 
         table: 'messages',
-        filter: `receiver_id=eq.${conversation.id}` 
+        filter: `receiver_id=eq.${user.id}` 
       }, (payload) => {
         setMessages(prev => [...prev, payload.new]);
       })
@@ -248,7 +246,7 @@ function ChatView({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversation.id]);
+  }, [conversation.partner_id, user]);
 
   // Scroll to bottom
   useEffect(() => {
@@ -259,7 +257,7 @@ function ChatView({
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !user) return;
 
     try {
       const msg = newMessage;
@@ -268,13 +266,24 @@ function ChatView({
       const { error } = await supabase
         .from('messages')
         .insert({
-          sender_id: conversation.id,
+          sender_id: user.id,
           receiver_id: conversation.partner_id,
           content: msg,
           read: false
         });
 
       if (error) throw error;
+      
+      // Optimistically add message
+      const optimMsg = {
+        id: Math.random().toString(),
+        sender_id: user.id,
+        receiver_id: conversation.partner_id,
+        content: msg,
+        created_at: new Date().toISOString(),
+        read: false
+      };
+      setMessages(prev => [...prev, optimMsg]);
     } catch (err) {
       console.error('Error sending message:', err);
     }
@@ -336,7 +345,7 @@ function ChatView({
           </div>
         ) : (
           messages.map((msg) => {
-            const isMe = msg.sender_id === conversation.id;
+            const isMe = user && msg.sender_id === user.id;
             return (
               <div 
                 key={msg.id} 
