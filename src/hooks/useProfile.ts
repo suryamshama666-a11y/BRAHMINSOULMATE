@@ -58,28 +58,51 @@ export const useProfile = (userId?: string) => {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  const { mutateAsync: updateProfile } = useMutation({
-    mutationFn: async (updates: Partial<Profile>) => {
-      if (!user?.id) throw new Error('User not authenticated');
+    const { mutateAsync: updateProfile } = useMutation({
+      mutationFn: async (updates: Partial<Profile>) => {
+        if (!user?.id) throw new Error('User not authenticated');
 
-      const { error } = await getSupabase()
-        .from('profiles')
-        .update(updates)
-        .eq('user_id', user.id);
+        const { error } = await getSupabase()
+          .from('profiles')
+          .update(updates)
+          .eq('user_id', user.id);
 
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
-      toast.success('Profile updated successfully');
-    },
-    onError: (error) => {
-      toast.error('Failed to update profile');
-      console.error('Error updating profile:', error);
-    },
-  });
+        if (error) throw error;
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
+        toast.success('Profile updated successfully');
+      },
+      onError: (error) => {
+        toast.error('Failed to update profile');
+        console.error('Error updating profile:', error);
+      },
+    });
 
-  const { mutateAsync: uploadImage } = useMutation({
+    const { mutateAsync: createProfile } = useMutation({
+      mutationFn: async (newProfile: Omit<Profile, 'id' | 'user_id' | 'created_at' | 'last_active'>) => {
+        if (!user?.id) throw new Error('User not authenticated');
+
+        const { error } = await getSupabase()
+          .from('profiles')
+          .insert({
+            ...newProfile,
+            user_id: user.id,
+            last_active: new Date().toISOString(),
+          });
+
+        if (error) throw error;
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
+      },
+      onError: (error) => {
+        console.error('Error creating profile:', error);
+        throw error;
+      },
+    });
+
+    const { mutateAsync: uploadImage } = useMutation({
     mutationFn: async (file: File) => {
       if (!user?.id) throw new Error('User not authenticated');
 

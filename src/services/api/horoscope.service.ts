@@ -82,7 +82,7 @@ class HoroscopeService {
 
     // Check if horoscope exists
     const { data: existing } = await supabase
-      .from('horoscopes')
+      .from('horoscope_details')
       .select('*')
       .eq('user_id', user.id)
       .single();
@@ -90,7 +90,7 @@ class HoroscopeService {
     if (existing) {
       // Update existing
       const { data, error } = await supabase
-        .from('horoscopes')
+        .from('horoscope_details')
         .update(horoscopeData)
         .eq('user_id', user.id)
         .select()
@@ -101,7 +101,7 @@ class HoroscopeService {
     } else {
       // Insert new
       const { data, error } = await supabase
-        .from('horoscopes')
+        .from('horoscope_details')
         .insert({
           ...horoscopeData,
           user_id: user.id
@@ -161,7 +161,7 @@ class HoroscopeService {
     if (!user) throw new Error('Not authenticated');
 
     const { data, error } = await supabase
-      .from('horoscopes')
+      .from('horoscope_details')
       .select('*')
       .eq('user_id', user.id)
       .single();
@@ -191,7 +191,7 @@ class HoroscopeService {
     }
 
     const { data, error } = await supabase
-      .from('horoscopes')
+      .from('horoscope_details')
       .select('*')
       .eq('user_id', userId)
       .single();
@@ -206,7 +206,7 @@ class HoroscopeService {
     horoscope2: Horoscope
   ): HoroscopeCompatibility {
     const factors = {
-      moonSign: this.calculateMoonSignScore(horoscope1.moon_sign, horoscope2.moon_sign),
+      moonSign: this.calculateMoonSignScore(horoscope1.rashi || horoscope1.moon_sign, horoscope2.rashi || horoscope2.moon_sign),
       nakshatra: this.calculateNakshatraScore(horoscope1.nakshatra, horoscope2.nakshatra),
       manglik: this.calculateManglikScore(horoscope1.manglik_status, horoscope2.manglik_status)
     };

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useCompatibility } from '@/hooks/useCompatibility';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { Star, Heart, Calculator, Sparkles } from 'lucide-react';
 
 interface CompatibilityScoreProps {
@@ -16,15 +17,17 @@ export const CompatibilityScore: React.FC<CompatibilityScoreProps> = ({
   targetUserId,
   targetUserName
 }) => {
+  const { user } = useSupabaseAuth();
   const { calculateCompatibility, getCompatibilityScore, loading } = useCompatibility();
   const [compatibilityData, setCompatibilityData] = useState<any>(null);
   const [hasCalculated, setHasCalculated] = useState(false);
 
   useEffect(() => {
     loadExistingCompatibility();
-  }, [targetUserId]);
+  }, [targetUserId, user]);
 
   const loadExistingCompatibility = async () => {
+    if (!user) return;
     const existing = await getCompatibilityScore(targetUserId);
     if (existing) {
       setCompatibilityData(existing);
@@ -33,7 +36,8 @@ export const CompatibilityScore: React.FC<CompatibilityScoreProps> = ({
   };
 
   const handleCalculateCompatibility = async () => {
-    const score = await calculateCompatibility('current-user-id', targetUserId);
+    if (!user) return;
+    const score = await calculateCompatibility(user.id, targetUserId);
     if (score) {
       setCompatibilityData(score);
       setHasCalculated(true);

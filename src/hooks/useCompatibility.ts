@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useSupabaseAuth } from './useSupabaseAuth';
 import { toast } from 'sonner';
+import { horoscopeService, Horoscope } from '@/services/api/horoscope.service';
+import { supabase } from '@/lib/supabase';
 
 export interface CompatibilityMatch {
   id: string;
@@ -13,6 +15,10 @@ export interface CompatibilityMatch {
   lifestyle_score: number;
   family_score: number;
   created_at: string;
+  rashi_compatibility?: number;
+  nakshatra_compatibility?: number;
+  dosha_compatibility?: number;
+  compatibility_details?: any;
 }
 
 export const useCompatibility = () => {
@@ -20,37 +26,77 @@ export const useCompatibility = () => {
   const [matches, setMatches] = useState<CompatibilityMatch[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Mock compatibility calculation since we don't have the actual table
   const calculateCompatibility = async (userId1: string, userId2: string) => {
     try {
-      // Mock calculation - in real app this would use horoscope data
-      const mockScore = Math.floor(Math.random() * 40) + 60; // 60-100 range
+      setLoading(true);
+      
+      // Fetch horoscope details for both users
+      const { data: h1 } = await supabase
+        .from('horoscope_details')
+        .select('*')
+        .eq('user_id', userId1)
+        .single();
+
+      const { data: h2 } = await supabase
+        .from('horoscope_details')
+        .select('*')
+        .eq('user_id', userId2)
+        .single();
+
+      if (!h1 || !h2) {
+        // Fallback to mock if data is missing, or return null
+        return null;
+      }
+
+      const compatibility = horoscopeService.calculateCompatibility(h1, h2);
       
       return {
-        overall_score: mockScore,
-        guna_milan_score: Math.floor(Math.random() * 36) + 18, // 18-36 range
-        rashi_compatibility: Math.floor(Math.random() * 25) + 10,
-        nakshatra_compatibility: Math.floor(Math.random() * 25) + 10,
-        dosha_compatibility: Math.floor(Math.random() * 25) + 10,
-        personality_score: Math.floor(Math.random() * 30) + 70,
-        lifestyle_score: Math.floor(Math.random() * 30) + 70,
-        family_score: Math.floor(Math.random() * 30) + 70,
+        overall_score: compatibility.score,
+        guna_milan_score: compatibility.factors.nakshatra, // Use nakshatra score as guna milan proxy
+        rashi_compatibility: compatibility.factors.moonSign,
+        nakshatra_compatibility: compatibility.factors.nakshatra,
+        dosha_compatibility: compatibility.factors.manglik,
+        personality_score: 85, // Mocked for now
+        lifestyle_score: 80, // Mocked for now
+        family_score: 75, // Mocked for now
         compatibility_details: {
           calculated_factors: {
-            rashi_match: Math.random() > 0.5,
-            manglik_match: Math.random() > 0.3
-          }
+            rashi_match: compatibility.factors.moonSign >= 70,
+            manglik_match: compatibility.factors.manglik >= 60
+          },
+          details: compatibility.details
         }
       };
     } catch (error) {
       console.error('Error calculating compatibility:', error);
       return null;
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getCompatibilityScore = async (userId: string) => {
+  const getCompatibilityScore = async (targetUserId: string) => {
     if (!user) return null;
-    return calculateCompatibility(user.id, userId);
+    
+    // Check if we already have a saved match in compatibility_matches table
+    const { data: existing } = await supabase
+      .from('compatibility_matches')
+      .select('*')
+      .or(`and(user1_id.eq.${user.id},user2_id.eq.${targetUserId}),and(user1_id.eq.${targetUserId},user2_id.eq.${user.id})`)
+      .single();
+
+    if (existing) {
+      return {
+        overall_score: existing.overall_score,
+        guna_milan_score: existing.guna_milan_score,
+        personality_score: existing.personality_score,
+        lifestyle_score: existing.lifestyle_score,
+        family_score: existing.family_score,
+        ...existing.compatibility_details
+      };
+    }
+
+    return calculateCompatibility(user.id, targetUserId);
   };
 
   // Mock function to get potential matches from profiles
