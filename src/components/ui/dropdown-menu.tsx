@@ -192,7 +192,7 @@ export const DropdownMenuItem: React.FC<DropdownMenuItemProps> = ({
           child.props.onClick(e);
         }
       },
-      className: `w-full ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${className} ${child.props.className || ''}`,
+      className: `${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${className} ${child.props.className || ''}`,
     });
   }
 
