@@ -151,6 +151,7 @@ export default function VideoCallPage() {
               callState={callState}
               videoEnabled={videoEnabled}
               profile={profile}
+              meetingUrl={meetingUrl}
             />
 
             <VideoCallSelfView

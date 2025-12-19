@@ -8,12 +8,14 @@ interface VideoCallMainAreaProps {
   callState: CallState;
   videoEnabled: boolean;
   profile: Profile;
+  meetingUrl?: string | null;
 }
 
 export const VideoCallMainArea = ({
   callState,
   videoEnabled,
-  profile
+  profile,
+  meetingUrl
 }: VideoCallMainAreaProps) => {
   return (
     <div className="absolute inset-0 flex items-center justify-center">
@@ -32,7 +34,14 @@ export const VideoCallMainArea = ({
         </div>
       ) : (
         <div className="w-full h-full relative">
-          {videoEnabled ? (
+          {meetingUrl ? (
+            <iframe
+              src={meetingUrl}
+              allow="camera; microphone; display-capture; fullscreen"
+              className="w-full h-full border-0"
+              title="Video Call"
+            />
+          ) : videoEnabled ? (
             <div className="w-full h-full flex items-center justify-center">
               <Avatar className="h-64 w-64 border-4 border-white/20">
                 <AvatarImage src={profile.images[0]} alt={profile.name} />

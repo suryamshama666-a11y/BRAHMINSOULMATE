@@ -33,7 +33,10 @@ export const useVideoCall = (userId: string, profile: Profile | undefined) => {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [autoEndTimer, setAutoEndTimer] = useState<number | null>(null);
 
-  // Initialize participants
+  const [vdateId, setVdateId] = useState<string | null>(null);
+  const [meetingUrl, setMeetingUrl] = useState<string | null>(null);
+
+  // Initialize participants and vdate
   useEffect(() => {
     if (profile) {
       setParticipants([
@@ -54,10 +57,34 @@ export const useVideoCall = (userId: string, profile: Profile | undefined) => {
           isCurrentUser: false
         }
       ]);
+
+      // Check for active V-Date
+      const fetchVDate = async () => {
+        try {
+          const { data: vdates } = await supabase
+            .from('vdates')
+            .select('*')
+            .or(`and(user_id_1.eq.${userId},user_id_2.eq.${profile.id}),and(user_id_1.eq.${profile.id},user_id_2.eq.${userId})`)
+            .eq('status', 'scheduled')
+            .order('scheduled_time', { ascending: true })
+            .limit(1);
+
+          if (vdates && vdates.length > 0) {
+            setVdateId(vdates[0].id);
+            if (vdates[0].room_name) {
+              setMeetingUrl(`https://meet.jit.si/${vdates[0].room_name}`);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching V-Date:', error);
+        }
+      };
+
+      fetchVDate();
     }
   }, [userId, profile]);
 
-  // Simulate connection with matrimonial safety checks
+  // Simulate connection with real meeting check
   useEffect(() => {
     const connectionTimer = setTimeout(() => {
       setCallState('connected');
@@ -219,6 +246,7 @@ export const useVideoCall = (userId: string, profile: Profile | undefined) => {
     endCall,
     sendChatMessage,
     changeBackground,
-    setAutoEnd
+    setAutoEnd,
+    meetingUrl
   };
 };
