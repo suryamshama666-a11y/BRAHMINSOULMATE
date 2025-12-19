@@ -153,19 +153,19 @@ export default function ConnectionsDropdown({
                         <item.icon className="h-4 w-4" />
                       </div>
                       <div className="flex flex-col min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-[14px] text-gray-900 group-hover:text-[#FF4500] truncate">
-                            {item.label}
-                          </span>
-                          {item.isNew && (
-                            <Badge className="bg-red-500 text-white text-[10px] h-4 px-1.5 py-0 shrink-0 border-none">
-                              NEW
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-[12px] text-gray-500 truncate leading-tight group-hover:text-gray-600">
-                          {item.description}
-                        </p>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-[14px] text-gray-900 group-hover:text-[#FF4500]">
+                              {item.label}
+                            </span>
+                            {item.isNew && (
+                              <Badge className="bg-red-500 text-white text-[10px] h-4 px-1.5 py-0 shrink-0 border-none">
+                                NEW
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-[12px] text-gray-500 leading-tight group-hover:text-gray-600">
+                            {item.description}
+                          </p>
                       </div>
                     </div>
                     <div className="flex items-center ml-4 shrink-0">

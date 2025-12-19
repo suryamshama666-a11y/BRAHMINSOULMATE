@@ -146,7 +146,7 @@ export const DropdownMenuContent: React.FC<DropdownMenuContentProps> = ({
   return (
     <div
       ref={contentRef}
-      className={`absolute z-50 mt-2 ${!hasWidth ? 'w-56' : ''} rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border border-gray-200 ${alignmentClasses[align]} ${className}`}
+      className={`absolute z-[100] mt-2 ${!hasWidth ? 'w-56' : ''} rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border border-gray-200 ${alignmentClasses[align]} ${className}`}
       role="menu"
       aria-orientation="vertical"
       tabIndex={-1}
@@ -183,18 +183,18 @@ export const DropdownMenuItem: React.FC<DropdownMenuItemProps> = ({
     setIsOpen(false);
   };
 
-    if (asChild && isValidElement(children)) {
-      const child = children as React.ReactElement<any>;
-      return cloneElement(child, {
-        onClick: (e: React.MouseEvent) => {
-          handleClick(e);
-          if (child.props.onClick) {
-            child.props.onClick(e);
-          }
-        },
-        className: `w-full text-left text-sm ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${className} ${child.props.className || ''}`,
-      });
-    }
+  if (asChild && isValidElement(children)) {
+    const child = children as React.ReactElement<any>;
+    return cloneElement(child, {
+      onClick: (e: React.MouseEvent) => {
+        handleClick(e);
+        if (child.props.onClick) {
+          child.props.onClick(e);
+        }
+      },
+      className: `w-full ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${className} ${child.props.className || ''}`,
+    });
+  }
 
   return (
     <button
@@ -208,3 +208,14 @@ export const DropdownMenuItem: React.FC<DropdownMenuItemProps> = ({
     </button>
   );
 };
+
+// Missing components
+export const DropdownMenuLabel: React.FC<{ children: ReactNode; className?: string }> = ({ children, className = '' }) => (
+  <div className={`px-4 py-2 text-sm font-semibold text-gray-900 ${className}`}>
+    {children}
+  </div>
+);
+
+export const DropdownMenuSeparator: React.FC<{ className?: string }> = ({ className = '' }) => (
+  <div className={`h-px bg-gray-200 my-1 ${className}`} />
+);
