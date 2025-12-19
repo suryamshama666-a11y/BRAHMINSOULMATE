@@ -1,19 +1,18 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  Heart, Star, UserPlus, Eye, MessageCircle, 
-  Clock, MapPin, GraduationCap, Briefcase, Filter 
+  Heart, Star, UserPlus, Eye, Filter 
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Footer from '@/components/Footer';
+import { ProfileCard } from '@/components/ProfileCard';
 
 type ConnectionProfile = {
   id: string;
-  name: string;
+  full_name: string;
   age: number;
   location: string;
   education: string;
@@ -30,7 +29,7 @@ type ConnectionProfile = {
 const mockConnections: ConnectionProfile[] = [
   {
     id: '1',
-    name: 'Priya Sharma',
+    full_name: 'Priya Sharma',
     age: 28,
     location: 'Mumbai, Maharashtra',
     education: 'MBA',
@@ -45,7 +44,7 @@ const mockConnections: ConnectionProfile[] = [
   },
   {
     id: '2',
-    name: 'Anjali Patel',
+    full_name: 'Anjali Patel',
     age: 26,
     location: 'Bangalore, Karnataka',
     education: 'M.Tech',
@@ -60,7 +59,7 @@ const mockConnections: ConnectionProfile[] = [
   },
   {
     id: '3',
-    name: 'Kavya Iyer',
+    full_name: 'Kavya Iyer',
     age: 25,
     location: 'Chennai, Tamil Nadu',
     education: 'CA',
@@ -93,85 +92,6 @@ export default function MyConnections() {
         return connections;
     }
   };
-
-  const renderConnectionCard = (connection: ConnectionProfile) => (
-    <Card key={connection.id} className="hover:shadow-lg transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-center space-x-4">
-          {/* Profile Picture with Status */}
-          <div className="relative">
-            <Avatar className="h-16 w-16">
-              <AvatarImage src={connection.profilePicture} alt={connection.name} />
-              <AvatarFallback>{connection.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            {connection.isOnline && (
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
-            )}
-            {connection.isPremium && (
-              <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs">★</span>
-              </div>
-            )}
-          </div>
-
-          {/* Profile Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold text-lg truncate">{connection.name}</h3>
-              <span className="text-gray-500">({connection.age})</span>
-              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                {connection.compatibility}% match
-              </Badge>
-            </div>
-            
-            <div className="space-y-1 text-sm text-gray-600">
-              <div className="flex items-center gap-1">
-                <MapPin className="h-3 w-3" />
-                <span className="truncate">{connection.location}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <GraduationCap className="h-3 w-3" />
-                <span className="truncate">{connection.education}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Briefcase className="h-3 w-3" />
-                <span className="truncate">{connection.profession}</span>
-              </div>
-            </div>
-
-            {/* Status and Timestamp */}
-            <div className="flex items-center justify-between mt-3">
-              <div className="flex items-center gap-1">
-                <Clock className="h-3 w-3 text-gray-400" />
-                <span className={`text-xs ${connection.isOnline ? 'text-green-600 font-medium' : 'text-gray-500'}`}>
-                  {connection.lastSeen}
-                </span>
-              </div>
-              <span className="text-xs text-gray-400">{connection.timestamp}</span>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex flex-col gap-2">
-            <Link to={`/profile/${connection.id}`}>
-              <Button variant="outline" size="sm" className="w-full">
-                <Eye className="h-4 w-4 mr-1" />
-                View
-              </Button>
-            </Link>
-            <Button variant="default" size="sm" className="w-full bg-red-600 hover:bg-red-700">
-              <MessageCircle className="h-4 w-4 mr-1" />
-              Chat
-            </Button>
-            <Button variant="ghost" size="sm" className="w-full text-red-500 hover:text-red-600">
-              <Heart className="h-4 w-4 mr-1" />
-              Like
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
 
   const tabData = [
     { id: 'favorites', label: 'My Favorites', icon: Star, count: getConnectionsByType('favorites').length },
@@ -221,8 +141,13 @@ export default function MyConnections() {
               </div>
 
               {getConnectionsByType(tab.id).length > 0 ? (
-                <div className="grid gap-4">
-                  {getConnectionsByType(tab.id).map(renderConnectionCard)}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {getConnectionsByType(tab.id).map((connection) => (
+                    <ProfileCard 
+                      key={connection.id}
+                      profile={connection}
+                    />
+                  ))}
                 </div>
               ) : (
                 <Card>

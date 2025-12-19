@@ -36,9 +36,12 @@ export default function OriginalNavbar() {
   ];
 
   const connectionsLinks = [
+    { path: '/my-connections', label: 'All Connections', icon: Users },
     { path: '/my-favorites', label: 'My Favorites', icon: Heart },
     { path: '/my-interests', label: 'My Interests', icon: Users },
     { path: '/interests-received', label: 'Interests Received', icon: Bell },
+    { path: '/connections/who-viewed', label: 'Who Viewed Me', icon: Eye },
+    { path: '/connections/you-viewed', label: 'You Viewed', icon: Eye },
   ];
 
   const moreLinks = [
