@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Footer from '@/components/Footer';
-import { ProfileCard } from '@/components/ProfileCard';
+import ProfileCard from '@/components/ProfileCard';
 
 type ConnectionProfile = {
   id: string;
