@@ -92,6 +92,21 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Root endpoint with info
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Brahmin Soulmate Connect API is running',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      ready: '/ready',
+      api: '/api'
+    },
+    frontend_url: process.env.FRONTEND_URL || 'http://localhost:8080'
+  });
+});
+
 // Readiness probe (checks basic envs and CORS origin)
 app.get('/ready', (req, res) => {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
