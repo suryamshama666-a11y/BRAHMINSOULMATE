@@ -37,7 +37,6 @@ const Dashboard = React.lazy(() => import(/* webpackChunkName: "dashboard" */ '@
 const Profile = React.lazy(() => import(/* webpackChunkName: "profile" */ '@/pages/Profile'));
 const ProfileManagement = React.lazy(() => import(/* webpackChunkName: "profile" */ '@/pages/ProfileManagement'));
 const ProfileSetupWizard = React.lazy(() => import(/* webpackChunkName: "profile" */ '@/features/profile/components/ProfileSetupWizard'));
-const MyConnections = React.lazy(() => import(/* webpackChunkName: "connections" */ '@/pages/MyConnections'));
 const Messages = React.lazy(() => import(/* webpackChunkName: "messages" */ '@/pages/Messages'));
 const Matches = React.lazy(() => import(/* webpackChunkName: "matches" */ '@/pages/Matches'));
 const Settings = React.lazy(() => import(/* webpackChunkName: "settings" */ '@/pages/Settings'));
@@ -163,7 +162,6 @@ const AppContent = () => {
                 <Route path="/profile/photos" element={<Authenticated><PhotoManagement /></Authenticated>} />
                 <Route path="/messages" element={<Authenticated><Messages /></Authenticated>} />
                 <Route path="/matches" element={<Authenticated><Matches /></Authenticated>} />
-                <Route path="/my-connections" element={<Authenticated><MyConnections /></Authenticated>} />
                 <Route path="/settings" element={<Authenticated><Settings /></Authenticated>} />
                 <Route path="/search" element={<Authenticated><Search /></Authenticated>} />
                 <Route path="/v-dates" element={<Authenticated><VDates /></Authenticated>} />

@@ -36,12 +36,10 @@ export default function OriginalNavbar() {
   ];
 
   const connectionsLinks = [
-    { path: '/my-connections', label: 'All Connections', icon: Users },
-    { path: '/my-favorites', label: 'My Favorites', icon: Heart },
-    { path: '/my-interests', label: 'My Interests', icon: Users },
-    { path: '/interests-received', label: 'Interests Received', icon: Bell },
-    { path: '/connections/who-viewed', label: 'Who Viewed Me', icon: Eye },
-    { path: '/connections/you-viewed', label: 'You Viewed', icon: Eye },
+    { name: 'My Favorites', href: '/my-favorites', icon: Star },
+    { name: 'My Interests', href: '/my-interests', icon: Heart },
+    { name: 'Interested in Me', href: '/interests-received', icon: Heart },
+    { name: 'Who Viewed You', href: '/connections/who-viewed', icon: Eye },
   ];
 
   const moreLinks = [

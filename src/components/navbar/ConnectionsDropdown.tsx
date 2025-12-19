@@ -45,7 +45,7 @@ export default function ConnectionsDropdown({
       label: 'My Favorites',
       count: data.myFavorites,
       icon: Star,
-      route: '/my-connections?tab=favorites',
+      route: '/my-favorites',
       description: 'Profiles you marked as favorite',
       color: 'bg-yellow-500'
     },
@@ -54,7 +54,7 @@ export default function ConnectionsDropdown({
       label: 'My Interests',
       count: data.myInterests,
       icon: Heart,
-      route: '/my-connections?tab=interests',
+      route: '/my-interests',
       description: 'People you showed interest in',
       color: 'bg-red-500'
     },
@@ -63,7 +63,7 @@ export default function ConnectionsDropdown({
       label: 'Interested in Me',
       count: data.interestedInMe,
       icon: Heart,
-      route: '/my-connections?tab=interested-in-me',
+      route: '/interests-received',
       description: 'People who showed interest in you',
       color: 'bg-pink-500',
       isNew: data.interestedInMe > 0
@@ -101,7 +101,7 @@ export default function ConnectionsDropdown({
       label: 'New Hellos',
       count: data.newHellos,
       icon: UserPlus,
-      route: '/my-connections?tab=hellos',
+      route: '/interests-received',
       description: 'New hello requests received',
       color: 'bg-purple-500',
       isNew: data.newHellos > 0
@@ -187,28 +187,18 @@ export default function ConnectionsDropdown({
               Quick Actions
             </span>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Link to="/my-connections">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-xs h-8 hover:bg-blue-50 hover:border-blue-300"
-              >
-                <Users className="h-3 w-3 mr-1" />
-                View All
-              </Button>
-            </Link>
-            <Link to="/search">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-xs h-8 hover:bg-green-50 hover:border-green-300"
-              >
-                <UserPlus className="h-3 w-3 mr-1" />
-                Find More
-              </Button>
-            </Link>
-          </div>
+            <div className="grid grid-cols-1 gap-2">
+              <Link to="/search">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs h-8 hover:bg-green-50 hover:border-green-300"
+                >
+                  <UserPlus className="h-3 w-3 mr-1" />
+                  Find More
+                </Button>
+              </Link>
+            </div>
         </div>
 
         {/* Status Indicator */}
