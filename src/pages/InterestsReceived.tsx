@@ -77,9 +77,9 @@ const InterestsReceived = () => {
           <p className="text-gray-600">People who are interested in your profile</p>
         </div>
 
-        {pendingInterests.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {pendingInterests.map((interest) => (
+          {pendingInterests.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pendingInterests.map((interest) => (
               interest.sender && (
                 <ProfileCard 
                   key={interest.id}
