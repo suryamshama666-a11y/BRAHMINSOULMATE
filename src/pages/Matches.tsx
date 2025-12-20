@@ -16,6 +16,7 @@ const Matches = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [showFilters, setShowFilters] = useState(false);
+  const [activeTab, setActiveTab] = useState<'filters' | 'recalculate' | null>(null);
   const [filters, setFilters] = useState({
     ageMin: '',
     ageMax: '',
@@ -44,7 +45,7 @@ const Matches = () => {
     if (filters.caste !== 'all' && profile.caste !== filters.caste) return false;
 
     return true;
-  }).sort((a: any, b: any) => {
+    }).sort((a: any, b: any) => {
     if (filters.sortBy === 'compatibility') {
       return b.compatibility_score - a.compatibility_score;
     } else if (filters.sortBy === 'age_asc') {
@@ -65,9 +66,12 @@ const Matches = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['matches'] });
       toast.success('Matches recalculated successfully!');
+      // Keep activeTab as 'recalculate' or clear it? 
+      // User said "stay red when selected", so we keep it.
     },
     onError: () => {
       toast.error('Failed to recalculate matches');
+      setActiveTab(null);
     }
   });
 
@@ -92,6 +96,15 @@ const Matches = () => {
 
   const handleRecalculate = () => {
     recalculateMutation.mutate();
+  };
+
+  const handleToggleFilters = (open: boolean) => {
+    setShowFilters(open);
+    if (open) {
+      setActiveTab('filters');
+    } else if (activeTab === 'filters') {
+      setActiveTab(null);
+    }
   };
 
   const resetFilters = () => {
@@ -127,16 +140,22 @@ const Matches = () => {
           </div>
           <div className="flex gap-2">
             <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
+              variant={activeTab === 'filters' ? 'default' : 'outline'}
+              className={activeTab === 'filters' ? 'bg-red-600 hover:bg-red-700 text-white' : ''}
+              onClick={() => handleToggleFilters(!showFilters)}
             >
               <SlidersHorizontal className="h-4 w-4 mr-2" />
               Filters
             </Button>
             <Button
-              onClick={handleRecalculate}
+              onClick={() => {
+                setActiveTab('recalculate');
+                setShowFilters(false);
+                handleRecalculate();
+              }}
               disabled={recalculateMutation.isPending}
-              variant="outline"
+              variant={activeTab === 'recalculate' ? 'default' : 'outline'}
+              className={activeTab === 'recalculate' ? 'bg-red-600 hover:bg-red-700 text-white' : ''}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${recalculateMutation.isPending ? 'animate-spin' : ''}`} />
               Recalculate Matches
@@ -144,7 +163,8 @@ const Matches = () => {
           </div>
         </div>
 
-        <Collapsible open={showFilters} onOpenChange={setShowFilters}>
+        <Collapsible open={showFilters} onOpenChange={handleToggleFilters}>
+
           <CollapsibleContent>
             <Card className="mb-6">
               <CardContent className="p-6">
