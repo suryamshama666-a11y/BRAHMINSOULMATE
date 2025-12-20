@@ -14,7 +14,7 @@ const razorpay = new Razorpay({
 });
 
 // Subscription plans
-const PLANS: Record<string, { price: number; duration: number; name: string }> = {
+export const PLANS: Record<string, { price: number; duration: number; name: string }> = {
   basic_monthly: { price: 99900, duration: 30, name: 'Basic Monthly' },
   premium_monthly: { price: 199900, duration: 30, name: 'Premium Monthly' },
   premium_quarterly: { price: 499900, duration: 90, name: 'Premium Quarterly' },
@@ -23,7 +23,7 @@ const PLANS: Record<string, { price: number; duration: number; name: string }> =
 
 // Create order
 router.post('/create-order', authMiddleware, asyncHandler(async (req, res) => {
-  const { plan_id, amount, currency } = req.body;
+  const { plan_id, currency } = req.body;
   const userId = req.user?.id;
 
   if (!PLANS[plan_id]) {
@@ -33,7 +33,7 @@ router.post('/create-order', authMiddleware, asyncHandler(async (req, res) => {
   const planDetails = PLANS[plan_id];
   
   const order = await razorpay.orders.create({
-    amount: amount * 100, // Convert to paise
+    amount: planDetails.price, // Already in paise
     currency: currency || 'INR',
     receipt: `order_${userId}_${Date.now()}`,
     notes: {
@@ -100,7 +100,7 @@ router.post('/verify', authMiddleware, asyncHandler(async (req, res) => {
       subscription_start: new Date().toISOString(),
       subscription_end: endDate.toISOString()
     })
-    .eq('id', userId);
+    .eq('user_id', userId);
 
   if (profileError) throw profileError;
 
@@ -114,7 +114,7 @@ router.get('/subscription', authMiddleware, asyncHandler(async (req, res) => {
   const { data, error } = await supabase
     .from('profiles')
     .select('subscription_type, subscription_start, subscription_end, subscription_status')
-    .eq('id', userId)
+    .eq('user_id', userId)
     .single();
 
   if (error) throw error;
@@ -131,7 +131,7 @@ router.post('/cancel', authMiddleware, asyncHandler(async (req, res) => {
       subscription_status: 'cancelled',
       subscription_end: new Date().toISOString()
     })
-    .eq('id', userId);
+    .eq('user_id', userId);
 
   if (error) throw error;
   res.json({ success: true });

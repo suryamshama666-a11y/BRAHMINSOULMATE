@@ -101,10 +101,23 @@ const Matches = () => {
   });
 
   const handleSendInterest = async (profileId: string) => {
+    if (!user?.id) return;
+    
+    // Check limits before sending interest
+    const canSend = await PaymentService.checkSubscriptionLimits(user.id, 'interests_sent');
+    if (!canSend) {
+      toast.error('Daily limit reached. Please upgrade your plan to send more interests.');
+      navigate('/plans');
+      return;
+    }
+
     sendInterestMutation.mutate({
       profileId,
       message: 'Hi! I found your profile interesting and would like to connect.'
     });
+    
+    // Record activity
+    await PaymentService.recordActivity(user.id, 'interests_sent');
   };
 
   const handleRecalculate = () => {

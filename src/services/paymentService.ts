@@ -1,23 +1,28 @@
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/supabase';
 
-type Subscription = Database['public']['Tables']['subscriptions']['Row'];
+type Subscription = {
+  subscription_type: string | null;
+  subscription_start: string | null;
+  subscription_end: string | null;
+  subscription_status: string | null;
+};
 
 export interface PaymentPlan {
   id: string;
   name: string;
-  price: number;
-  duration: number; // in months
+  price: number; // in paise
+  duration: number; // in days
   features: string[];
   popular?: boolean;
 }
 
 export const PAYMENT_PLANS: PaymentPlan[] = [
   {
-    id: 'basic',
-    name: 'Basic',
-    price: 999,
-    duration: 1,
+    id: 'basic_monthly',
+    name: 'Basic Monthly',
+    price: 99900,
+    duration: 30,
     features: [
       'View up to 50 profiles per day',
       'Send up to 10 interests per day',
@@ -26,10 +31,10 @@ export const PAYMENT_PLANS: PaymentPlan[] = [
     ]
   },
   {
-    id: 'premium',
-    name: 'Premium',
-    price: 2499,
-    duration: 3,
+    id: 'premium_monthly',
+    name: 'Premium Monthly',
+    price: 199900,
+    duration: 30,
     features: [
       'Unlimited profile views',
       'Unlimited interests',
@@ -41,159 +46,138 @@ export const PAYMENT_PLANS: PaymentPlan[] = [
     popular: true
   },
   {
-    id: 'elite',
-    name: 'Elite',
-    price: 4999,
-    duration: 6,
+    id: 'premium_quarterly',
+    name: 'Premium Quarterly',
+    price: 499900,
+    duration: 90,
     features: [
       'All Premium features',
-      'Profile highlighting',
+      '3 months validity',
+      'Save ₹998 compared to monthly',
+      'Advanced search filters',
+      'Video calling feature'
+    ]
+  },
+  {
+    id: 'premium_yearly',
+    name: 'Premium Yearly',
+    price: 1499900,
+    duration: 365,
+    features: [
+      'All Premium features',
       'Dedicated relationship manager',
-      'Horoscope matching',
-      'Priority in search results',
+      'Profile highlighting',
+      'Save ₹8989 compared to monthly',
       'Exclusive events access'
     ]
   }
 ];
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+
 export class PaymentService {
-  // Create Razorpay order
+  // Create Razorpay order via backend
   static async createOrder(planId: string, userId: string): Promise<any> {
     try {
-      const plan = PAYMENT_PLANS.find(p => p.id === planId);
-      if (!plan) throw new Error('Invalid plan selected');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
 
-      // In a real implementation, you would call your backend API
-      // which would create a Razorpay order
-      const response = await fetch('/api/create-order', {
+      const response = await fetch(`${API_BASE_URL}/api/payments/create-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
-          amount: plan.price * 100, // Razorpay expects amount in paise
-          currency: 'INR',
-          planId,
-          userId
+          plan_id: planId,
+          currency: 'INR'
         })
       });
 
-      if (!response.ok) throw new Error('Failed to create order');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create order');
+      }
       
-      const orderData = await response.json();
-      return orderData;
+      return await response.json();
     } catch (error) {
       console.error('Create order error:', error);
       throw error;
     }
   }
 
-  // Process payment success
-  static async processPaymentSuccess(
-    orderId: string,
-    paymentId: string,
-    signature: string,
-    planId: string,
-    userId: string
+  // Verify payment via backend
+  static async verifyPayment(
+    razorpay_order_id: string,
+    razorpay_payment_id: string,
+    razorpay_signature: string
   ): Promise<boolean> {
     try {
-      // Verify payment signature (should be done on backend)
-      const response = await fetch('/api/verify-payment', {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await fetch(`${API_BASE_URL}/api/payments/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
-          orderId,
-          paymentId,
-          signature,
-          planId,
-          userId
+          razorpay_order_id,
+          razorpay_payment_id,
+          razorpay_signature
         })
       });
 
-      if (!response.ok) throw new Error('Payment verification failed');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Payment verification failed');
+      }
 
-      const plan = PAYMENT_PLANS.find(p => p.id === planId);
-      if (!plan) throw new Error('Invalid plan');
-
-      // Create subscription record
-      const startDate = new Date();
-      const endDate = new Date();
-      endDate.setMonth(endDate.getMonth() + plan.duration);
-
-      const { error: subscriptionError } = await supabase
-        .from('subscriptions')
-        .insert({
-          user_id: userId,
-          plan: planId,
-          status: 'active',
-          current_period_start: startDate.toISOString(),
-          current_period_end: endDate.toISOString(),
-          cancel_at_period_end: false
-        });
-
-      if (subscriptionError) throw subscriptionError;
-
-      // Update user profile subscription type
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          subscription_type: planId,
-          subscription_expiry: endDate.toISOString()
-        })
-        .eq('user_id', userId);
-
-      if (profileError) throw profileError;
-
-      // Create notification
-      await this.createNotification(
-        userId,
-        'subscription_activated',
-        'Subscription Activated!',
-        `Your ${plan.name} subscription has been activated successfully.`,
-        '/account'
-      );
-
-      return true;
+      const result = await response.json();
+      return result.success;
     } catch (error) {
-      console.error('Process payment success error:', error);
+      console.error('Verify payment error:', error);
       return false;
     }
   }
 
-  // Get user's current subscription
-  static async getCurrentSubscription(userId: string): Promise<Subscription | null> {
+  // Get user's current subscription from backend/profile
+  static async getCurrentSubscription(): Promise<Subscription | null> {
     try {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return null;
 
-      if (error && error.code !== 'PGRST116') throw error;
-      return data || null;
+      const response = await fetch(`${API_BASE_URL}/api/payments/subscription`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (!response.ok) return null;
+      
+      const result = await response.json();
+      return result.subscription;
     } catch (error) {
       console.error('Get current subscription error:', error);
       return null;
     }
   }
 
-  // Cancel subscription
-  static async cancelSubscription(subscriptionId: string): Promise<boolean> {
+  // Cancel subscription via backend
+  static async cancelSubscription(): Promise<boolean> {
     try {
-      const { error } = await supabase
-        .from('subscriptions')
-        .update({
-          cancel_at_period_end: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', subscriptionId);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return false;
 
-      if (error) throw error;
+      const response = await fetch(`${API_BASE_URL}/api/payments/cancel`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (!response.ok) return false;
       return true;
     } catch (error) {
       console.error('Cancel subscription error:', error);
@@ -201,108 +185,27 @@ export class PaymentService {
     }
   }
 
-  // Reactivate subscription
-  static async reactivateSubscription(subscriptionId: string): Promise<boolean> {
-    try {
-      const { error } = await supabase
-        .from('subscriptions')
-        .update({
-          cancel_at_period_end: false,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', subscriptionId);
-
-      if (error) throw error;
-      return true;
-    } catch (error) {
-      console.error('Reactivate subscription error:', error);
-      return false;
-    }
-  }
-
-  // Check if user has active subscription
-  static async hasActiveSubscription(userId: string): Promise<boolean> {
-    try {
-      const subscription = await this.getCurrentSubscription(userId);
-      if (!subscription) return false;
-
-      const now = new Date();
-      const endDate = new Date(subscription.current_period_end);
-      
-      return endDate > now && subscription.status === 'active';
-    } catch (error) {
-      console.error('Check active subscription error:', error);
-      return false;
-    }
-  }
-
-  // Get subscription history
-  static async getSubscriptionHistory(userId: string): Promise<Subscription[]> {
-    try {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Get subscription history error:', error);
-      return [];
-    }
-  }
-
-  // Check subscription limits
+  // Check subscription limits using user_activity table
   static async checkSubscriptionLimits(userId: string, action: string): Promise<boolean> {
     try {
-      const subscription = await this.getCurrentSubscription(userId);
-      const plan = subscription ? PAYMENT_PLANS.find(p => p.id === subscription.plan) : null;
+      const subscription = await this.getCurrentSubscription();
+      const planId = subscription?.subscription_status === 'active' ? subscription.subscription_type : 'free';
 
-      // If no active subscription, apply free tier limits
-      if (!plan) {
-        switch (action) {
-          case 'view_profile':
-            return await this.checkDailyLimit(userId, 'profile_views', 10);
-          case 'send_interest':
-            return await this.checkDailyLimit(userId, 'interests_sent', 5);
-          case 'send_message':
-            return false; // Free users can't message
-          default:
-            return false;
-        }
-      }
+      const limits: Record<string, Record<string, number>> = {
+        free: { profile_views: 10, interests_sent: 5, messages: 0 },
+        basic_monthly: { profile_views: 50, interests_sent: 10, messages: 100 },
+        premium_monthly: { profile_views: 999999, interests_sent: 999999, messages: 999999 },
+        premium_quarterly: { profile_views: 999999, interests_sent: 999999, messages: 999999 },
+        premium_yearly: { profile_views: 999999, interests_sent: 999999, messages: 999999 },
+      };
 
-      // Premium users have different limits based on their plan
-      switch (plan.id) {
-        case 'basic':
-          switch (action) {
-            case 'view_profile':
-              return await this.checkDailyLimit(userId, 'profile_views', 50);
-            case 'send_interest':
-              return await this.checkDailyLimit(userId, 'interests_sent', 10);
-            case 'send_message':
-              return true;
-            default:
-              return true;
-          }
-        case 'premium':
-        case 'elite':
-          return true; // Unlimited for premium and elite
-        default:
-          return false;
-      }
-    } catch (error) {
-      console.error('Check subscription limits error:', error);
-      return false;
-    }
-  }
+      const currentPlanLimits = limits[planId || 'free'] || limits.free;
+      const limit = currentPlanLimits[action];
 
-  // Check daily limit for specific action
-  private static async checkDailyLimit(userId: string, action: string, limit: number): Promise<boolean> {
-    try {
+      if (limit === undefined) return true;
+      if (limit === 0) return false;
+
       const today = new Date().toISOString().split('T')[0];
-      
       const { data, error } = await supabase
         .from('user_activity')
         .select('count')
@@ -313,32 +216,33 @@ export class PaymentService {
 
       if (error && error.code !== 'PGRST116') throw error;
       
-      const currentCount = data?.count || 0;
-      return currentCount < limit;
+      return (data?.count || 0) < limit;
     } catch (error) {
-      console.error('Check daily limit error:', error);
+      console.error('Check subscription limits error:', error);
       return false;
     }
   }
 
-  // Record user activity for limit tracking
+  // Record activity
   static async recordActivity(userId: string, action: string): Promise<void> {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      // Try to increment existing record
-      const { data: existing } = await supabase
+      const { data: existing, error: fetchError } = await supabase
         .from('user_activity')
-        .select('*')
+        .select('id, count')
         .eq('user_id', userId)
         .eq('action', action)
         .eq('date', today)
-        .single();
+        .maybeSingle();
 
       if (existing) {
         await supabase
           .from('user_activity')
-          .update({ count: existing.count + 1 })
+          .update({ 
+            count: (existing.count || 0) + 1,
+            updated_at: new Date().toISOString()
+          })
           .eq('id', existing.id);
       } else {
         await supabase
@@ -355,73 +259,54 @@ export class PaymentService {
     }
   }
 
-  // Create notification helper
-  private static async createNotification(
-    userId: string,
-    type: string,
-    title: string,
-    message: string,
-    actionUrl?: string
-  ) {
-    try {
-      await supabase
-        .from('notifications')
-        .insert({
-          user_id: userId,
-          type,
-          title,
-          message,
-          action_url: actionUrl,
-          read: false,
-          timestamp: new Date().toISOString()
-        });
-    } catch (error) {
-      console.error('Create notification error:', error);
-    }
-  }
-
-  // Initialize Razorpay
+  // Initialize Razorpay script
   static initializeRazorpay(): Promise<any> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      if ((window as any).Razorpay) {
+        resolve((window as any).Razorpay);
+        return;
+      }
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => {
-        resolve((window as any).Razorpay);
-      };
+      script.async = true;
+      script.onload = () => resolve((window as any).Razorpay);
+      script.onerror = () => reject(new Error('Razorpay SDK failed to load'));
       document.body.appendChild(script);
     });
   }
 
   // Open Razorpay checkout
-  static async openCheckout(orderData: any, onSuccess: (response: any) => void, onError: (error: any) => void) {
+  static async openCheckout(
+    orderData: any, 
+    onSuccess: (response: any) => void, 
+    onError: (error: any) => void
+  ) {
     try {
-      const Razorpay = await this.initializeRazorpay();
+      const RazorpaySDK = await this.initializeRazorpay();
       
       const options = {
-        key: process.env.REACT_APP_RAZORPAY_KEY_ID, // Your Razorpay key ID
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'Brahmin Soulmate Connect',
-        description: 'Subscription Payment',
+        description: `Subscription: ${orderData.notes?.plan || 'Premium'}`,
         order_id: orderData.id,
         handler: onSuccess,
         prefill: {
-          name: orderData.customerName,
-          email: orderData.customerEmail,
-          contact: orderData.customerPhone
+          name: '', // Will be filled if user profile exists
+          email: '',
+          contact: ''
         },
         theme: {
           color: '#E30613'
         },
         modal: {
-          ondismiss: () => {
-            onError(new Error('Payment cancelled by user'));
-          }
+          ondismiss: () => onError(new Error('Payment cancelled by user'))
         }
       };
 
-      const razorpayInstance = new Razorpay(options);
-      razorpayInstance.open();
+      const rzp = new RazorpaySDK(options);
+      rzp.open();
     } catch (error) {
       onError(error);
     }
