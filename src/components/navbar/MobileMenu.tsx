@@ -53,17 +53,17 @@ const MobileMenu = ({ onClose }: MobileMenuProps) => {
       
       return (
         <Link key={path} to={path} onClick={onClose}>
-          <Button
-            variant="ghost"
-            className={`
-              w-full justify-start space-x-3 py-3 text-base transition-colors
-              focus:outline-none focus:ring-2 focus:ring-[#FF4500] focus:ring-offset-2
-              ${isActive 
-                ? 'bg-[#FFF1E6] text-[#FF4500] hover:bg-[#FFE4D6] border border-[#FF4500]/20' 
-                : 'text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20'
-              }
-            `}
-          >
+            <Button
+              variant="ghost"
+              className={`
+                w-full justify-start space-x-3 py-3 text-base transition-colors
+                focus:outline-none focus:border-amber-500
+                ${isActive 
+                  ? 'bg-[#FFF1E6] text-[#FF4500] hover:bg-[#FFE4D6] border border-[#FF4500]/20' 
+                  : 'text-neutral-800 hover:text-[#FF4500] hover:bg-[#FFF1E6] hover:border hover:border-[#FF4500]/20'
+                }
+              `}
+            >
             <Icon className="h-5 w-5" />
             <span>{label}</span>
           </Button>
