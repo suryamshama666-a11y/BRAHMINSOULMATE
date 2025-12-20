@@ -355,81 +355,82 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-            <Card className="border-2 border-gray-100 shadow-xl overflow-hidden relative">
-              <CardHeader className="bg-gradient-to-br from-gray-50 via-white to-gray-50/30 pb-4">
-              <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center text-gray-900 text-xl font-bold">
-                    <UserPlus className="h-6 w-6 mr-3 text-gray-700" />
-                    New Members
-                  </CardTitle>
-                  <Link to="/new-members">
-                    <Button className="bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white px-6 py-2 rounded-full font-semibold shadow-md hover:shadow-lg transition-all">
-                      View All
-                    </Button>
-                  </Link>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="flex flex-col">
-                {recentMembers.map((member, index) => (
-                    <div key={member.id}>
-                      <div className="flex items-center space-x-4 p-4 rounded-2xl hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 transition-all duration-300 group border-2 border-transparent hover:border-gray-200">
-                        <Link to={`/profile/${member.id}`}>
-                          <Avatar className="h-16 w-16 border-3 border-gray-200 group-hover:border-gray-400 transition-all shadow-md group-hover:shadow-xl group-hover:scale-110 duration-300">
-                            <AvatarImage 
-                              src={`https://randomuser.me/api/portraits/${member.gender === 'male' ? 'men' : 'women'}/${Math.floor(Math.random() * 50) + 1}.jpg`} 
-                              alt={`Profile ${member.id}`} 
-                            />
-                            <AvatarFallback className="bg-gray-100 text-gray-700 font-bold">{member.gender === 'male' ? 'M' : 'F'}</AvatarFallback>
-                          </Avatar>
-                        </Link>
-                        <div className="flex-1">
+            <Card className="border-2 border-transparent shadow-xl overflow-hidden relative">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-400 via-rose-500 to-orange-500"></div>
+              <CardHeader className="bg-gradient-to-br from-rose-50 via-white to-orange-50/30 pb-4">
+                <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center text-rose-700 text-xl font-bold">
+                      <UserPlus className="h-6 w-6 mr-3 text-rose-600" />
+                      New Members
+                    </CardTitle>
+                    <Link to="/new-members">
+                      <Button className="bg-gradient-to-r from-rose-500 to-orange-600 hover:from-rose-600 hover:to-orange-700 text-white px-6 py-2 rounded-full font-semibold shadow-md hover:shadow-lg transition-all border-0 outline-none ring-0 focus:ring-0 focus:outline-none">
+                        View All
+                      </Button>
+                    </Link>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="flex flex-col">
+                  {recentMembers.map((member, index) => (
+                      <div key={member.id}>
+                        <div className="flex items-center space-x-4 p-4 rounded-2xl hover:bg-gradient-to-r hover:from-rose-50 hover:to-orange-50 transition-all duration-300 group border-2 border-transparent hover:border-rose-100">
                           <Link to={`/profile/${member.id}`}>
-                            <h4 className="font-bold text-lg hover:text-gray-900 transition-colors">
-                              {member.gender === 'male' ? 'Male' : 'Female'} Profile
-                            </h4>
+                            <Avatar className="h-16 w-16 border-3 border-rose-200 group-hover:border-rose-400 transition-all shadow-md group-hover:shadow-xl group-hover:scale-110 duration-300">
+                              <AvatarImage 
+                                src={`https://randomuser.me/api/portraits/${member.gender === 'male' ? 'men' : 'women'}/${Math.floor(Math.random() * 50) + 1}.jpg`} 
+                                alt={`Profile ${member.id}`} 
+                              />
+                              <AvatarFallback className="bg-rose-100 text-rose-700 font-bold">{member.gender === 'male' ? 'M' : 'F'}</AvatarFallback>
+                            </Avatar>
                           </Link>
-                          <p className="text-sm text-gray-600 font-medium">
-                            {member.height}cm • {member.subcaste}
-                          </p>
-                          <div className="flex items-center mt-2 space-x-2">
-                            <Badge variant="secondary" className="text-xs font-semibold bg-gray-100 text-gray-700">
-                              {member.gotra} Gotra
-                            </Badge>
-                            <Badge className={member.subscription_type === 'premium' ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white' : 'bg-gray-100 text-gray-700'} variant={member.subscription_type === 'premium' ? 'default' : 'outline'}>
-                              {member.subscription_type}
-                            </Badge>
+                          <div className="flex-1">
+                            <Link to={`/profile/${member.id}`}>
+                              <h4 className="font-bold text-lg hover:text-rose-600 transition-colors">
+                                {member.gender === 'male' ? 'Male' : 'Female'} Profile
+                              </h4>
+                            </Link>
+                            <p className="text-sm text-gray-600 font-medium">
+                              {member.height}cm • {member.subcaste}
+                            </p>
+                            <div className="flex items-center mt-2 space-x-2">
+                              <Badge variant="secondary" className="text-xs font-semibold bg-rose-50 text-rose-700 border-rose-100">
+                                {member.gotra} Gotra
+                              </Badge>
+                              <Badge className={member.subscription_type === 'premium' ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white' : 'bg-gray-100 text-gray-700'} variant={member.subscription_type === 'premium' ? 'default' : 'outline'}>
+                                {member.subscription_type}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <button 
+                              onClick={(e) => {
+                                e.preventDefault();
+                                const heart = e.currentTarget.querySelector('svg');
+                                if (heart) {
+                                  heart.classList.toggle('fill-rose-600');
+                                }
+                                console.log('Added to favorites:', member.id);
+                              }}
+                              className="p-2 rounded-full hover:bg-rose-50 text-rose-400 hover:text-rose-600 focus:outline-none transition-all hover:scale-110 duration-200"
+                              title="Add to favorites"
+                            >
+                              <Heart className="h-6 w-6 transition-all" />
+                            </button>
+                            <Link 
+                              to={`/messages?partner=${member.id}`}
+                              className="p-2 rounded-full hover:bg-rose-50 text-rose-400 hover:text-rose-600 focus:outline-none transition-all hover:scale-110 duration-200"
+                              title="Send message"
+                            >
+                              <MessageCircle className="h-6 w-6" />
+                            </Link>
                           </div>
                         </div>
-                        <div className="flex space-x-2">
-                          <button 
-                            onClick={(e) => {
-                              e.preventDefault();
-                              const heart = e.currentTarget.querySelector('svg');
-                              if (heart) {
-                                heart.classList.toggle('fill-gray-600');
-                              }
-                              console.log('Added to favorites:', member.id);
-                            }}
-                            className="p-2 rounded-full hover:bg-gray-50 text-gray-400 hover:text-gray-600 focus:outline-none transition-all hover:scale-110 duration-200"
-                            title="Add to favorites"
-                          >
-                            <Heart className="h-6 w-6 transition-all" />
-                          </button>
-                          <Link 
-                            to={`/messages?partner=${member.id}`}
-                            className="p-2 rounded-full hover:bg-gray-50 text-gray-400 hover:text-gray-600 focus:outline-none transition-all hover:scale-110 duration-200"
-                            title="Send message"
-                          >
-                            <MessageCircle className="h-6 w-6" />
-                          </Link>
-                        </div>
+                        {index < recentMembers.length - 1 && (
+                          <div className="h-px bg-gradient-to-r from-transparent via-rose-100 to-transparent my-2" />
+                        )}
                       </div>
-                      {index < recentMembers.length - 1 && (
-                        <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent my-2" />
-                      )}
-                    </div>
-                ))}
+                  ))}
               </div>
             </CardContent>
           </Card>
