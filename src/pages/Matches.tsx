@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { MIN_AGE, DEFAULT_CASTE, GOTRAS } from '@/data/constants';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { matchingService, interestsService } from '@/services/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar } from '@/components/ui/avatar';
 import { Send, Phone, Video, MoreVertical, Image, FileText, Star, StarOff, UserX, Flag, X, Mic } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { messagesService } from '@/services/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

@@ -12,7 +12,7 @@ import ProfileCard from '@/components/ProfileCard';
 import { Search as SearchIcon, Filter, Loader2, ChevronDown, ChevronUp, Save, MapPin, Briefcase, GraduationCap, Heart, Star, Users, X, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import Footer from '@/components/Footer';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import LocationSearch from '@/components/search/LocationSearch';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';

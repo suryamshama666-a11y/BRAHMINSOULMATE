@@ -5,7 +5,7 @@ import { Message } from './types';
 import { MessageInput } from './MessageInput';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { ChatHeader } from './components/ChatHeader';
 import { ChatMessages } from './components/ChatMessages';
 import { EmptyChat } from './components/EmptyChat';

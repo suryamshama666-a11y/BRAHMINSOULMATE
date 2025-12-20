@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Link, useNavigate } from 'react-router-dom';
 import { Heart, MessageCircle, Eye, UserPlus, Calendar, MapPin, Filter, Users, Clock } from 'lucide-react';
 import ProfileCard from '@/components/ProfileCard';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Pagination } from '@/components/ui/pagination';
 import { cn } from '@/lib/utils';

@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { 
   User, Shield, Bell, Crown, Eye, Mail, Phone, Lock, Calendar, CreditCard, LogOut, Trash2
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import Footer from '@/components/Footer';
 

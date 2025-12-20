@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Link, useNavigate } from 'react-router-dom';
 import { Heart, MessageCircle, Eye, Clock, MapPin, Filter, Users, UserPlus } from 'lucide-react';
 import ProfileCard from '@/components/ProfileCard';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 const OnlineProfiles = () => {

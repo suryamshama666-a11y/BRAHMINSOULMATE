@@ -9,7 +9,7 @@ import {
   Heart, MessageCircle, Calendar, Users, Eye, Star,
   Video, Crown, UserPlus, Loader2, Sparkles
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 const Dashboard = () => {
   const { profile, user } = useAuth();

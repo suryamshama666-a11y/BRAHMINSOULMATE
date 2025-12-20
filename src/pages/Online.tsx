@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { OnlineStats } from './components/OnlineStats';
 import { OnlineSearchBar } from './components/OnlineSearchBar';
 import { OnlineProfileCard } from './components/OnlineProfileCard';

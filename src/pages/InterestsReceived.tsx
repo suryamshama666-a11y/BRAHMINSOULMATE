@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Heart, Clock, CheckCircle, XCircle } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { interestsService } from '@/services/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

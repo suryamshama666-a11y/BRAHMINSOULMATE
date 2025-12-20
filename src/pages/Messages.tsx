@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Search, MessageCircle } from 'lucide-react';
 import { ChatWindow } from '@/components/messaging/ChatWindow';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { messagesService } from '@/services/api';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRealTimeMessages } from '@/hooks/useRealTimeMessages';
 import { useProfile } from '@/hooks/useProfile';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { transformRealTimeMessage } from './types';

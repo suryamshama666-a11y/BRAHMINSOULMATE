@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User, AuthError, Session } from '@supabase/supabase-js';
-import { UserProfile, UserSubscription, SubscriptionPlan } from '@/types';
+import { UserProfile, UserSubscription } from '@/types';
 import { AuthContextType } from '@/types/auth';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,12 +26,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       if (profileError) {
         if (profileError.code === 'PGRST116') {
+          const { data: { user: authUser } } = await supabase.auth.getUser();
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
             .upsert({
               user_id: userId,
-              email: (await supabase.auth.getUser()).data.user?.email || '',
-              name: (await supabase.auth.getUser()).data.user?.email?.split('@')[0] || 'User',
+              email: authUser?.email || '',
+              name: authUser?.email?.split('@')[0] || 'User',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
               profile_completion: 10
@@ -200,13 +201,3 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     </AuthContext.Provider>
   );
 };
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-export default AuthContext;

@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Eye, Clock, Filter, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ProfileCard from '@/components/ProfileCard';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { profileViewsService } from '@/services/api';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Heart, MessageCircle, Video, Lock, MapPin, Shield, Phone, Star, Sparkles } from 'lucide-react';
 import { useProfileInteractions } from '@/features/profile/hooks/useProfileInteractions';
 import { formatHeight, formatLocation } from '@/features/profile/utils/formatters';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 

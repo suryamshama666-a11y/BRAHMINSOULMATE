@@ -7,7 +7,7 @@ import { PersonalDetailsForm } from './PersonalDetailsForm';
 import { SecuritySettings } from './SecuritySettings';
 import { NotificationPreferences } from './NotificationPreferences';
 import { BillingPlans } from './BillingPlans';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 export const AccountSettings = () => {
   const { setNameVisibility, profile, signOut } = useAuth();

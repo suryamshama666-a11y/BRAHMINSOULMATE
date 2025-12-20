@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Link, useNavigate } from 'react-router-dom';
 import { Heart, MessageCircle, Eye, Star, HeartOff } from 'lucide-react';
 import ProfileCard from '@/components/ProfileCard';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { ListFilters } from '@/components/ListFilters';
 import { Pagination } from '@/components/ui/pagination';

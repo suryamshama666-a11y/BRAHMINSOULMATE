@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import PaymentPlans from '@/features/payments/components/PaymentPlans';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import PaymentForm from '@/features/payments/components/PaymentForm';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 export default function AstrologicalServices() {
