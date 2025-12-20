@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { MIN_AGE, DEFAULT_CASTE } from '@/data/constants';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { matchingService, interestsService } from '@/services/api';
@@ -24,10 +25,10 @@ const Matches = () => {
     const [itemsPerPage, setItemsPerPage] = useState(9);
 
   const [filters, setFilters] = useState({
-    ageMin: '',
+    ageMin: user?.gender === 'male' ? MIN_AGE.FEMALE.toString() : MIN_AGE.MALE.toString(),
     ageMax: '',
     location: 'all',
-    caste: 'all',
+    caste: DEFAULT_CASTE,
     sortBy: 'compatibility'
   });
 
@@ -121,10 +122,10 @@ const Matches = () => {
 
   const resetFilters = () => {
     setFilters({
-      ageMin: '',
+      ageMin: user?.gender === 'male' ? MIN_AGE.FEMALE.toString() : MIN_AGE.MALE.toString(),
       ageMax: '',
       location: 'all',
-      caste: 'all',
+      caste: DEFAULT_CASTE,
       sortBy: 'compatibility'
     });
   };
@@ -181,52 +182,51 @@ const Matches = () => {
             <Card className="mb-6">
               <CardContent className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium mb-2 block">Min Age</Label>
-                    <Input
-                      type="number"
-                      placeholder="18"
-                      value={filters.ageMin}
-                      onChange={(e) => setFilters({ ...filters, ageMin: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium mb-2 block">Max Age</Label>
-                    <Input
-                      type="number"
-                      placeholder="50"
-                      value={filters.ageMax}
-                      onChange={(e) => setFilters({ ...filters, ageMax: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium mb-2 block">Location</Label>
-                    <Select value={filters.location} onValueChange={(v) => setFilters({ ...filters, location: v })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All Locations" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Locations</SelectItem>
-                        {uniqueLocations.map((loc: string) => (
-                          <SelectItem key={loc} value={loc}>{loc}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium mb-2 block">Caste</Label>
-                    <Select value={filters.caste} onValueChange={(v) => setFilters({ ...filters, caste: v })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All Castes" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Castes</SelectItem>
-                        {uniqueCastes.map((caste: string) => (
-                          <SelectItem key={caste} value={caste}>{caste}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Min Age</Label>
+                      <Input
+                        type="number"
+                        min={user?.gender === 'male' ? MIN_AGE.FEMALE : MIN_AGE.MALE}
+                        placeholder={user?.gender === 'male' ? MIN_AGE.FEMALE.toString() : MIN_AGE.MALE.toString()}
+                        value={filters.ageMin}
+                        onChange={(e) => setFilters({ ...filters, ageMin: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Max Age</Label>
+                      <Input
+                        type="number"
+                        placeholder="50"
+                        value={filters.ageMax}
+                        onChange={(e) => setFilters({ ...filters, ageMax: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Location</Label>
+                      <Select value={filters.location} onValueChange={(v) => setFilters({ ...filters, location: v })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="All Locations" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Locations</SelectItem>
+                          {uniqueLocations.map((loc: string) => (
+                            <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Caste</Label>
+                      <Select value={filters.caste} onValueChange={(v) => setFilters({ ...filters, caste: v })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={DEFAULT_CASTE} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={DEFAULT_CASTE}>{DEFAULT_CASTE}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                   <div>
                     <Label className="text-sm font-medium mb-2 block">Sort By</Label>
                     <Select value={filters.sortBy} onValueChange={(v) => setFilters({ ...filters, sortBy: v })}>

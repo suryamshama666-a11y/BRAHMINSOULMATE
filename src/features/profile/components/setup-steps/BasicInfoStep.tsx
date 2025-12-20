@@ -8,7 +8,9 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { CalendarIcon, User, MapPin, Heart } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, subYears } from 'date-fns';
+import { MIN_AGE, DEFAULT_CASTE } from '@/data/constants';
+import { COUNTRIES, INDIAN_STATES_AND_DISTRICTS } from '@/data/locationData';
 
 type BasicInfoStepProps = {
   data: {
@@ -36,13 +38,7 @@ type BasicInfoStepProps = {
   onComplete: (isCompleted: boolean) => void;
 };
 
-const INDIAN_STATES = [
-  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
-  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka',
-  'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram',
-  'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu',
-  'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Delhi'
-];
+const INDIAN_STATES = Object.keys(INDIAN_STATES_AND_DISTRICTS);
 
 const BRAHMIN_SUBCASTES = [
   'Gaur', 'Deshastha', 'Iyer', 'Iyengar', 'Namboodiri', 'Kashmiri Pandit',
@@ -150,15 +146,18 @@ export default function BasicInfoStep({ data, onUpdate, onComplete }: BasicInfoS
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={formData.dateOfBirth}
-                    onSelect={(date) => updateFormData({ dateOfBirth: date })}
-                    disabled={(date) =>
-                      date > new Date() || date < new Date("1950-01-01")
-                    }
-                    initialFocus
-                  />
+                    <Calendar
+                      mode="single"
+                      selected={formData.dateOfBirth}
+                      onSelect={(date) => updateFormData({ dateOfBirth: date })}
+                      disabled={(date) => {
+                        const minAge = formData.gender === 'male' ? MIN_AGE.MALE : MIN_AGE.FEMALE;
+                        const maxBirthDate = subYears(new Date(), minAge);
+                        return date > maxBirthDate || date < new Date("1950-01-01");
+                      }}
+                      initialFocus
+                    />
+
                 </PopoverContent>
               </Popover>
             </div>
@@ -257,44 +256,35 @@ export default function BasicInfoStep({ data, onUpdate, onComplete }: BasicInfoS
             <h3 className="text-lg font-semibold">Religious Information</h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label>Religion *</Label>
-              <Select value={formData.religion} onValueChange={(value) => updateFormData({ religion: value })}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select religion" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Hindu">Hindu</SelectItem>
-                  <SelectItem value="Muslim">Muslim</SelectItem>
-                  <SelectItem value="Christian">Christian</SelectItem>
-                  <SelectItem value="Sikh">Sikh</SelectItem>
-                  <SelectItem value="Buddhist">Buddhist</SelectItem>
-                  <SelectItem value="Jain">Jain</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>Religion *</Label>
+                <Select value={formData.religion} onValueChange={(value) => updateFormData({ religion: value })}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select religion" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Hindu">Hindu</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div>
-              <Label>Caste *</Label>
-              <Select value={formData.caste} onValueChange={(value) => updateFormData({ caste: value })}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select caste" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Brahmin">Brahmin</SelectItem>
-                  <SelectItem value="Kshatriya">Kshatriya</SelectItem>
-                  <SelectItem value="Vaishya">Vaishya</SelectItem>
-                  <SelectItem value="Shudra">Shudra</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div>
+                <Label>Caste *</Label>
+                <Select value={DEFAULT_CASTE} disabled>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder={DEFAULT_CASTE} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={DEFAULT_CASTE}>{DEFAULT_CASTE}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div>
-              <Label>Subcaste</Label>
-              <Select value={formData.subcaste} onValueChange={(value) => updateFormData({ subcaste: value })}>
+              <div>
+                <Label>Subcaste</Label>
+                <Select value={formData.subcaste} onValueChange={(value) => updateFormData({ subcaste: value })}>
+
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select subcaste" />
                 </SelectTrigger>
@@ -327,72 +317,110 @@ export default function BasicInfoStep({ data, onUpdate, onComplete }: BasicInfoS
         </CardContent>
       </Card>
 
-      {/* Location Information */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <MapPin className="h-5 w-5 text-red-600" />
-            <h3 className="text-lg font-semibold">Location Information</h3>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label>Country *</Label>
-              <Select 
-                value={formData.location.country} 
-                onValueChange={(value) => updateFormData({ 
-                  location: { ...formData.location, country: value } 
-                })}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select country" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="India">India</SelectItem>
-                  <SelectItem value="USA">USA</SelectItem>
-                  <SelectItem value="Canada">Canada</SelectItem>
-                  <SelectItem value="UK">UK</SelectItem>
-                  <SelectItem value="Australia">Australia</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+        {/* Location Information */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <MapPin className="h-5 w-5 text-red-600" />
+              <h3 className="text-lg font-semibold">Location Information</h3>
             </div>
 
-            <div>
-              <Label>State *</Label>
-              <Select 
-                value={formData.location.state} 
-                onValueChange={(value) => updateFormData({ 
-                  location: { ...formData.location, state: value } 
-                })}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select state" />
-                </SelectTrigger>
-                <SelectContent>
-                  {INDIAN_STATES.map((state) => (
-                    <SelectItem key={state} value={state}>
-                      {state}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label>Country *</Label>
+                <Select 
+                  value={formData.location.country} 
+                  onValueChange={(value) => updateFormData({ 
+                    location: { ...formData.location, country: value, state: '', city: '' } 
+                  })}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COUNTRIES.map(country => (
+                      <SelectItem key={country} value={country}>{country}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div>
-              <Label>City *</Label>
-              <Input
-                value={formData.location.city}
-                onChange={(e) => updateFormData({ 
-                  location: { ...formData.location, city: e.target.value } 
-                })}
-                placeholder="Enter your city"
-                className="mt-1"
-              />
+              {formData.location.country === 'India' ? (
+                <>
+                  <div>
+                    <Label>State *</Label>
+                    <Select 
+                      value={formData.location.state} 
+                      onValueChange={(value) => updateFormData({ 
+                        location: { ...formData.location, state: value, city: '' } 
+                      })}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Select state" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {INDIAN_STATES.map((state) => (
+                          <SelectItem key={state} value={state}>
+                            {state}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>District/City *</Label>
+                    <Select 
+                      value={formData.location.city} 
+                      onValueChange={(value) => updateFormData({ 
+                        location: { ...formData.location, city: value } 
+                      })}
+                      disabled={!formData.location.state}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Select district" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {formData.location.state && INDIAN_STATES_AND_DISTRICTS[formData.location.state]?.map((district) => (
+                          <SelectItem key={district} value={district}>
+                            {district}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <Label>State/Province (Optional)</Label>
+                    <Input
+                      value={formData.location.state}
+                      onChange={(e) => updateFormData({ 
+                        location: { ...formData.location, state: e.target.value } 
+                      })}
+                      placeholder="Enter state/province"
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>City *</Label>
+                    <Input
+                      value={formData.location.city}
+                      onChange={(e) => updateFormData({ 
+                        location: { ...formData.location, city: e.target.value } 
+                      })}
+                      placeholder="Enter your city"
+                      className="mt-1"
+                    />
+                  </div>
+                </>
+              )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
 
       {/* Contact Information */}
       <Card>
