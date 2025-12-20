@@ -96,6 +96,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initAuth();
 
     const { data: { subscription: authListener } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+      if (isDevBypassMode()) return;
+      
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       
