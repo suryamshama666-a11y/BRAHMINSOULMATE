@@ -151,6 +151,7 @@ class MatchingService {
           state,
           education,
           occupation,
+          gotra,
           photos,
           profile_picture
         )

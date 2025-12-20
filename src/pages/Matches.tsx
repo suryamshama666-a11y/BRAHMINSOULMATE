@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { MIN_AGE, DEFAULT_CASTE } from '@/data/constants';
+import { MIN_AGE, DEFAULT_CASTE, GOTRAS } from '@/data/constants';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { matchingService, interestsService } from '@/services/api';
@@ -28,7 +28,7 @@ const Matches = () => {
     ageMin: user?.gender === 'male' ? MIN_AGE.FEMALE.toString() : MIN_AGE.MALE.toString(),
     ageMax: '',
     location: 'all',
-    caste: DEFAULT_CASTE,
+    gotra: 'all',
     sortBy: 'compatibility'
   });
 
@@ -49,7 +49,7 @@ const Matches = () => {
     if (filters.ageMin && profile.age < parseInt(filters.ageMin)) return false;
     if (filters.ageMax && profile.age > parseInt(filters.ageMax)) return false;
     if (filters.location !== 'all' && profile.state !== filters.location) return false;
-    if (filters.caste !== 'all' && profile.caste !== filters.caste) return false;
+    if (filters.gotra !== 'all' && profile.gotra !== filters.gotra) return false;
 
     return true;
     }).sort((a: any, b: any) => {
@@ -125,13 +125,12 @@ const Matches = () => {
       ageMin: user?.gender === 'male' ? MIN_AGE.FEMALE.toString() : MIN_AGE.MALE.toString(),
       ageMax: '',
       location: 'all',
-      caste: DEFAULT_CASTE,
+      gotra: 'all',
       sortBy: 'compatibility'
     });
   };
 
   const uniqueLocations = [...new Set(matches.map((m: any) => m.profile?.state).filter(Boolean))];
-  const uniqueCastes = [...new Set(matches.map((m: any) => m.profile?.caste).filter(Boolean))];
 
   if (loading) {
     return (
@@ -216,13 +215,16 @@ const Matches = () => {
                       </Select>
                     </div>
                     <div>
-                      <Label className="text-sm font-medium mb-2 block">Caste</Label>
-                      <Select value={filters.caste} onValueChange={(v) => setFilters({ ...filters, caste: v })}>
+                      <Label className="text-sm font-medium mb-2 block">Gotra</Label>
+                      <Select value={filters.gotra} onValueChange={(v) => setFilters({ ...filters, gotra: v })}>
                         <SelectTrigger>
-                          <SelectValue placeholder={DEFAULT_CASTE} />
+                          <SelectValue placeholder="All Gotras" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={DEFAULT_CASTE}>{DEFAULT_CASTE}</SelectItem>
+                          <SelectItem value="all">All Gotras</SelectItem>
+                          {GOTRAS.map((gotra) => (
+                            <SelectItem key={gotra} value={gotra}>{gotra}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -287,11 +289,17 @@ const Matches = () => {
                             <GraduationCap className="h-4 w-4 mr-2" />
                             {match.profile.education}
                           </div>
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Briefcase className="h-4 w-4 mr-2" />
-                            {match.profile.occupation}
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Briefcase className="h-4 w-4 mr-2" />
+                              {match.profile.occupation}
+                            </div>
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Badge variant="outline" className="font-normal">
+                                Gotra: {match.profile.gotra || 'Not specified'}
+                              </Badge>
+                            </div>
                           </div>
-                        </div>
+
 
                         <Button
                           onClick={() => handleSendInterest(match.profile.user_id)}
