@@ -12,13 +12,24 @@ const supabase = createClient(
 
 // Initialize Razorpay lazily or with fallbacks to prevent crash if env vars are missing during startup
 const getRazorpay = () => {
+  const key_id = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_placeholder';
+  const key_secret = process.env.RAZORPAY_KEY_SECRET || 'placeholder';
+  
   return new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID || 'placeholder',
-    key_secret: process.env.RAZORPAY_KEY_SECRET || 'placeholder'
+    key_id,
+    key_secret
   });
 };
 
-const razorpay = getRazorpay();
+// Use a proxy or a getter to avoid initialization if not needed, 
+// but here we just ensure it doesn't crash on boot by providing a valid-format placeholder
+let razorpayInstance: Razorpay | null = null;
+const getRazorpayInstance = () => {
+  if (!razorpayInstance) {
+    razorpayInstance = getRazorpay();
+  }
+  return razorpayInstance;
+};
 
 // Subscription plans
 const PLANS: Record<string, { price: number; duration: number; name: string }> = {
@@ -40,7 +51,7 @@ router.post('/create-order', authMiddleware, async (req, res) => {
 
     const planDetails = PLANS[plan_id];
     
-    const order = await razorpay.orders.create({
+    const order = await getRazorpayInstance().orders.create({
       amount: amount * 100, // Convert to paise
       currency: currency || 'INR',
       receipt: `order_${userId}_${Date.now()}`,
@@ -75,7 +86,7 @@ router.post('/verify', authMiddleware, async (req, res) => {
     }
 
     // Fetch order details to get plan info
-    const order = await razorpay.orders.fetch(razorpay_order_id);
+    const order = await getRazorpayInstance().orders.fetch(razorpay_order_id);
     const plan = order.notes?.plan as string;
     const planDetails = plan ? PLANS[plan] : null;
 
