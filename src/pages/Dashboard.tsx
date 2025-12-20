@@ -217,8 +217,8 @@ const Dashboard = () => {
           matchesCount: mockMatches.length
         });
 
-        setRecentMembers(mockRecentMembers);
-        setMatches(mockMatches);
+        setRecentMembers(mockRecentMembers.slice(0, 7));
+        setMatches(mockMatches.slice(0, 5));
 
       } catch (error) {
         console.error('Error loading dashboard data:', error);
