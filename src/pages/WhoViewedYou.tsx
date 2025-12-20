@@ -265,7 +265,7 @@ const WhoViewedYou = () => {
                     setItemsPerPage(val);
                     setCurrentPage(1);
                   }}
-                  itemsPerPageOptions={[9, 15, 18]}
+                    itemsPerPageOptions={[9, 15, 21]}
                 />
 
           </>

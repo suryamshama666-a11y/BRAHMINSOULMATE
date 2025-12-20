@@ -20,7 +20,7 @@ export const Pagination = ({
   onPageChange,
   itemsPerPage,
   onItemsPerPageChange,
-  itemsPerPageOptions = [8, 16, 24],
+    itemsPerPageOptions = [9, 15, 21],
   className
 }: PaginationProps) => {
   const getPageNumbers = () => {

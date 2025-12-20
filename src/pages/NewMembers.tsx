@@ -22,13 +22,13 @@ const NewMembers = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(9);
     
-    const itemsPerPageOptions = showFilters ? [8, 16, 24] : [9, 15, 18];
+    const itemsPerPageOptions = [9, 15, 21];
 
     useEffect(() => {
       if (!itemsPerPageOptions.includes(itemsPerPage)) {
         setItemsPerPage(itemsPerPageOptions[0]);
       }
-    }, [showFilters]);
+    }, []);
 
     
     const [filterOnline, setFilterOnline] = useState(false);

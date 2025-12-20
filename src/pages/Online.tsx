@@ -21,14 +21,14 @@ const Online = () => {
     const [itemsPerPage, setItemsPerPage] = useState(9);
   const [showFilters, setShowFilters] = useState(true);
 
-  const itemsPerPageOptions = showFilters ? [8, 16, 24] : [9, 15, 18];
+    const itemsPerPageOptions = [9, 15, 21];
 
-  useEffect(() => {
-    // Reset items per page if it's not in the current options when filters toggle
-    if (!itemsPerPageOptions.includes(itemsPerPage)) {
-      setItemsPerPage(itemsPerPageOptions[0]);
-    }
-  }, [showFilters]);
+    useEffect(() => {
+      // Reset items per page if it's not in the current options
+      if (!itemsPerPageOptions.includes(itemsPerPage)) {
+        setItemsPerPage(itemsPerPageOptions[0]);
+      }
+    }, []);
   const navigate = useNavigate();
   const { isPremium } = useAuth();
 
