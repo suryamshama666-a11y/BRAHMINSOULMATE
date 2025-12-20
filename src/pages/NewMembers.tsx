@@ -204,11 +204,73 @@ const NewMembers = () => {
           </Button>
         </div>
 
-          <div className="grid lg:grid-cols-3 gap-6">
-            {showFilters && (
-              <Card className="lg:col-span-1 h-fit">
-...
-            <div className={showFilters ? 'lg:col-span-2' : 'lg:col-span-3'}>
+            <div className="grid lg:grid-cols-3 gap-6">
+              {showFilters && (
+                <Card className="lg:col-span-1 h-fit">
+                  <CardContent className="p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-lg text-purple-700">Filters</h3>
+                      <Button variant="ghost" size="sm" onClick={resetFilters} className="text-purple-600 h-8 px-2 hover:bg-purple-50">
+                        Reset
+                      </Button>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-2 bg-purple-50/50 rounded-lg border border-purple-100">
+                        <Label htmlFor="new" className="text-sm font-medium cursor-pointer">Joined Recently</Label>
+                        <Checkbox 
+                          id="new" 
+                          checked={filterNewMember} 
+                          onCheckedChange={(checked) => setFilterNewMember(!!checked)}
+                          className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-200">
+                          <Label htmlFor="online" className="text-sm cursor-pointer">Online Now</Label>
+                          <Checkbox 
+                            id="online" 
+                            checked={filterOnline} 
+                            onCheckedChange={(checked) => setFilterOnline(!!checked)}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-200">
+                          <Label htmlFor="verified" className="text-sm cursor-pointer">Verified Only</Label>
+                          <Checkbox 
+                            id="verified" 
+                            checked={filterVerified} 
+                            onCheckedChange={(checked) => setFilterVerified(!!checked)}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-200">
+                          <Label htmlFor="photo" className="text-sm cursor-pointer">With Photo</Label>
+                          <Checkbox 
+                            id="photo" 
+                            checked={filterWithPhoto} 
+                            onCheckedChange={(checked) => setFilterWithPhoto(!!checked)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t">
+                      <Label className="text-sm font-semibold mb-2 block text-gray-700">Sort By</Label>
+                      <Select value={sortBy} onValueChange={setSortBy}>
+                        <SelectTrigger className="w-full h-9">
+                          <SelectValue placeholder="Sort by" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="newest">Newest First</SelectItem>
+                          <SelectItem value="profileCompletion">Profile Completion</SelectItem>
+                          <SelectItem value="age">Age: Low to High</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              <div className={showFilters ? 'lg:col-span-2' : 'lg:col-span-3'}>
               {newMembers.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {newMembers.map((profile) => (
