@@ -19,6 +19,15 @@ const Online = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(8);
   const [showFilters, setShowFilters] = useState(true);
+
+  const itemsPerPageOptions = showFilters ? [8, 16, 24] : [9, 15, 18];
+
+  useEffect(() => {
+    // Reset items per page if it's not in the current options when filters toggle
+    if (!itemsPerPageOptions.includes(itemsPerPage)) {
+      setItemsPerPage(itemsPerPageOptions[0]);
+    }
+  }, [showFilters]);
   const navigate = useNavigate();
   const { isPremium } = useAuth();
 
@@ -152,18 +161,20 @@ const Online = () => {
             </div>
 
             {/* Pagination */}
-            <div className="mt-8">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-                itemsPerPage={itemsPerPage}
-                onItemsPerPageChange={(val) => {
-                  setItemsPerPage(val);
-                  setCurrentPage(1);
-                }}
-              />
-            </div>
+              <div className="mt-8">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                  itemsPerPage={itemsPerPage}
+                  onItemsPerPageChange={(val) => {
+                    setItemsPerPage(val);
+                    setCurrentPage(1);
+                  }}
+                  itemsPerPageOptions={itemsPerPageOptions}
+                />
+              </div>
+
           </div>
         </div>
       </main>

@@ -17,9 +17,18 @@ const NewMembers = () => {
   const navigate = useNavigate();
   const [newMembers, setNewMembers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showFilters, setShowFilters] = useState(true);
+    const [showFilters, setShowFilters] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(8);
+    const [itemsPerPage, setItemsPerPage] = useState(9);
+    
+    const itemsPerPageOptions = showFilters ? [8, 16, 24] : [9, 15, 18];
+
+    useEffect(() => {
+      if (!itemsPerPageOptions.includes(itemsPerPage)) {
+        setItemsPerPage(itemsPerPageOptions[0]);
+      }
+    }, [showFilters]);
+
     
     const [filterOnline, setFilterOnline] = useState(false);
   const [filterNewMember, setFilterNewMember] = useState(true);
@@ -304,18 +313,20 @@ const NewMembers = () => {
                         ))}
                       </div>
   
-                      <div className="mt-8">
-                        <Pagination
-                          currentPage={currentPage}
-                          totalPages={totalPages}
-                          onPageChange={setCurrentPage}
-                          itemsPerPage={itemsPerPage}
-                          onItemsPerPageChange={(val) => {
-                            setItemsPerPage(val);
-                            setCurrentPage(1);
-                          }}
-                        />
-                      </div>
+                        <div className="mt-8">
+                          <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
+                            itemsPerPage={itemsPerPage}
+                            onItemsPerPageChange={(val) => {
+                              setItemsPerPage(val);
+                              setCurrentPage(1);
+                            }}
+                            itemsPerPageOptions={itemsPerPageOptions}
+                          />
+                        </div>
+
                     </>
                 ) : (
 

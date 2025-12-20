@@ -130,7 +130,15 @@ export default function Search() {
   const [total, setTotal] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(8);
+  const [itemsPerPage, setItemsPerPage] = useState(9);
+  
+  const itemsPerPageOptions = showFilters ? [8, 16, 24] : [9, 15, 18];
+
+  useEffect(() => {
+    if (!itemsPerPageOptions.includes(itemsPerPage)) {
+      setItemsPerPage(itemsPerPageOptions[0]);
+    }
+  }, [showFilters]);
   
   const [basicOpen, setBasicOpen] = useState(true);
   const [locationOpen, setLocationOpen] = useState(false);
@@ -653,18 +661,20 @@ export default function Search() {
                       ))}
                     </div>
 
-                      <div className="mt-8">
-                        <Pagination
-                          currentPage={currentPage}
-                          totalPages={totalPages}
-                          onPageChange={setCurrentPage}
-                          itemsPerPage={itemsPerPage}
-                          onItemsPerPageChange={(val) => {
-                            setItemsPerPage(val);
-                            setCurrentPage(1);
-                          }}
-                        />
-                      </div>
+                        <div className="mt-8">
+                          <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
+                            itemsPerPage={itemsPerPage}
+                            onItemsPerPageChange={(val) => {
+                              setItemsPerPage(val);
+                              setCurrentPage(1);
+                            }}
+                            itemsPerPageOptions={itemsPerPageOptions}
+                          />
+                        </div>
+
                   </>
                 )}
 

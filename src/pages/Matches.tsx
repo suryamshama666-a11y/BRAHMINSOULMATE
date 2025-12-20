@@ -20,8 +20,9 @@ const Matches = () => {
   const queryClient = useQueryClient();
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState<'filters' | 'recalculate' | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(8);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(9);
+
   const [filters, setFilters] = useState({
     ageMin: '',
     ageMax: '',
@@ -316,6 +317,7 @@ const Matches = () => {
                 setItemsPerPage(val);
                 setCurrentPage(1);
               }}
+              itemsPerPageOptions={[9, 15, 18]}
             />
           </>
         )}

@@ -20,9 +20,10 @@ const WhoViewedYou = () => {
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('newest');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(8);
+    const [sortBy, setSortBy] = useState('newest');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(9);
+
 
   const sortOptions = [
     { value: 'newest', label: 'Most Recent' },
@@ -255,16 +256,18 @@ const WhoViewedYou = () => {
               ))}
             </div>
 
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-                itemsPerPage={itemsPerPage}
-                onItemsPerPageChange={(val) => {
-                  setItemsPerPage(val);
-                  setCurrentPage(1);
-                }}
-              />
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                  itemsPerPage={itemsPerPage}
+                  onItemsPerPageChange={(val) => {
+                    setItemsPerPage(val);
+                    setCurrentPage(1);
+                  }}
+                  itemsPerPageOptions={[9, 15, 18]}
+                />
+
           </>
         ) : (
           <Card className="text-center py-16">
