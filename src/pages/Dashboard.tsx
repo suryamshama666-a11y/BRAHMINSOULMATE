@@ -240,8 +240,8 @@ const Dashboard = () => {
               <div className="absolute right-[-20%] bottom-[-20%] w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
             </Card>
 
-            <Card className="border-0 shadow-sm rounded-[2rem] bg-white p-6">
-              <CardTitle className="text-lg font-black mb-6 text-[#1A1A1A]">Recent Activity</h3CardTitle>
+              <Card className="border-0 shadow-sm rounded-[2rem] bg-white p-6">
+                <CardTitle className="text-lg font-black mb-6 text-[#1A1A1A]">Recent Activity</CardTitle>
               <div className="space-y-6">
                 {recentMembers.slice(0, 4).map((member) => (
                   <div key={member.id} className="flex items-center gap-4 group cursor-pointer">
