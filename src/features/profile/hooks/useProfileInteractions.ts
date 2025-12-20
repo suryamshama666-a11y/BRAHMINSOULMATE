@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { Profile } from "@/types/profile";
 import { UserProfile } from '@/types';
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 
 // Create a unified type that works with both Profile and UserProfile structures
 type AnyProfileType = Profile | UserProfile | any;

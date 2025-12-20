@@ -1,18 +1,18 @@
 
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { LogOut, Heart } from "lucide-react";
 
 const Logout = () => {
-  const { logout } = useAuth();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
   
   useEffect(() => {
     const performLogout = async () => {
       try {
-        await logout();
+        await signOut();
         toast.success("You have been successfully logged out");
         navigate("/");
       } catch (error) {
