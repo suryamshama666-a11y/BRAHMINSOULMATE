@@ -78,7 +78,10 @@ const Dashboard = () => {
         setStats(activityStats);
         
         const transformProfile = (p: any) => {
-          const isOnline = p.last_active ? new Date(p.last_active) > new Date(Date.now() - 60 * 60 * 1000) : false;
+          const lastActive = p.last_active ? new Date(p.last_active).getTime() : 0;
+          const now = Date.now();
+          // Consider online if active in last 12 hours for better visibility in dev
+          const isOnline = lastActive > (now - 12 * 60 * 60 * 1000); 
           return {
             id: p.id,
             name: p.first_name + (p.last_name ? ` ${p.last_name}` : ''),
@@ -208,22 +211,22 @@ const Dashboard = () => {
               <CardContent className="p-0 divide-y divide-red-50">
                 {newMembers.length > 0 ? (
                   newMembers.map((member) => (
-                    <div 
-                      key={member.id} 
-                      className="p-4 flex items-center gap-4 hover:bg-red-50/50 transition-colors cursor-pointer group"
-                      onClick={() => navigate(`/profile/${member.id}`)}
-                    >
-                      <div className="relative">
-                        <Avatar className="h-12 w-12 border border-red-200">
-                          <AvatarImage src={member.avatarUrl} className="object-cover" />
-                          <AvatarFallback className="bg-red-50 text-red-600">{member.name[0]}</AvatarFallback>
-                        </Avatar>
-                        {member.isOnline && (
-                          <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-white rounded-full" />
-                        )}
-                      </div>
-                      <div className="flex-grow min-w-0">
-                        <h4 className="font-bold text-gray-800 truncate group-hover:text-red-600 transition-colors">{member.name}, {member.age}</h4>
+                      <div 
+                        key={member.id} 
+                        className="p-4 flex items-center gap-4 hover:bg-red-50/50 transition-colors cursor-pointer group"
+                        onClick={() => navigate(`/profile/${member.id}`)}
+                      >
+                        <div className="relative flex-shrink-0">
+                          <Avatar className="h-12 w-12 border border-red-200 shadow-sm">
+                            <AvatarImage src={member.avatarUrl} className="object-cover" />
+                            <AvatarFallback className="bg-red-50 text-red-600 font-bold">{member.name[0]}</AvatarFallback>
+                          </Avatar>
+                          {member.isOnline && (
+                            <div className="absolute bottom-0 right-0 h-3.5 w-3.5 bg-green-500 border-2 border-white rounded-full shadow-sm z-10" />
+                          )}
+                        </div>
+                        <div className="flex-grow min-w-0">
+                          <h4 className="font-bold text-gray-800 truncate group-hover:text-red-600 transition-colors">{member.name}, {member.age}</h4>
                         <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500 mt-0.5">
                           <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {member.location.split(',')[0]}</span>
                           <span className="flex items-center gap-1"><Briefcase className="h-3 w-3" /> {member.profession}</span>
