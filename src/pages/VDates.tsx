@@ -288,7 +288,7 @@ export default function VDates() {
                         <div className="flex gap-2">
                           <Button 
                             size="sm" 
-                            className="bg-green-600 hover:bg-green-700"
+                            className="bg-green-600 hover:bg-green-700 text-white"
                             onClick={() => handleJoinVDate(vdate)}
                             disabled={!canJoin}
                           >

@@ -125,7 +125,7 @@ export const PostCallFeedback = ({ isOpen, onClose, profile, callDuration }: Pos
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            <Button onClick={handleSubmit} className="w-full bg-red-600 hover:bg-red-700">
+            <Button onClick={handleSubmit} className="w-full bg-red-600 hover:bg-red-700 text-white">
               Submit Feedback
             </Button>
             

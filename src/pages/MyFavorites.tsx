@@ -225,7 +225,7 @@ const MyFavorites = () => {
                   </Button>
                 ) : (
                   <Link to="/search">
-                    <Button className="bg-red-600 hover:bg-red-700 shadow-md">
+                    <Button className="bg-red-600 hover:bg-red-700 text-white shadow-md">
                       Browse Profiles
                     </Button>
                   </Link>

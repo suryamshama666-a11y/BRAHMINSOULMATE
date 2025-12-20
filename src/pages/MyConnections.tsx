@@ -160,7 +160,7 @@ export default function MyConnections() {
                       Start connecting with people to see them here
                     </p>
                     <Link to="/search">
-                      <Button className="bg-red-600 hover:bg-red-700">
+                      <Button className="bg-red-600 hover:bg-red-700 text-white">
                         <UserPlus className="h-4 w-4 mr-2" />
                         Find Connections
                       </Button>

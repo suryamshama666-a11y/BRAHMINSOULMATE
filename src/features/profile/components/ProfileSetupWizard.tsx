@@ -294,11 +294,11 @@ export default function ProfileSetupWizard({ onComplete }: ProfileSetupWizardPro
               Skip to End
             </Button>
           )}
-          <Button
-            onClick={handleNext}
-            disabled={!canProceed}
-            className="flex items-center gap-2"
-          >
+            <Button
+              onClick={handleNext}
+              disabled={!canProceed}
+              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white"
+            >
             {isLastStep ? 'Complete Profile' : 'Next'}
             {!isLastStep && <ArrowRight className="h-4 w-4" />}
           </Button>

@@ -89,7 +89,7 @@ export const MatrimonialProfileOverlay = ({
           <div className="flex gap-2">
             <Button
               size="sm"
-              className="flex-1 bg-red-600 hover:bg-red-700"
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white"
               onClick={onInterest}
             >
               <Heart className="h-4 w-4 mr-1" />
