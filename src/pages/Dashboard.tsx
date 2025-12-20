@@ -25,9 +25,12 @@ const Dashboard = () => {
   const [matches, setMatches] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+    useEffect(() => {
     const loadDashboardData = async () => {
-      if (!user?.id) return;
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
       
       try {
         setLoading(true);
