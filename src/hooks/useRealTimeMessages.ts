@@ -42,7 +42,8 @@ export const useRealTimeMessages = ({
   const [unreadCount, setUnreadCount] = useState(0);
   
   const supabase = getSupabase();
-  const subscriptionRef = useRef<any>(null);
+  const messagesChannelRef = useRef<any>(null);
+  const typingChannelRef = useRef<any>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load initial messages for conversation
@@ -63,6 +64,59 @@ export const useRealTimeMessages = ({
       toast.error('Failed to load messages');
     }
   }, [userId, conversationUserId, supabase]);
+
+  // Mark messages as read
+  const markAsRead = useCallback(async (messageIds: string[]) => {
+    if (messageIds.length === 0) return;
+
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ read: true })
+        .in('id', messageIds)
+        .eq('receiver_id', userId);
+
+      if (error) throw error;
+
+      // Update local state
+      setMessages(prev => prev.map(msg => 
+        messageIds.includes(msg.id) ? { ...msg, read: true } : msg
+      ));
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  }, [userId, supabase]);
+
+  // Send typing indicator
+  const sendTypingIndicator = useCallback(async (isTyping: boolean) => {
+    if (!conversationUserId || !typingChannelRef.current) return;
+
+    try {
+      await typingChannelRef.current.send({
+        type: 'broadcast',
+        event: 'typing',
+        payload: {
+          userId,
+          isTyping,
+          timestamp: Date.now()
+        }
+      });
+
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      // Auto-stop typing after 3 seconds
+      if (isTyping) {
+        typingTimeoutRef.current = setTimeout(() => {
+          sendTypingIndicator(false);
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Error sending typing indicator:', error);
+    }
+  }, [userId, conversationUserId]);
 
   // Send message
   const sendMessage = useCallback(async (content: string, messageType: string = 'text', attachmentUrl?: string) => {
@@ -95,63 +149,7 @@ export const useRealTimeMessages = ({
       toast.error('Failed to send message');
       return null;
     }
-  }, [userId, conversationUserId, supabase]);
-
-  // Mark messages as read
-  const markAsRead = useCallback(async (messageIds: string[]) => {
-    if (messageIds.length === 0) return;
-
-    try {
-      const { error } = await supabase
-        .from('messages')
-        .update({ read: true })
-        .in('id', messageIds)
-        .eq('receiver_id', userId);
-
-      if (error) throw error;
-
-      // Update local state
-      setMessages(prev => prev.map(msg => 
-        messageIds.includes(msg.id) ? { ...msg, read: true } : msg
-      ));
-    } catch (error) {
-      console.error('Error marking messages as read:', error);
-    }
-  }, [userId, supabase]);
-
-  // Send typing indicator
-  const sendTypingIndicator = useCallback(async (isTyping: boolean) => {
-    if (!conversationUserId) return;
-
-    try {
-      // Use Supabase realtime to broadcast typing status
-      const channel = supabase.channel(`typing:${userId}:${conversationUserId}`);
-      
-      await channel.send({
-        type: 'broadcast',
-        event: 'typing',
-        payload: {
-          userId,
-          isTyping,
-          timestamp: Date.now()
-        }
-      });
-
-      // Clear existing timeout
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-
-      // Auto-stop typing after 3 seconds
-      if (isTyping) {
-        typingTimeoutRef.current = setTimeout(() => {
-          sendTypingIndicator(false);
-        }, 3000);
-      }
-    } catch (error) {
-      console.error('Error sending typing indicator:', error);
-    }
-  }, [userId, conversationUserId, supabase]);
+  }, [userId, conversationUserId, supabase, sendTypingIndicator]);
 
   // Get unread message count
   const getUnreadCount = useCallback(async () => {
@@ -226,9 +224,13 @@ export const useRealTimeMessages = ({
   useEffect(() => {
     if (!userId) return;
 
+    // Cleanup previous subscriptions
+    if (messagesChannelRef.current) supabase.removeChannel(messagesChannelRef.current);
+    if (typingChannelRef.current) supabase.removeChannel(typingChannelRef.current);
+
     // Subscribe to new messages
-    const messagesChannel = supabase
-      .channel('messages')
+    messagesChannelRef.current = supabase
+      .channel(`messages:${userId}`)
       .on(
         'postgres_changes',
         {
@@ -240,20 +242,15 @@ export const useRealTimeMessages = ({
         (payload) => {
           const newMessage = payload.new as Message;
           
-          // Add to messages if it's part of current conversation
           if (!conversationUserId || 
               newMessage.sender_id === conversationUserId || 
               newMessage.receiver_id === conversationUserId) {
             setMessages(prev => [...prev, newMessage]);
           }
 
-          // Update unread count
           setUnreadCount(prev => prev + 1);
-
-          // Call callback
           onNewMessage?.(newMessage);
 
-          // Show notification if not in current conversation
           if (conversationUserId !== newMessage.sender_id) {
             toast.info('New message received');
           }
@@ -264,17 +261,19 @@ export const useRealTimeMessages = ({
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'messages',
-          filter: `or(sender_id.eq.${userId},receiver_id.eq.${userId})`
+          table: 'messages'
+          // Note: Filtering updates by multiple OR conditions is not supported in postgres_changes filters
         },
         (payload) => {
           const updatedMessage = payload.new as Message;
           
-          setMessages(prev => prev.map(msg => 
-            msg.id === updatedMessage.id ? updatedMessage : msg
-          ));
-
-          onMessageUpdate?.(updatedMessage);
+          // Only update if it belongs to current conversation or is our own message
+          if (updatedMessage.sender_id === userId || updatedMessage.receiver_id === userId) {
+            setMessages(prev => prev.map(msg => 
+              msg.id === updatedMessage.id ? updatedMessage : msg
+            ));
+            onMessageUpdate?.(updatedMessage);
+          }
         }
       )
       .subscribe((status) => {
@@ -282,36 +281,33 @@ export const useRealTimeMessages = ({
       });
 
     // Subscribe to typing indicators
-    const typingChannel = supabase
-      .channel(`typing:${conversationUserId}:${userId}`)
-      .on('broadcast', { event: 'typing' }, (payload) => {
-        const { userId: typingUserId, isTyping, timestamp } = payload.payload;
-        
-        setTypingUsers(prev => {
-          const filtered = prev.filter(t => t.userId !== typingUserId);
-          if (isTyping) {
-            return [...filtered, { userId: typingUserId, isTyping, timestamp }];
+    if (conversationUserId) {
+      typingChannelRef.current = supabase
+        .channel(`typing:${conversationUserId}:${userId}`)
+        .on('broadcast', { event: 'typing' }, (payload) => {
+          const { userId: typingUserId, isTyping, timestamp } = payload.payload;
+          
+          if (typingUserId !== userId) { // Don't track own typing status
+            setTypingUsers(prev => {
+              const filtered = prev.filter(t => t.userId !== typingUserId);
+              if (isTyping) {
+                return [...filtered, { userId: typingUserId, isTyping, timestamp }];
+              }
+              return filtered;
+            });
+            onTypingUpdate?.(typingUserId, isTyping);
           }
-          return filtered;
-        });
+        })
+        .subscribe();
+    }
 
-        onTypingUpdate?.(typingUserId, isTyping);
-      })
-      .subscribe();
-
-    subscriptionRef.current = { messagesChannel, typingChannel };
-
-    // Load initial data
     loadMessages();
     getUnreadCount();
 
-    // Cleanup
     return () => {
-      messagesChannel.unsubscribe();
-      typingChannel.unsubscribe();
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
+      if (messagesChannelRef.current) supabase.removeChannel(messagesChannelRef.current);
+      if (typingChannelRef.current) supabase.removeChannel(typingChannelRef.current);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     };
   }, [userId, conversationUserId, loadMessages, getUnreadCount, onNewMessage, onMessageUpdate, onTypingUpdate, supabase]);
 
@@ -319,14 +315,14 @@ export const useRealTimeMessages = ({
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
-      setTypingUsers(prev => prev.filter(t => now - t.timestamp < 5000)); // 5 second timeout
+      setTypingUsers(prev => prev.filter(t => now - t.timestamp < 5000));
     }, 1000);
 
     return () => clearInterval(interval);
   }, []);
 
   return {
-    messages: messages.filter(msg => !msg.deleted_at), // Filter out deleted messages
+    messages: messages.filter(msg => !msg.deleted_at),
     isConnected,
     unreadCount,
     typingUsers,

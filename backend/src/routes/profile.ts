@@ -1,84 +1,65 @@
 import express from 'express';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../config/supabase';
 import { authMiddleware } from '../middleware/auth';
+import { asyncHandler } from '../utils/asyncHandler';
 
 const router = express.Router();
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 // Get profile
-router.get('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', id)
-      .single();
+router.get('/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', id)
+    .single();
 
-    if (error) throw error;
-    res.json({ success: true, profile: data });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+  if (error) throw error;
+  res.json({ success: true, profile: data });
+}));
 
 // Update profile
-router.put('/', authMiddleware, async (req, res) => {
-  try {
-    const userId = req.user?.id;
-    const updates = req.body;
+router.put('/', authMiddleware, asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
+  const updates = req.body;
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .update(updates)
-      .eq('id', userId)
-      .select()
-      .single();
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', userId)
+    .select()
+    .single();
 
-    if (error) throw error;
-    res.json({ success: true, profile: data });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+  if (error) throw error;
+  res.json({ success: true, profile: data });
+}));
 
 // Search profiles
-    router.get('/search/all', async (req, res) => {
-      try {
-        const { gender, min_age, max_age, city, religion, viewerId, limit } = req.query;
-        
-        let query = supabase
-          .from('profiles')
-          .select('*')
-          .eq('caste', 'Brahmin'); // Strictly Brahmin-only platform
-    
-        if (gender) query = query.eq('gender', gender);
-        
-        // Enforce legal age limits even if not specified
-        const effectiveMinAge = min_age 
-          ? Math.max(Number(min_age), (gender === 'female' ? 18 : 21))
-          : (gender === 'female' ? 18 : 21);
+router.get('/search/all', asyncHandler(async (req, res) => {
+  const { gender, min_age, max_age, city, religion, limit } = req.query;
+  
+  let query = supabase
+    .from('profiles')
+    .select('*')
+    .eq('caste', 'Brahmin'); // Strictly Brahmin-only platform
 
-        query = query.gte('age', effectiveMinAge);
-        if (max_age) query = query.lte('age', max_age);
-        if (city) query = query.ilike('location->city', `%${city}%`);
-        if (religion) query = query.eq('religion', religion);
-    
-        const { data: profiles, error } = await query.limit(Number(limit) || 20);
+  if (gender) query = query.eq('gender', gender);
+  
+  // Enforce legal age limits even if not specified
+  const effectiveMinAge = min_age 
+    ? Math.max(Number(min_age), (gender === 'female' ? 18 : 21))
+    : (gender === 'female' ? 18 : 21);
 
-    if (error) throw error;
+  query = query.gte('age', effectiveMinAge);
+  if (max_age) query = query.lte('age', max_age);
+  if (city) query = query.ilike('location->city', `%${city}%`);
+  if (religion) query = query.eq('religion', religion);
 
-    // If viewerId is provided, we could calculate compatibility here
-    // but for simplicity and performance, we'll let the frontend handle it per card
-    // or just return the profiles
-    
-    res.json({ success: true, profiles });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+  const { data: profiles, error } = await query.limit(Number(limit) || 20);
+
+  if (error) throw error;
+  
+  res.json({ success: true, profiles });
+}));
 
 export default router;

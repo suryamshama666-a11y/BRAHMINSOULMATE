@@ -24,18 +24,6 @@ export function CollapsibleChatWidget() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   
-  // Debug logging
-  useEffect(() => {
-    console.log('🔍 ChatWidget Render State:', { 
-      hasUser: !!user, 
-      loading, 
-      bypassEnabled: import.meta.env.VITE_DEV_BYPASS_AUTH === 'true',
-      userId: user?.id,
-      windowWidth: window.innerWidth,
-      isOpen
-    });
-  }, [user, loading, isOpen]);
-
   const { conversations, totalUnread, isLoading: convsLoading } = useConversations();
   const { isUserOnline } = usePresence();
   
@@ -50,12 +38,26 @@ export function CollapsibleChatWidget() {
     }
   }, [user]);
 
-  // Calculate total unread count if not provided by hook
+  // Use bypass mode if enabled
+  const isBypass = import.meta.env.VITE_DEV_BYPASS_AUTH === 'true';
+  const showWidget = !!user || loading || isBypass;
+
+  // Calculate total unread count
   const totalUnreadCount = totalUnread ?? (conversations?.reduce((acc: number, conv: any) => acc + (conv.unread_count || 0), 0) || 0);
 
-  // Use bypass mode if enabled, otherwise check for user
-  const isBypass = import.meta.env.VITE_DEV_BYPASS_AUTH === 'true';
-  if (!user && !loading && !isBypass) return null;
+  // Debug logging
+  useEffect(() => {
+    if (showWidget) {
+      console.log('🔍 ChatWidget Render State:', { 
+        hasUser: !!user, 
+        loading, 
+        isBypass,
+        isOpen
+      });
+    }
+  }, [user, loading, isOpen, showWidget, isBypass]);
+
+  if (!showWidget) return null;
 
   return (
     <div className="fixed bottom-4 right-4 z-[10000] pointer-events-auto">
@@ -201,7 +203,6 @@ export function CollapsibleChatWidget() {
   );
 }
 
-// Sub-components
 function ChatView({ 
   conversation, 
   isOnline, 
@@ -223,7 +224,6 @@ function ChatView({
   const [isLoading, setIsLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Fetch messages
   useEffect(() => {
     if (!user) return;
 
@@ -247,7 +247,6 @@ function ChatView({
 
     fetchMessages();
 
-    // Subscribe to new messages
     const channel = supabase
       .channel(`chat:${conversation.id}`)
       .on('postgres_changes', { 
@@ -263,9 +262,8 @@ function ChatView({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversation.partner_id, user]);
+  }, [conversation.partner_id, user, conversation.id]);
 
-  // Scroll to bottom
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo(0, scrollRef.current.scrollHeight);
@@ -291,7 +289,6 @@ function ChatView({
 
       if (error) throw error;
       
-      // Optimistically add message
       const optimMsg = {
         id: Math.random().toString(),
         sender_id: user.id,
@@ -308,13 +305,9 @@ function ChatView({
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white shrink-0">
         <div className="flex items-center gap-2">
-          <button 
-            onClick={onBack}
-            className="p-1 hover:bg-white/20 rounded-full transition-colors"
-          >
+          <button onClick={onBack} className="p-1 hover:bg-white/20 rounded-full transition-colors">
             <ArrowLeft size={18} />
           </button>
           <div className="relative">
@@ -322,9 +315,7 @@ function ChatView({
               <AvatarImage src={conversation.partner_avatar} />
               <AvatarFallback><User size={14} /></AvatarFallback>
             </Avatar>
-            {isOnline && (
-              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
-            )}
+            {isOnline && <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />}
           </div>
           <div className="flex flex-col">
             <span className="font-semibold text-sm leading-tight">{conversation.partner_name}</span>
@@ -332,49 +323,26 @@ function ChatView({
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <button 
-            onClick={onToggleMute}
-            className="p-1.5 hover:bg-white/20 rounded-full transition-colors"
-          >
+          <button onClick={onToggleMute} className="p-1.5 hover:bg-white/20 rounded-full transition-colors">
             {isMuted ? <BellOff size={16} /> : <Bell size={16} />}
           </button>
-          <button 
-            onClick={onClose}
-            className="p-1.5 hover:bg-white/20 rounded-full transition-colors"
-          >
+          <button onClick={onClose} className="p-1.5 hover:bg-white/20 rounded-full transition-colors">
             <X size={18} />
           </button>
         </div>
       </div>
 
-      {/* Messages */}
-      <div 
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50"
-      >
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
         {isLoading ? (
-          <div className="flex justify-center py-4">
-            <Circle className="animate-spin text-orange-500" size={20} />
-          </div>
+          <div className="flex justify-center py-4"><Circle className="animate-spin text-orange-500" size={20} /></div>
         ) : messages.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-xs text-gray-400">No messages yet. Say hi!</p>
-          </div>
+          <div className="text-center py-8"><p className="text-xs text-gray-400">No messages yet. Say hi!</p></div>
         ) : (
           messages.map((msg) => {
             const isMe = user && msg.sender_id === user.id;
             return (
-              <div 
-                key={msg.id} 
-                className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
-              >
-                <div 
-                  className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm shadow-sm ${
-                    isMe 
-                      ? 'bg-orange-500 text-white rounded-tr-none' 
-                      : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
-                  }`}
-                >
+              <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm shadow-sm ${isMe ? 'bg-orange-500 text-white rounded-tr-none' : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'}`}>
                   <p>{msg.content}</p>
                   <div className={`text-[10px] mt-1 text-right ${isMe ? 'text-white/70' : 'text-gray-400'}`}>
                     {format(new Date(msg.created_at), 'HH:mm')}
@@ -386,15 +354,8 @@ function ChatView({
         )}
       </div>
 
-      {/* Input */}
-      <form 
-        onSubmit={handleSendMessage}
-        className="p-3 bg-white border-t flex items-center gap-2 shrink-0"
-      >
-        <button 
-          type="button"
-          className="p-2 text-gray-400 hover:text-orange-500 rounded-full hover:bg-orange-50 transition-all"
-        >
+      <form onSubmit={handleSendMessage} className="p-3 bg-white border-t flex items-center gap-2 shrink-0">
+        <button type="button" className="p-2 text-gray-400 hover:text-orange-500 rounded-full hover:bg-orange-50 transition-all">
           <Smile size={20} />
         </button>
         <input 

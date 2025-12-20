@@ -1,16 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useSupabaseAuth } from './useSupabaseAuth';
-
-interface TypingStatus {
-  userId: string;
-  isTyping: boolean;
-}
+import { getSupabase } from '@/lib/getSupabase';
+import { useAuth } from './useAuth';
 
 export const useTypingIndicator = () => {
-  const { user } = useSupabaseAuth();
+  const { user } = useAuth();
   const [typingUsers, setTypingUsers] = useState<Record<string, string[]>>({});
   const channelRef = useRef<any>(null);
+  const supabase = getSupabase();
 
   useEffect(() => {
     if (!user) return;
@@ -50,24 +46,16 @@ export const useTypingIndicator = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, supabase]);
 
   const setTyping = useCallback(async (conversationId: string, isTyping: boolean) => {
     if (!user || !channelRef.current) return;
 
-    if (isTyping) {
-      await channelRef.current.track({
-        conversationId,
-        isTyping: true,
-        typing_at: new Date().toISOString()
-      });
-    } else {
-      await channelRef.current.track({
-        conversationId,
-        isTyping: false,
-        typing_at: new Date().toISOString()
-      });
-    }
+    await channelRef.current.track({
+      conversationId,
+      isTyping,
+      typing_at: new Date().toISOString()
+    });
   }, [user]);
 
   const getTypingUsers = (conversationId: string): string[] => {
