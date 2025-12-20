@@ -356,7 +356,6 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <Card className="border-2 border-transparent shadow-xl overflow-hidden relative">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-400 via-rose-500 to-orange-500"></div>
               <CardHeader className="bg-gradient-to-br from-rose-50 via-white to-orange-50/30 pb-4">
                 <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center text-rose-700 text-xl font-bold">
