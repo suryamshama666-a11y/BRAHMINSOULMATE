@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,12 +9,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import ProfileCard from '@/components/ProfileCard';
-import { Search as SearchIcon, Filter, Loader2, ChevronDown, ChevronUp, Save, MapPin, Briefcase, GraduationCap, Heart, Star, Users, X } from 'lucide-react';
+import { Search as SearchIcon, Filter, Loader2, ChevronDown, ChevronUp, Save, MapPin, Briefcase, GraduationCap, Heart, Star, Users, X, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import LocationSearch from '@/components/search/LocationSearch';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { interestsService } from '@/services/api';
 
 const COUNTRIES = [
   { value: 'india', label: 'India' },
@@ -159,6 +161,15 @@ export default function Search() {
   const [occupationSearch, setOccupationSearch] = useState('');
 
   const [saveSearchName, setSaveSearchName] = useState('');
+
+  const { data: sentInterests = [] } = useQuery({
+    queryKey: ['interests', 'sent', profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      return await interestsService.getSentInterests();
+    },
+    enabled: !!profile?.id
+  });
 
   const handleProfileAction = (action: string, profileId: string) => {
     const targetProfile = profiles.find(p => p.id === profileId);
@@ -336,6 +347,39 @@ export default function Search() {
               {showFilters ? 'Hide' : 'Show'} Filters
             </Button>
           </div>
+        </div>
+
+        {/* Interest Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="border-2 border-green-100/50 shadow-sm bg-white/50 backdrop-blur-sm">
+            <CardContent className="p-4 text-center">
+              <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-1" />
+              <h3 className="text-xl font-bold text-green-600">
+                {sentInterests.filter(i => i.status === 'accepted').length}
+              </h3>
+              <p className="text-xs text-gray-600 uppercase tracking-wider font-semibold">Accepted</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-2 border-yellow-100/50 shadow-sm bg-white/50 backdrop-blur-sm">
+            <CardContent className="p-4 text-center">
+              <Clock className="h-6 w-6 text-yellow-500 mx-auto mb-1" />
+              <h3 className="text-xl font-bold text-yellow-600">
+                {sentInterests.filter(i => i.status === 'pending').length}
+              </h3>
+              <p className="text-xs text-gray-600 uppercase tracking-wider font-semibold">Pending</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-2 border-red-100/50 shadow-sm bg-white/50 backdrop-blur-sm">
+            <CardContent className="p-4 text-center">
+              <XCircle className="h-6 w-6 text-red-500 mx-auto mb-1" />
+              <h3 className="text-xl font-bold text-red-600">
+                {sentInterests.filter(i => i.status === 'declined').length}
+              </h3>
+              <p className="text-xs text-gray-600 uppercase tracking-wider font-semibold">Declined</p>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="grid md:grid-cols-4 gap-6">
