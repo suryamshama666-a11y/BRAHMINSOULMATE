@@ -341,11 +341,11 @@ const NewMembers = () => {
                   <UserPlus className="h-16 w-16 mx-auto mb-4 text-gray-300" />
                   <h3 className="text-xl font-semibold mb-2">No New Members This Week</h3>
                   <p className="text-gray-600 mb-6">Check back later for new profiles</p>
-                  <Link to="/search">
-                    <Button className="bg-purple-600 hover:bg-purple-700">
-                      Browse All Profiles
-                    </Button>
-                  </Link>
+                    <Link to="/search">
+                      <Button className="bg-purple-600 hover:bg-purple-700 text-white shadow-md">
+                        Browse All Profiles
+                      </Button>
+                    </Link>
                 </CardContent>
               </Card>
             )}

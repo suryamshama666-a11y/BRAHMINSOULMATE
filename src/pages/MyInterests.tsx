@@ -224,11 +224,11 @@ const MyInterests = () => {
                     Clear Search
                   </Button>
                 ) : (
-                  <Link to="/search">
-                    <Button className="bg-amber-600 hover:bg-amber-700 shadow-md">
-                      Browse Profiles
-                    </Button>
-                  </Link>
+                    <Link to="/search">
+                      <Button className="bg-amber-600 hover:bg-amber-700 text-white shadow-md">
+                        Browse Profiles
+                      </Button>
+                    </Link>
                 )}
               </CardContent>
             </Card>

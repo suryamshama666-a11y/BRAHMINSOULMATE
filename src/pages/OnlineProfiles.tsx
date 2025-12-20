@@ -289,11 +289,11 @@ const OnlineProfiles = () => {
                   </div>
                   <h3 className="text-xl font-semibold mb-2">No One Online Right Now</h3>
                   <p className="text-gray-600 mb-6">Check back later or browse all profiles</p>
-                  <Link to="/search">
-                    <Button className="bg-green-600 hover:bg-green-700">
-                      Browse All Profiles
-                    </Button>
-                  </Link>
+                    <Link to="/search">
+                      <Button className="bg-green-600 hover:bg-green-700 text-white shadow-md">
+                        Browse All Profiles
+                      </Button>
+                    </Link>
                 </CardContent>
               </Card>
             )}
