@@ -7,6 +7,9 @@ interface PaginationProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  itemsPerPage?: number;
+  onItemsPerPageChange?: (items: number) => void;
+  itemsPerPageOptions?: number[];
   className?: string;
 }
 
@@ -14,10 +17,11 @@ export const Pagination = ({
   currentPage,
   totalPages,
   onPageChange,
+  itemsPerPage,
+  onItemsPerPageChange,
+  itemsPerPageOptions = [8, 16, 24],
   className
 }: PaginationProps) => {
-  if (totalPages <= 1) return null;
-
   const getPageNumbers = () => {
     const pages = [];
     const showMax = 5;
@@ -39,50 +43,74 @@ export const Pagination = ({
   };
 
   return (
-    <nav className={cn("flex items-center justify-center space-x-2 py-8", className)}>
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        className="h-9 w-9"
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
+    <div className={cn("flex flex-col items-center space-y-4 py-8", className)}>
+      <div className="flex items-center justify-center space-x-2">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage <= 1}
+          className="h-9 w-9"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
 
-      <div className="flex items-center space-x-1">
-        {getPageNumbers().map((page, index) => (
-          <React.Fragment key={index}>
-            {page === 'ellipsis' ? (
-              <div className="px-2">
-                <MoreHorizontal className="h-4 w-4 text-gray-400" />
-              </div>
-            ) : (
-              <Button
-                variant={currentPage === page ? "default" : "outline"}
-                size="sm"
-                onClick={() => onPageChange(page as number)}
-                className={cn(
-                  "h-9 w-9",
-                  currentPage === page ? "bg-red-600 hover:bg-red-700 text-white" : ""
-                )}
-              >
-                {page}
-              </Button>
-            )}
-          </React.Fragment>
-        ))}
+        <div className="flex items-center space-x-1">
+          {getPageNumbers().map((page, index) => (
+            <React.Fragment key={index}>
+              {page === 'ellipsis' ? (
+                <div className="px-2">
+                  <MoreHorizontal className="h-4 w-4 text-gray-400" />
+                </div>
+              ) : (
+                <Button
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => onPageChange(page as number)}
+                  className={cn(
+                    "h-9 w-9",
+                    currentPage === page ? "bg-red-600 hover:bg-red-700 text-white" : ""
+                  )}
+                >
+                  {page}
+                </Button>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage >= totalPages}
+          className="h-9 w-9"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
       </div>
 
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className="h-9 w-9"
-      >
-        <ChevronRight className="h-4 w-4" />
-      </Button>
-    </nav>
+      {onItemsPerPageChange && itemsPerPage && (
+        <div className="flex items-center space-x-2 text-sm text-gray-600">
+          <span>Profiles per page:</span>
+          <div className="flex items-center space-x-1">
+            {itemsPerPageOptions.map((option) => (
+              <Button
+                key={option}
+                variant={itemsPerPage === option ? "default" : "outline"}
+                size="sm"
+                onClick={() => onItemsPerPageChange(option)}
+                className={cn(
+                  "h-8 px-3",
+                  itemsPerPage === option ? "bg-red-600 hover:bg-red-700 text-white" : ""
+                )}
+              >
+                {option}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 };

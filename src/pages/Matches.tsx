@@ -21,6 +21,7 @@ const Matches = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState<'filters' | 'recalculate' | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
   const [filters, setFilters] = useState({
     ageMin: '',
     ageMax: '',
@@ -62,10 +63,10 @@ const Matches = () => {
     return 0;
   });
 
-  const totalPages = Math.ceil(filteredMatches.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredMatches.length / itemsPerPage);
   const currentMatches = filteredMatches.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   const recalculateMutation = useMutation({
@@ -310,6 +311,11 @@ const Matches = () => {
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={setCurrentPage}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={(val) => {
+                setItemsPerPage(val);
+                setCurrentPage(1);
+              }}
             />
           </>
         )}
