@@ -17,6 +17,8 @@ const Online = () => {
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
+  const [showFilters, setShowFilters] = useState(true);
   const navigate = useNavigate();
   const { isPremium } = useAuth();
 
@@ -97,49 +99,73 @@ const Online = () => {
     profile.location.city.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalPages = Math.ceil(filteredProfiles.length / ITEMS_PER_PAGE);
-  const currentProfiles = filteredProfiles.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+    const totalPages = Math.ceil(filteredProfiles.length / itemsPerPage);
+    const currentProfiles = filteredProfiles.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    );
 
   return (
     <div className="min-h-screen flex flex-col bg-orange-50/30">
       <main className="flex-grow container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-serif font-bold text-primary mb-2">
-            Online Now
-          </h1>
-          <p className="text-gray-600">Connect with members who are currently online</p>
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-4xl font-serif font-bold text-primary mb-2">
+              Online Now
+            </h1>
+            <p className="text-gray-600">Connect with members who are currently online</p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-2"
+          >
+            {showFilters ? 'Hide Filters' : 'Show Filters'}
+          </Button>
         </div>
 
         <OnlineStats onlineCount={onlineProfiles.length} />
 
-        <OnlineSearchBar 
-          searchTerm={searchTerm} 
-          setSearchTerm={setSearchTerm} 
-        />
+        <div className="flex flex-col lg:flex-row gap-8">
+          {showFilters && (
+            <div className="w-full lg:w-1/4">
+              <OnlineSearchBar 
+                searchTerm={searchTerm} 
+                setSearchTerm={setSearchTerm} 
+              />
+            </div>
+          )}
 
-        {/* Online Profiles Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {currentProfiles.map((profile) => (
-            <OnlineProfileCard
-              key={profile.id}
-              profile={profile}
-              onStartChat={handleStartChat}
-              onVideoCall={handleVideoCall}
-              onPhoneCall={handlePhoneCall}
-              onSendInterest={handleSendInterest}
-            />
-          ))}
+          <div className={`flex-1 ${!showFilters ? 'w-full' : ''}`}>
+            {/* Online Profiles Grid */}
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${showFilters ? 'lg:grid-cols-2' : 'lg:grid-cols-3'} gap-6`}>
+              {currentProfiles.map((profile) => (
+                <OnlineProfileCard
+                  key={profile.id}
+                  profile={profile}
+                  onStartChat={handleStartChat}
+                  onVideoCall={handleVideoCall}
+                  onPhoneCall={handlePhoneCall}
+                  onSendInterest={handleSendInterest}
+                />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            <div className="mt-8">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                itemsPerPage={itemsPerPage}
+                onItemsPerPageChange={(val) => {
+                  setItemsPerPage(val);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+          </div>
         </div>
-
-        {/* Pagination */}
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
       </main>
       
       <Footer />

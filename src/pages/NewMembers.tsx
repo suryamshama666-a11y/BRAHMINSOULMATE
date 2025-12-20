@@ -12,17 +12,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Pagination } from '@/components/ui/pagination';
 
-const ITEMS_PER_PAGE = 6;
-
 const NewMembers = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [newMembers, setNewMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  
-  const [filterOnline, setFilterOnline] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(8);
+    
+    const [filterOnline, setFilterOnline] = useState(false);
   const [filterNewMember, setFilterNewMember] = useState(true);
   const [filterVerified, setFilterVerified] = useState(false);
   const [filterWithPhoto, setFilterWithPhoto] = useState(false);
@@ -147,10 +146,10 @@ const NewMembers = () => {
     return true;
   });
 
-  const totalPages = Math.ceil(filteredMembers.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredMembers.length / itemsPerPage);
   const currentMembers = filteredMembers.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   const handleProfileAction = (action: string, profileId: string) => {
@@ -287,30 +286,37 @@ const NewMembers = () => {
                   </CardContent>
                 </Card>
               )}
-                <div className={showFilters ? 'lg:col-span-2' : 'lg:col-span-3'}>
-                {filteredMembers.length > 0 ? (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {currentMembers.map((profile) => (
-                        <ProfileCard 
-                          key={profile.id}
-                          profile={{
-                            ...profile, 
-                            joinedDate: profile.joinedDate,
-                            gotra: profile.gotra || 'Gotra not specified'
+                  <div className={showFilters ? 'lg:col-span-2' : 'lg:col-span-3'}>
+                  {filteredMembers.length > 0 ? (
+                    <>
+                      <div className={`grid grid-cols-1 md:grid-cols-2 ${showFilters ? 'lg:grid-cols-2' : 'lg:grid-cols-3'} gap-4`}>
+                        {currentMembers.map((profile) => (
+                          <ProfileCard 
+                            key={profile.id}
+                            profile={{
+                              ...profile, 
+                              joinedDate: profile.joinedDate,
+                              gotra: profile.gotra || 'Gotra not specified'
+                            }}
+                            variant="new"
+                            onAction={handleProfileAction}
+                          />
+                        ))}
+                      </div>
+  
+                      <div className="mt-8">
+                        <Pagination
+                          currentPage={currentPage}
+                          totalPages={totalPages}
+                          onPageChange={setCurrentPage}
+                          itemsPerPage={itemsPerPage}
+                          onItemsPerPageChange={(val) => {
+                            setItemsPerPage(val);
+                            setCurrentPage(1);
                           }}
-                          variant="new"
-                          onAction={handleProfileAction}
                         />
-                      ))}
-                    </div>
-
-                    <Pagination
-                      currentPage={currentPage}
-                      totalPages={totalPages}
-                      onPageChange={setCurrentPage}
-                    />
-                  </>
+                      </div>
+                    </>
                 ) : (
 
               <Card className="text-center py-16">

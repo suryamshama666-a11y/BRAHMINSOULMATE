@@ -13,8 +13,6 @@ import { supabase } from '@/lib/supabase';
 import { ListFilters } from '@/components/ListFilters';
 import { Pagination } from '@/components/ui/pagination';
 
-const ITEMS_PER_PAGE = 9;
-
 const WhoViewedYou = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -24,6 +22,7 @@ const WhoViewedYou = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
 
   const sortOptions = [
     { value: 'newest', label: 'Most Recent' },
@@ -138,10 +137,10 @@ const WhoViewedYou = () => {
     return result;
   }, [viewers, searchTerm, sortBy]);
 
-  const totalPages = Math.ceil(filteredAndSortedViewers.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredAndSortedViewers.length / itemsPerPage);
   const currentViewers = filteredAndSortedViewers.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   const formatViewTime = (dateString: string) => {
@@ -256,11 +255,16 @@ const WhoViewedYou = () => {
               ))}
             </div>
 
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                itemsPerPage={itemsPerPage}
+                onItemsPerPageChange={(val) => {
+                  setItemsPerPage(val);
+                  setCurrentPage(1);
+                }}
+              />
           </>
         ) : (
           <Card className="text-center py-16">

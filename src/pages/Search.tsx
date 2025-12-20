@@ -19,7 +19,6 @@ import { useQuery } from '@tanstack/react-query';
 import { interestsService } from '@/services/api';
 import { Pagination } from '@/components/ui/pagination';
 
-const ITEMS_PER_PAGE = 6;
 
 const COUNTRIES = [
   { value: 'india', label: 'India' },
@@ -131,6 +130,7 @@ export default function Search() {
   const [total, setTotal] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
   
   const [basicOpen, setBasicOpen] = useState(true);
   const [locationOpen, setLocationOpen] = useState(false);
@@ -653,11 +653,18 @@ export default function Search() {
                       ))}
                     </div>
 
-                    <Pagination
-                      currentPage={currentPage}
-                      totalPages={totalPages}
-                      onPageChange={setCurrentPage}
-                    />
+                      <div className="mt-8">
+                        <Pagination
+                          currentPage={currentPage}
+                          totalPages={totalPages}
+                          onPageChange={setCurrentPage}
+                          itemsPerPage={itemsPerPage}
+                          onItemsPerPageChange={(val) => {
+                            setItemsPerPage(val);
+                            setCurrentPage(1);
+                          }}
+                        />
+                      </div>
                   </>
                 )}
 
