@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from './button';
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
 
 interface PaginationProps {
   currentPage: number;
@@ -91,24 +92,23 @@ export const Pagination = ({
       </div>
 
       {onItemsPerPageChange && itemsPerPage && (
-        <div className="flex items-center space-x-2 text-sm text-gray-600">
-          <span>Profiles per page:</span>
-          <div className="flex items-center space-x-1">
-            {itemsPerPageOptions.map((option) => (
-              <Button
-                key={option}
-                variant={itemsPerPage === option ? "default" : "outline"}
-                size="sm"
-                onClick={() => onItemsPerPageChange(option)}
-                className={cn(
-                  "h-8 px-3",
-                  itemsPerPage === option ? "bg-red-600 hover:bg-red-700 text-white" : ""
-                )}
-              >
-                {option}
-              </Button>
-            ))}
-          </div>
+        <div className="flex items-center space-x-2 text-sm text-gray-600 bg-white p-2 rounded-lg border shadow-sm">
+          <span className="font-medium">Profiles per page:</span>
+          <Select 
+            value={itemsPerPage.toString()} 
+            onValueChange={(val) => onItemsPerPageChange(parseInt(val))}
+          >
+            <SelectTrigger className="h-8 w-[70px]">
+              <SelectValue placeholder={itemsPerPage.toString()} />
+            </SelectTrigger>
+            <SelectContent>
+              {itemsPerPageOptions.map((option) => (
+                <SelectItem key={option} value={option.toString()}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
     </div>
