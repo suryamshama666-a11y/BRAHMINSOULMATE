@@ -44,106 +44,170 @@ const Dashboard = () => {
         const oppositeGender = userGender === 'male' ? 'female' : 'male';
 
             const mockRecentMembers = [
-              {
-                id: '1',
-                gender: oppositeGender,
-                height: 165,
-                gotra: 'Bharadwaja',
-                subcaste: 'Iyer',
-                subscription_type: 'premium'
-              },
-              {
-                id: '2',
-                gender: oppositeGender,
-                height: 175,
-                gotra: 'Kashyapa',
-                subcaste: 'Iyengar',
-                subscription_type: 'free'
-              },
-              {
-                id: '3',
-                gender: oppositeGender,
-                height: 160,
-                gotra: 'Atri',
-                subcaste: 'Deshastha',
-                subscription_type: 'premium'
-              },
-              {
-                id: '4',
-                gender: oppositeGender,
-                height: 180,
-                gotra: 'Vasishtha',
-                subcaste: 'Kanyakubja',
-                subscription_type: 'free'
-              },
-              {
-                id: '10',
-                gender: oppositeGender,
-                height: 168,
-                gotra: 'Bhardwaj',
-                subcaste: 'Saraswat',
-                subscription_type: 'premium'
-              },
-              {
-                id: '11',
-                gender: oppositeGender,
-                height: 170,
-                gotra: 'Gautama',
-                subcaste: 'Iyer',
-                subscription_type: 'free'
-              }
-            ];
+                {
+                  id: '1',
+                  gender: oppositeGender,
+                  height: 165,
+                  gotra: 'Bharadwaja',
+                  subcaste: 'Iyer',
+                  subscription_type: 'premium'
+                },
+                {
+                  id: '2',
+                  gender: oppositeGender,
+                  height: 175,
+                  gotra: 'Kashyapa',
+                  subcaste: 'Iyengar',
+                  subscription_type: 'free'
+                },
+                {
+                  id: '3',
+                  gender: oppositeGender,
+                  height: 160,
+                  gotra: 'Atri',
+                  subcaste: 'Deshastha',
+                  subscription_type: 'premium'
+                },
+                {
+                  id: '4',
+                  gender: oppositeGender,
+                  height: 180,
+                  gotra: 'Vasishtha',
+                  subcaste: 'Kanyakubja',
+                  subscription_type: 'free'
+                },
+                {
+                  id: '10',
+                  gender: oppositeGender,
+                  height: 168,
+                  gotra: 'Bhardwaj',
+                  subcaste: 'Saraswat',
+                  subscription_type: 'premium'
+                },
+                {
+                  id: '11',
+                  gender: oppositeGender,
+                  height: 170,
+                  gotra: 'Gautama',
+                  subcaste: 'Iyer',
+                  subscription_type: 'free'
+                },
+                {
+                  id: '13',
+                  gender: oppositeGender,
+                  height: 162,
+                  gotra: 'Sandilya',
+                  subcaste: 'Madhwa',
+                  subscription_type: 'premium'
+                },
+                {
+                  id: '14',
+                  gender: oppositeGender,
+                  height: 172,
+                  gotra: 'Atri',
+                  subcaste: 'Smartha',
+                  subscription_type: 'free'
+                },
+                {
+                  id: '15',
+                  gender: oppositeGender,
+                  height: 165,
+                  gotra: 'Kashyapa',
+                  subcaste: 'Iyer',
+                  subscription_type: 'premium'
+                },
+                {
+                  id: '16',
+                  gender: oppositeGender,
+                  height: 178,
+                  gotra: 'Bharadwaja',
+                  subcaste: 'Iyengar',
+                  subscription_type: 'free'
+                }
+              ];
 
-            const mockMatches = [
-              {
-                id: '5',
-                gender: oppositeGender,
-                height: 162,
-                gotra: 'Gautama',
-                subcaste: 'Madhwa',
-                subscription_type: 'premium'
-              },
-              {
-                id: '6',
-                gender: oppositeGender,
-                height: 178,
-                gotra: 'Jamadagni',
-                subcaste: 'Smartha',
-                subscription_type: 'premium'
-              },
-              {
-                id: '7',
-                gender: oppositeGender,
-                height: 158,
-                gotra: 'Vishwamitra',
-                subcaste: 'Kokanastha',
-                subscription_type: 'free'
-              },
-              {
-                id: '8',
-                gender: oppositeGender,
-                height: 172,
-                gotra: 'Angirasa',
-                subcaste: 'Gaur',
-                subscription_type: 'premium'
-              },
-              {
-                id: '9',
-                gender: oppositeGender,
-                height: 165,
-                gotra: 'Vatsa',
-                subcaste: 'Deshastha',
-                subscription_type: 'premium'
-              },
-              {
-                id: '12',
-                gender: oppositeGender,
-                height: 167,
-                gotra: 'Kashyapa',
-                subcaste: 'Iyengar',
-                subscription_type: 'premium'
-              }
-            ];
+              const mockMatches = [
+                {
+                  id: '5',
+                  gender: oppositeGender,
+                  height: 162,
+                  gotra: 'Gautama',
+                  subcaste: 'Madhwa',
+                  subscription_type: 'premium'
+                },
+                {
+                  id: '6',
+                  gender: oppositeGender,
+                  height: 178,
+                  gotra: 'Jamadagni',
+                  subcaste: 'Smartha',
+                  subscription_type: 'premium'
+                },
+                {
+                  id: '7',
+                  gender: oppositeGender,
+                  height: 158,
+                  gotra: 'Vishwamitra',
+                  subcaste: 'Kokanastha',
+                  subscription_type: 'free'
+                },
+                {
+                  id: '8',
+                  gender: oppositeGender,
+                  height: 172,
+                  gotra: 'Angirasa',
+                  subcaste: 'Gaur',
+                  subscription_type: 'premium'
+                },
+                {
+                  id: '9',
+                  gender: oppositeGender,
+                  height: 165,
+                  gotra: 'Vatsa',
+                  subcaste: 'Deshastha',
+                  subscription_type: 'premium'
+                },
+                {
+                  id: '12',
+                  gender: oppositeGender,
+                  height: 167,
+                  gotra: 'Kashyapa',
+                  subcaste: 'Iyengar',
+                  subscription_type: 'premium'
+                },
+                {
+                  id: '17',
+                  gender: oppositeGender,
+                  height: 160,
+                  gotra: 'Bharadwaja',
+                  subcaste: 'Iyer',
+                  subscription_type: 'premium'
+                },
+                {
+                  id: '18',
+                  gender: oppositeGender,
+                  height: 174,
+                  gotra: 'Gautama',
+                  subcaste: 'Madhwa',
+                  subscription_type: 'free'
+                },
+                {
+                  id: '19',
+                  gender: oppositeGender,
+                  height: 163,
+                  gotra: 'Atri',
+                  subcaste: 'Smartha',
+                  subscription_type: 'premium'
+                },
+                {
+                  id: '20',
+                  gender: oppositeGender,
+                  height: 169,
+                  gotra: 'Kashyapa',
+                  subcaste: 'Deshastha',
+                  subscription_type: 'free'
+                }
+              ];
 
         setStats({
           profileViews: Math.floor(Math.random() * 500) + 100,
@@ -245,9 +309,9 @@ const Dashboard = () => {
                 </Badge>
               </div>
             </CardHeader>
-            <CardContent className="p-8">
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                {Array.from({ length: 6 }, (_, index) => {
+              <CardContent className="p-8">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                  {Array.from({ length: 12 }, (_, index) => {
                   const gender = Math.random() > 0.5 ? 'male' : 'female';
                   const profileId = `online-${index + 1}`;
                   return (
