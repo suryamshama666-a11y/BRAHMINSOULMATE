@@ -291,11 +291,11 @@ const WhoViewedYou = () => {
                   Clear Search
                 </Button>
               ) : (
-                <Link to="/profile/manage">
-                  <Button className="bg-blue-600 hover:bg-blue-700 shadow-md">
-                    Complete Your Profile
-                  </Button>
-                </Link>
+                  <Link to="/profile/manage">
+                    <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md">
+                      Complete Your Profile
+                    </Button>
+                  </Link>
               )}
             </CardContent>
           </Card>
