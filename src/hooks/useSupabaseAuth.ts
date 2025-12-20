@@ -32,9 +32,10 @@ export const useSupabaseAuth = () => {
           isAuthenticated: !!session,
         });
 
-        if (event === 'SIGNED_IN' && session?.user) {
-          toast.success(`Welcome back, ${session.user.email}!`);
-        } else if (event === 'SIGNED_OUT') {
+          if (event === 'SIGNED_IN' && session?.user) {
+            const firstName = session.user.user_metadata?.first_name || session.user.email?.split('@')[0];
+            toast.success(`Welcome, ${firstName}!`);
+          } else if (event === 'SIGNED_OUT') {
           toast.info('Signed out successfully');
         }
       }

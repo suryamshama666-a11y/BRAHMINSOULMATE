@@ -14,9 +14,9 @@ const Dashboard = () => {
         {/* Welcome Section */}
         <div className="mb-8">
           <div className="bg-gradient-to-r from-red-600 to-amber-600 text-white rounded-2xl p-6">
-            <h1 className="text-3xl font-serif font-bold mb-2">
-              Welcome back, {profile?.name || user?.email?.split('@')[0] || 'User'}!
-            </h1>
+              <h1 className="text-3xl font-serif font-bold mb-2">
+                Welcome, {profile?.first_name || profile?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}!
+              </h1>
             <p className="text-red-100">Find your perfect match today</p>
           </div>
         </div>

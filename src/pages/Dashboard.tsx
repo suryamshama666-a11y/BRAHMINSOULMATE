@@ -165,7 +165,7 @@ const Dashboard = () => {
                 <div className="flex items-center space-x-2">
                   <Sparkles className="h-6 w-6 text-yellow-300 animate-pulse" />
                   <h1 className="text-4xl font-serif font-bold">
-                    Welcome back, {profile?.name || user?.email?.split('@')[0] || 'User'}!
+                    Welcome, {profile?.first_name || profile?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}!
                   </h1>
                 </div>
                 <p className="text-rose-100 text-lg">Your perfect match is waiting for you</p>
