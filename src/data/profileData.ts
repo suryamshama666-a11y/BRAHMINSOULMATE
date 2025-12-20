@@ -368,50 +368,50 @@ export const profiles: Profile[] = [
     createdAt: new Date("2023-09-05"),
     isVerified: true
   },
-  {
-    id: "profile5",
-    userId: "user5",
-    name: "Vikram Agarwal",
-    age: 32,
-    gender: "male",
-    maritalStatus: "Divorced",
-    height: 178,
-    location: {
-      country: "India",
-      state: "Delhi",
-      city: "New Delhi"
-    },
-    about: "Entrepreneur with a chain of wellness centers across Northern India. After my divorce 3 years ago, I've focused on personal growth and my business. I enjoy traveling, reading about history, and practice meditation daily. Looking for a mature partner who understands life's complexities.",
-    images: ["https://randomuser.me/api/portraits/men/50.jpg", "https://randomuser.me/api/portraits/men/51.jpg", "https://randomuser.me/api/portraits/men/52.jpg"],
-    education: [
-      {
-        degree: "MBA",
-        institution: "IIM Ahmedabad",
-        year: 2015
+    {
+      id: "profile5",
+      userId: "user5",
+      name: "Vikram Chaturvedi",
+      age: 32,
+      gender: "male",
+      maritalStatus: "Divorced",
+      height: 178,
+      location: {
+        country: "India",
+        state: "Delhi",
+        city: "New Delhi"
       },
-      {
-        degree: "B.Com",
-        institution: "Delhi University",
-        year: 2013
-      }
-    ],
-    employment: {
-      profession: "Entrepreneur",
-      company: "Aum Wellness (Self-owned)",
-      position: "Founder & CEO",
-      income: "50+ LPA"
-    },
-    family: {
-      fatherName: "Mohan Agarwal",
-      fatherOccupation: "Retired Businessman",
-      motherName: "Sita Agarwal",
-      motherOccupation: "Homemaker",
-      siblings: 2,
-      familyType: "joint",
-      gotra: "Gritsamada",
-      subcaste: "Anavil",
-      ishtaDevata: "Krishna"
-    },
+      about: "Entrepreneur with a chain of wellness centers across Northern India. After my divorce 3 years ago, I've focused on personal growth and my business. I enjoy traveling, reading about history, and practice meditation daily. Looking for a mature partner who understands life's complexities.",
+      images: ["https://randomuser.me/api/portraits/men/50.jpg", "https://randomuser.me/api/portraits/men/51.jpg", "https://randomuser.me/api/portraits/men/52.jpg"],
+      education: [
+        {
+          degree: "MBA",
+          institution: "IIM Ahmedabad",
+          year: 2015
+        },
+        {
+          degree: "B.Com",
+          institution: "Delhi University",
+          year: 2013
+        }
+      ],
+      employment: {
+        profession: "Entrepreneur",
+        company: "Aum Wellness (Self-owned)",
+        position: "Founder & CEO",
+        income: "50+ LPA"
+      },
+      family: {
+        fatherName: "Mohan Chaturvedi",
+        fatherOccupation: "Retired Businessman",
+        motherName: "Sita Chaturvedi",
+        motherOccupation: "Homemaker",
+        siblings: 2,
+        familyType: "joint",
+        gotra: "Gritsamada",
+        subcaste: "Anavil",
+        ishtaDevata: "Krishna"
+      },
     horoscope: {
       rashi: "Simha",
       nakshatra: "Magha",

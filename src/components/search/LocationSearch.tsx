@@ -41,7 +41,7 @@ const LocationSearch = ({ onSearch }: LocationSearchProps) => {
       { name: 'Ananya Iyer', profession: 'Software Engineer', city: 'Chennai' },
       { name: 'Meera Krishnan', profession: 'Teacher', city: 'Mysore' },
       { name: 'Kavitha Rao', profession: 'Architect', city: 'Hyderabad' },
-      { name: 'Deepa Nair', profession: 'Lawyer', city: 'Kochi' },
+      { name: 'Deepa Namboodiri', profession: 'Lawyer', city: 'Kochi' },
       { name: 'Sneha Bhat', profession: 'Business Analyst', city: 'Pune' },
       { name: 'Lakshmi Venkat', profession: 'CA', city: 'Mumbai' },
       { name: 'Divya Hegde', profession: 'Designer', city: 'Mangalore' },
@@ -52,7 +52,7 @@ const LocationSearch = ({ onSearch }: LocationSearchProps) => {
     return names.slice(0, count).map((p, i) => ({
       id: `nearby-${i}`,
       name: p.name,
-      age: 24 + Math.floor(Math.random() * 8),
+      age: 21 + Math.floor(Math.random() * 8), // Default to 21+ for Brahmin focus
       distance: Math.floor(Math.random() * (maxDistance - 5)) + 5,
       photo: `/placeholder.svg`,
       profession: p.profession,

@@ -46,22 +46,28 @@ router.put('/', authMiddleware, async (req, res) => {
 });
 
 // Search profiles
-  router.get('/search/all', async (req, res) => {
-    try {
-      const { gender, min_age, max_age, city, religion, caste, viewerId, limit } = req.query;
-      
-      let query = supabase
-        .from('profiles')
-        .select('*');
-  
-      if (gender) query = query.eq('gender', gender);
-      if (min_age) query = query.gte('age', min_age);
-      if (max_age) query = query.lte('age', max_age);
-      if (city) query = query.ilike('location->city', `%${city}%`);
-      if (religion) query = query.eq('religion', religion);
-      if (caste) query = query.eq('caste', caste);
-  
-      const { data: profiles, error } = await query.limit(Number(limit) || 20);
+    router.get('/search/all', async (req, res) => {
+      try {
+        const { gender, min_age, max_age, city, religion, viewerId, limit } = req.query;
+        
+        let query = supabase
+          .from('profiles')
+          .select('*')
+          .eq('caste', 'Brahmin'); // Strictly Brahmin-only platform
+    
+        if (gender) query = query.eq('gender', gender);
+        
+        // Enforce legal age limits even if not specified
+        const effectiveMinAge = min_age 
+          ? Math.max(Number(min_age), (gender === 'female' ? 18 : 21))
+          : (gender === 'female' ? 18 : 21);
+
+        query = query.gte('age', effectiveMinAge);
+        if (max_age) query = query.lte('age', max_age);
+        if (city) query = query.ilike('location->city', `%${city}%`);
+        if (religion) query = query.eq('religion', religion);
+    
+        const { data: profiles, error } = await query.limit(Number(limit) || 20);
 
     if (error) throw error;
 
