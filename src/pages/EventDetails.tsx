@@ -211,7 +211,7 @@ export default function EventDetails() {
                       className="w-full"
                       onClick={handleRegister}
                       disabled={actionLoading || isPastEvent || isFull}
-                      style={{ backgroundColor: '#E30613' }}
+                        style={{ backgroundColor: '#E30613', color: 'white' }}
                     >
                       {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                       {isPastEvent ? 'Event Ended' : isFull ? 'Event Full' : 'Register Now'}

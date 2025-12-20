@@ -196,11 +196,11 @@ const Help = () => {
                 <Textarea id="message" placeholder="Please describe your issue in detail" rows={4} />
               </div>
               
-              <Button 
-                type="submit" 
-                style={{ backgroundColor: '#E30613' }}
-                className="hover:bg-[#E30613]/90"
-              >
+                <Button 
+                  type="submit" 
+                  style={{ backgroundColor: '#E30613', color: 'white' }}
+                  className="hover:bg-[#E30613]/90"
+                >
                 Send Message
               </Button>
             </form>

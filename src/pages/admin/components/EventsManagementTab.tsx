@@ -182,7 +182,7 @@ export function EventsManagementTab() {
             <Calendar className="h-5 w-5" />
             Events Management
           </CardTitle>
-          <Button onClick={handleOpenCreate} style={{ backgroundColor: '#E30613' }}>
+            <Button onClick={handleOpenCreate} style={{ backgroundColor: '#E30613', color: 'white' }}>
             <Plus className="h-4 w-4 mr-2" />
             Create Event
           </Button>
@@ -313,7 +313,7 @@ export function EventsManagementTab() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={saving} style={{ backgroundColor: '#E30613' }}>
+              <Button onClick={handleSubmit} disabled={saving} style={{ backgroundColor: '#E30613', color: 'white' }}>
               {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               {selectedEvent ? 'Update' : 'Create'}
             </Button>
