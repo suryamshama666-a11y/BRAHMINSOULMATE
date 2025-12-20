@@ -9,6 +9,7 @@ import { OnlineStats } from './components/OnlineStats';
 import { OnlineSearchBar } from './components/OnlineSearchBar';
 import { OnlineProfileCard } from './components/OnlineProfileCard';
 import { Pagination } from '@/components/ui/pagination';
+import { cn } from '@/lib/utils';
 
 const ITEMS_PER_PAGE = 9;
 
