@@ -97,12 +97,12 @@ export const ForumTab: React.FC<ForumTabProps> = ({ onCreatePost }) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold">Discussion Forum</h2>
-        {user && (
-          <Button onClick={onCreatePost}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Post
-          </Button>
-        )}
+          {user && (
+            <Button onClick={onCreatePost} variant="destructive">
+              <Plus className="h-4 w-4 mr-2" />
+              New Post
+            </Button>
+          )}
       </div>
 
       <ForumSearch
@@ -158,11 +158,11 @@ export const ForumTab: React.FC<ForumTabProps> = ({ onCreatePost }) => {
                     : 'No posts yet. Be the first to start a discussion!'
                   }
                 </p>
-                {user && !searchQuery && Object.keys(filters).length <= 1 && (
-                  <Button onClick={onCreatePost} className="mt-4">
-                    Create First Post
-                  </Button>
-                )}
+                  {user && !searchQuery && Object.keys(filters).length <= 1 && (
+                    <Button onClick={onCreatePost} className="mt-4" variant="destructive">
+                      Create First Post
+                    </Button>
+                  )}
               </CardContent>
             </Card>
           ) : (

@@ -27,15 +27,16 @@ export const SuccessStoriesTab: React.FC<SuccessStoriesTabProps> = ({ onSubmitSt
           </h2>
           <p className="text-gray-600">Celebrate love stories from our community</p>
         </div>
-        {user && (
-          <Button 
-            onClick={onSubmitStory}
-            style={{ backgroundColor: '#E30613' }}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Share Your Story
-          </Button>
-        )}
+          {user && (
+            <Button 
+              onClick={onSubmitStory}
+              style={{ backgroundColor: '#E30613' }}
+              className="text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Share Your Story
+            </Button>
+          )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

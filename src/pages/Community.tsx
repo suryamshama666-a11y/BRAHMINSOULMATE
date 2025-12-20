@@ -199,7 +199,7 @@ export default function Community() {
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold">Forum Discussions</h2>
-                <Button onClick={() => setShowCreatePost(true)} className="bg-red-600 hover:bg-red-700">
+                <Button onClick={() => setShowCreatePost(true)} className="bg-red-600 hover:bg-red-700 text-white">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Post
                 </Button>
@@ -302,7 +302,7 @@ export default function Community() {
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold">Community Groups</h2>
-                <Button onClick={() => setShowCreateGroup(true)} className="bg-red-600 hover:bg-red-700">
+                <Button onClick={() => setShowCreateGroup(true)} className="bg-red-600 hover:bg-red-700 text-white">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Group
                 </Button>
@@ -382,13 +382,13 @@ export default function Community() {
                   onChange={(e) => setNewPost(p => ({ ...p, content: e.target.value }))} 
                   rows={4}
                 />
-                <div className="flex gap-2">
-                  <Button onClick={handleCreatePost} disabled={submitting} className="bg-red-600 hover:bg-red-700">
-                    {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                    Create
-                  </Button>
-                  <Button variant="outline" onClick={() => setShowCreatePost(false)}>Cancel</Button>
-                </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleCreatePost} disabled={submitting} className="bg-red-600 hover:bg-red-700 text-white">
+                      {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      Create
+                    </Button>
+                    <Button variant="outline" onClick={() => setShowCreatePost(false)}>Cancel</Button>
+                  </div>
               </div>
             </div>
           </div>

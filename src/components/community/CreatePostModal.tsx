@@ -115,17 +115,18 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
             />
           </div>
 
-          <div className="flex justify-end space-x-3">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={!title.trim() || !content.trim() || !categoryId || isSubmitting}
-            >
-              {isSubmitting ? 'Creating...' : 'Create Post'}
-            </Button>
-          </div>
+            <div className="flex justify-end space-x-3">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={!title.trim() || !content.trim() || !categoryId || isSubmitting}
+                className="bg-red-600 hover:bg-red-700 text-white border-none"
+              >
+                {isSubmitting ? 'Creating...' : 'Create Post'}
+              </Button>
+            </div>
         </form>
       </DialogContent>
     </Dialog>

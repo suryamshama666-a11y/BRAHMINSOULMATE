@@ -27,10 +27,10 @@ export const GroupsTab: React.FC<GroupsTabProps> = ({ onCreateGroup }) => {
               Join groups based on interests, location, profession, or age
             </CardDescription>
           </div>
-          <Button onClick={onCreateGroup}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Group
-          </Button>
+            <Button onClick={onCreateGroup} variant="destructive">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Group
+            </Button>
         </CardHeader>
         <CardContent>
           {communityGroups.length === 0 ? (
