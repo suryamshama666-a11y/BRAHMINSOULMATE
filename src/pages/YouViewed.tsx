@@ -267,7 +267,7 @@ const YouViewed = () => {
 
         {filteredAndSortedProfiles.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {currentProfiles.map((profile) => (
                 <div key={profile.id} className="relative">
                   <div className="absolute top-4 right-4 z-10">

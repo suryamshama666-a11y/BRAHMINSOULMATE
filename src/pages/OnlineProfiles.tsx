@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -264,9 +265,9 @@ const OnlineProfiles = () => {
                   </CardContent>
                 </Card>
               )}
-              <div className={showFilters ? 'lg:col-span-2' : 'lg:col-span-3'}>
-              {onlineProfiles.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className={cn(showFilters ? 'lg:col-span-2' : 'lg:col-span-3')}>
+                {onlineProfiles.length > 0 ? (
+                  <div className={cn("grid grid-cols-1 gap-4", showFilters ? "md:grid-cols-2" : "md:grid-cols-3")}>
                 {onlineProfiles.map((profile) => (
                   <ProfileCard 
                     key={profile.id}

@@ -140,8 +140,8 @@ export default function MyConnections() {
                 </h2>
               </div>
 
-                {getConnectionsByType(tab.id).length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {getConnectionsByType(tab.id).length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {getConnectionsByType(tab.id).map((connection) => (
                     <ProfileCard 
                       key={connection.id}

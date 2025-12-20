@@ -259,7 +259,7 @@ const Matches = () => {
           </Card>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {currentMatches.map((match: any) => (
                 <Card key={match.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">

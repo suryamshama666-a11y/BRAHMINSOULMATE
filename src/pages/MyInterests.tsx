@@ -133,9 +133,9 @@ const MyInterests = () => {
             </div>
           )}
 
-          {/* Interests Grid */}
-          {filteredAndSortedInterests.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Interests Grid */}
+            {filteredAndSortedInterests.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {filteredAndSortedInterests.map((interest) => (
                 interest.receiver && (
                   <div key={interest.id} className="relative">
