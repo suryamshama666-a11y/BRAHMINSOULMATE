@@ -36,7 +36,7 @@ export const ListFilters = ({
 }: ListFiltersProps) => {
   return (
     <div className={`flex flex-col md:flex-row gap-4 items-center mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100 ${className}`}>
-      <div className="relative w-full md:flex-1">
+      <div className="relative w-full md:w-[300px]">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
           placeholder={placeholder}

@@ -9,11 +9,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { interestsService } from '@/services/api';
 import { useQuery } from '@tanstack/react-query';
 import { ListFilters } from '@/components/ListFilters';
+import { Pagination } from '@/components/ui/pagination';
 
 const MyInterests = () => {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
 
   const sortOptions = [
     { value: 'newest', label: 'Newest First' },
@@ -26,7 +29,17 @@ const MyInterests = () => {
     queryKey: ['interests', 'sent', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      return await interestsService.getSentInterests();
+      const data = await interestsService.getSentInterests();
+      // For testing pagination if data is small
+      if (data && data.length > 0 && data.length < 10 && import.meta.env.DEV) {
+        return Array.from({ length: 20 }, (_, i) => ({
+          ...data[0],
+          id: `mock-${i}`,
+          receiver: { ...data[0].receiver, full_name: `${data[0].receiver.full_name} ${i+1}` },
+          created_at: new Date(Date.now() - i * 3600000).toISOString()
+        }));
+      }
+      return data;
     },
     enabled: !!user?.id
   });
@@ -60,6 +73,16 @@ const MyInterests = () => {
 
     return result;
   }, [interests, searchTerm, sortBy]);
+
+  const totalPages = Math.ceil(filteredAndSortedInterests.length / itemsPerPage);
+  const paginatedInterests = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredAndSortedInterests.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredAndSortedInterests, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, sortBy, itemsPerPage]);
 
   if (loading) {
     return (
@@ -133,42 +156,53 @@ const MyInterests = () => {
             </div>
           )}
 
-            {/* Interests Grid */}
-            {filteredAndSortedInterests.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {filteredAndSortedInterests.map((interest) => (
-                interest.receiver && (
-                  <div key={interest.id} className="relative">
-                    <ProfileCard 
-                      profile={{
-                        ...interest.receiver,
-                        name: interest.receiver.full_name,
-                        status: interest.status,
-                        sentDate: new Date(interest.created_at).toLocaleDateString()
-                      }} 
-                      variant="interest"
-                    />
-                    <div className="absolute top-4 left-4 z-10">
-                      <Badge 
-                        variant={
-                          interest.status === 'accepted' ? 'default' : 
-                          interest.status === 'declined' ? 'destructive' : 
-                          'secondary'
-                        }
-                        className={
-                          interest.status === 'accepted' ? 'bg-green-500 text-white shadow-lg' :
-                          interest.status === 'declined' ? 'bg-red-500 text-white shadow-lg' :
-                          'bg-yellow-500 text-white shadow-lg'
-                        }
-                      >
-                        {interest.status.charAt(0).toUpperCase() + interest.status.slice(1)}
-                      </Badge>
-                    </div>
+              {/* Interests Grid */}
+              {paginatedInterests.length > 0 ? (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {paginatedInterests.map((interest) => (
+                      interest.receiver && (
+                        <div key={interest.id} className="relative">
+                          <ProfileCard 
+                            profile={{
+                              ...interest.receiver,
+                              name: interest.receiver.full_name,
+                              status: interest.status,
+                              sentDate: new Date(interest.created_at).toLocaleDateString()
+                            }} 
+                            variant="interest"
+                          />
+                          <div className="absolute top-4 left-4 z-10">
+                            <Badge 
+                              variant={
+                                interest.status === 'accepted' ? 'default' : 
+                                interest.status === 'declined' ? 'destructive' : 
+                                'secondary'
+                              }
+                              className={
+                                interest.status === 'accepted' ? 'bg-green-500 text-white shadow-lg' :
+                                interest.status === 'declined' ? 'bg-red-500 text-white shadow-lg' :
+                                'bg-yellow-500 text-white shadow-lg'
+                              }
+                            >
+                              {interest.status.charAt(0).toUpperCase() + interest.status.slice(1)}
+                            </Badge>
+                          </div>
+                        </div>
+                      )
+                    ))}
                   </div>
-                )
-              ))}
-            </div>
-          ) : (
+                  
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    itemsPerPage={itemsPerPage}
+                    onItemsPerPageChange={setItemsPerPage}
+                    className="mt-8"
+                  />
+                </>
+              ) : (
             <Card className="text-center py-16">
               <CardContent>
                 <div className="bg-gray-50 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-4">

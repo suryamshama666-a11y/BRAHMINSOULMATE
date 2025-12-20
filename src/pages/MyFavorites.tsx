@@ -9,6 +9,7 @@ import ProfileCard from '@/components/ProfileCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { ListFilters } from '@/components/ListFilters';
+import { Pagination } from '@/components/ui/pagination';
 
 const MyFavorites = () => {
   const { user } = useAuth();
@@ -17,6 +18,8 @@ const MyFavorites = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
 
   const sortOptions = [
     { value: 'newest', label: 'Newest Added' },
@@ -29,54 +32,22 @@ const MyFavorites = () => {
     const loadFavorites = async () => {
       setLoading(true);
       
-      // Mock data for favorites
-      const mockFavorites = [
-        {
-          id: '1',
-          name: 'Priya Sharma',
-          age: 26,
-          gender: 'female',
-          height: 165,
-          religion: 'Hindu',
-          caste: 'Brahmin',
-          location: 'Mumbai, Maharashtra',
-          education: 'MBA',
-          profession: 'Software Engineer',
-          subscription_type: 'premium',
-          lastActive: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          addedToFavorites: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: '2',
-          name: 'Arjun Patel',
-          age: 29,
-          gender: 'male',
-          height: 178,
-          religion: 'Hindu',
-          caste: 'Brahmin',
-          location: 'Bangalore, Karnataka',
-          education: 'M.Tech',
-          profession: 'Data Scientist',
-          subscription_type: 'premium',
-          lastActive: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          addedToFavorites: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: '3',
-          name: 'Kavya Iyer',
-          age: 24,
-          gender: 'female',
-          height: 160,
-          religion: 'Hindu',
-          caste: 'Brahmin',
-          location: 'Chennai, Tamil Nadu',
-          education: 'CA',
-          profession: 'Chartered Accountant',
-          subscription_type: 'free',
-          lastActive: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-          addedToFavorites: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-        }
-      ];
+      // Mock data for favorites - generating more for pagination demo
+      const mockFavorites = Array.from({ length: 25 }, (_, i) => ({
+        id: (i + 1).toString(),
+        name: i % 2 === 0 ? `Priya Sharma ${i + 1}` : `Arjun Patel ${i + 1}`,
+        age: 22 + (i % 15),
+        gender: i % 2 === 0 ? 'female' : 'male',
+        height: 160 + (i % 20),
+        religion: 'Hindu',
+        caste: 'Brahmin',
+        location: i % 3 === 0 ? 'Mumbai, Maharashtra' : i % 3 === 1 ? 'Bangalore, Karnataka' : 'Chennai, Tamil Nadu',
+        education: i % 4 === 0 ? 'MBA' : i % 4 === 1 ? 'M.Tech' : i % 4 === 2 ? 'CA' : 'MBBS',
+        profession: i % 4 === 0 ? 'Software Engineer' : i % 4 === 1 ? 'Data Scientist' : i % 4 === 2 ? 'Chartered Accountant' : 'Doctor',
+        subscription_type: i % 5 === 0 ? 'premium' : 'free',
+        lastActive: new Date(Date.now() - (i * 2 * 60 * 60 * 1000)).toISOString(),
+        addedToFavorites: new Date(Date.now() - (i * 24 * 60 * 60 * 1000)).toISOString()
+      }));
 
       setTimeout(() => {
         setFavorites(mockFavorites);
@@ -118,6 +89,17 @@ const MyFavorites = () => {
 
     return result;
   }, [favorites, searchTerm, sortBy]);
+
+  const paginatedFavorites = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredAndSortedFavorites.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredAndSortedFavorites, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredAndSortedFavorites.length / itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, sortBy, itemsPerPage]);
 
   const removeFavorite = (profileId) => {
     setFavorites(favorites.filter(fav => fav.id !== profileId));
@@ -194,22 +176,33 @@ const MyFavorites = () => {
           />
 
           {/* Favorites Grid */}
-            {filteredAndSortedFavorites.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {filteredAndSortedFavorites.map((profile) => (
-                <ProfileCard 
-                  key={profile.id}
-                  profile={{
-                    ...profile, 
-                    addedToFavorites: profile.addedToFavorites,
-                    gotra: profile.gotra || 'Gotra not specified'
-                  }}
-                  variant="favorite"
-                  onAction={handleProfileAction}
+            {paginatedFavorites.length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {paginatedFavorites.map((profile) => (
+                    <ProfileCard 
+                      key={profile.id}
+                      profile={{
+                        ...profile, 
+                        addedToFavorites: profile.addedToFavorites,
+                        gotra: profile.gotra || 'Gotra not specified'
+                      }}
+                      variant="favorite"
+                      onAction={handleProfileAction}
+                    />
+                  ))}
+                </div>
+                
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                  itemsPerPage={itemsPerPage}
+                  onItemsPerPageChange={setItemsPerPage}
+                  className="mt-8"
                 />
-              ))}
-            </div>
-          ) : (
+              </>
+            ) : (
             <Card className="text-center py-16">
               <CardContent>
                 <div className="bg-gray-50 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-4">
