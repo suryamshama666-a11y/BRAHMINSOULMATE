@@ -35,53 +35,52 @@ export const SearchHeader = ({
           Search through thousands of verified profiles to find your soulmate
         </p>
         
-          <div className="space-y-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1 bg-white rounded-lg border border-gray-600 focus-within:border-amber-500 focus-within:bg-amber-50 transition-colors duration-200">
-                <Input
-                  type="text"
-                  placeholder="Search by name, location, or profession..."
-                  value={searchTerm}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                  className="border-0 focus:ring-0 bg-transparent focus:outline-none focus:bg-transparent"
-                  onKeyPress={(e) => e.key === 'Enter' && onSearch()}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={onSearch}
-                  variant="outline"
-                  className="border-2 border-[#FF4500] text-[#FF4500] hover:bg-[#FF4500] hover:text-white"
-                >
-                  <Search className="h-4 w-4 mr-2" />
-                  Search
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={onAdvancedSearch}
-                  className="border-2 border-[#FF4500] text-[#FF4500] hover:bg-[#FF4500] hover:text-white"
-                >
-                  <SlidersHorizontal className="h-4 w-4 mr-2" />
-                  Advanced
-                </Button>
-              </div>
+        <div className="space-y-4">
+          <div className="flex gap-4">
+            <div className="flex-1 bg-white rounded-lg border border-gray-600 focus-within:border-amber-500 focus-within:bg-amber-50 transition-colors duration-200">
+              <Input
+                type="text"
+                placeholder="Search by name, location, or profession..."
+                value={searchTerm}
+                onChange={(e) => onSearchChange(e.target.value)}
+                className="border-0 focus:ring-0 bg-transparent focus:outline-none focus:bg-transparent"
+                onKeyPress={(e) => e.key === 'Enter' && onSearch()}
+              />
             </div>
+            <Button
+              onClick={onSearch}
+              variant="outline"
+              className="border-2 border-[#FF4500] text-[#FF4500] hover:bg-[#FF4500] hover:text-white"
+            >
+              <Search className="h-4 w-4 mr-2" />
+              Search
+            </Button>
+            <Button
+              variant="outline"
+              onClick={onAdvancedSearch}
+              className="border-2 border-[#FF4500] text-[#FF4500] hover:bg-[#FF4500] hover:text-white"
+            >
+              <SlidersHorizontal className="h-4 w-4 mr-2" />
+              Advanced
+            </Button>
+          </div>
 
-            <div className="flex items-center gap-3 text-sm text-gray-600">
-              <span className="font-medium text-gray-700">Show:</span>
+          <div className="flex items-center gap-4 text-sm text-gray-600 justify-end">
+            <span className="font-medium">Profiles per page:</span>
+            <div className="w-32">
               <Select value={itemsPerPage} onValueChange={onItemsPerPageChange}>
-                <SelectTrigger className="w-[100px] border-gray-300 h-9">
+                <SelectTrigger className="border-gray-600">
                   <SelectValue placeholder="8" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="8">8 per page</SelectItem>
-                  <SelectItem value="16">16 per page</SelectItem>
-                  <SelectItem value="24">24 per page</SelectItem>
+                  <SelectItem value="8">8</SelectItem>
+                  <SelectItem value="16">16</SelectItem>
+                  <SelectItem value="24">24</SelectItem>
                 </SelectContent>
               </Select>
-              <span className="text-gray-500">profiles</span>
             </div>
           </div>
+        </div>
       </div>
     </div>
   );
