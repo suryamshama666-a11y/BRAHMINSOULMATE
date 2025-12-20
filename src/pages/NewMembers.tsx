@@ -298,7 +298,12 @@ const NewMembers = () => {
                   <div className={showFilters ? 'lg:col-span-2' : 'lg:col-span-3'}>
                   {filteredMembers.length > 0 ? (
                     <>
-                      <div className={`grid grid-cols-1 md:grid-cols-2 ${showFilters ? 'lg:grid-cols-2' : 'lg:grid-cols-3'} gap-4`}>
+                        <div className={cn(
+                          "grid gap-4",
+                          showFilters 
+                            ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-2" 
+                            : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                        )}>
                         {currentMembers.map((profile) => (
                           <ProfileCard 
                             key={profile.id}

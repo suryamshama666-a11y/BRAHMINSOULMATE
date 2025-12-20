@@ -17,7 +17,7 @@ const Online = () => {
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(8);
+    const [itemsPerPage, setItemsPerPage] = useState(9);
   const [showFilters, setShowFilters] = useState(true);
 
   const itemsPerPageOptions = showFilters ? [8, 16, 24] : [9, 15, 18];
@@ -145,9 +145,14 @@ const Online = () => {
             </div>
           )}
 
-          <div className={`flex-1 ${!showFilters ? 'w-full' : ''}`}>
-            {/* Online Profiles Grid */}
-            <div className={`grid grid-cols-1 md:grid-cols-2 ${showFilters ? 'lg:grid-cols-2' : 'lg:grid-cols-3'} gap-6`}>
+            <div className={`flex-1 ${!showFilters ? 'w-full' : ''}`}>
+              {/* Online Profiles Grid */}
+              <div className={cn(
+                "grid gap-6",
+                showFilters 
+                  ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-2" 
+                  : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+              )}>
               {currentProfiles.map((profile) => (
                 <OnlineProfileCard
                   key={profile.id}
