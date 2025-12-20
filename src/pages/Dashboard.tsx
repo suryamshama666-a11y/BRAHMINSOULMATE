@@ -77,17 +77,21 @@ const Dashboard = () => {
 
         setStats(activityStats);
         
-        const transformProfile = (p: any) => ({
-          id: p.id,
-          name: p.first_name + (p.last_name ? ` ${p.last_name}` : ''),
-          age: p.age || 25,
-          gender: p.gender,
-          location: `${p.city || 'Mumbai'}, ${p.state || 'Maharashtra'}`,
-          profession: p.occupation || 'Professional',
-          avatarUrl: p.profile_picture_url,
-          subscription_type: p.subscription_type || 'free',
-          lastSeen: 'Active now'
-        });
+        const transformProfile = (p: any) => {
+          const isOnline = p.last_active ? new Date(p.last_active) > new Date(Date.now() - 60 * 60 * 1000) : false;
+          return {
+            id: p.id,
+            name: p.first_name + (p.last_name ? ` ${p.last_name}` : ''),
+            age: p.age || 25,
+            gender: p.gender,
+            location: `${p.city || 'Mumbai'}, ${p.state || 'Maharashtra'}`,
+            profession: p.occupation || 'Professional',
+            avatarUrl: p.profile_picture_url,
+            subscription_type: p.subscription_type || 'free',
+            isOnline,
+            lastSeen: isOnline ? 'Active now' : 'Recently active'
+          };
+        };
 
         setOnlineMembers(onlineData?.map(transformProfile) || []);
         setNewMembers(newData?.map(transformProfile) || []);
@@ -209,10 +213,15 @@ const Dashboard = () => {
                       className="p-4 flex items-center gap-4 hover:bg-red-50/50 transition-colors cursor-pointer group"
                       onClick={() => navigate(`/profile/${member.id}`)}
                     >
-                      <Avatar className="h-12 w-12 border border-red-200">
-                        <AvatarImage src={member.avatarUrl} className="object-cover" />
-                        <AvatarFallback className="bg-red-50 text-red-600">{member.name[0]}</AvatarFallback>
-                      </Avatar>
+                      <div className="relative">
+                        <Avatar className="h-12 w-12 border border-red-200">
+                          <AvatarImage src={member.avatarUrl} className="object-cover" />
+                          <AvatarFallback className="bg-red-50 text-red-600">{member.name[0]}</AvatarFallback>
+                        </Avatar>
+                        {member.isOnline && (
+                          <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-white rounded-full" />
+                        )}
+                      </div>
                       <div className="flex-grow min-w-0">
                         <h4 className="font-bold text-gray-800 truncate group-hover:text-red-600 transition-colors">{member.name}, {member.age}</h4>
                         <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500 mt-0.5">
@@ -253,10 +262,15 @@ const Dashboard = () => {
                       className="p-4 flex items-center gap-4 hover:bg-amber-50/50 transition-colors cursor-pointer group"
                       onClick={() => navigate(`/profile/${match.id}`)}
                     >
-                      <Avatar className="h-12 w-12 border border-amber-200">
-                        <AvatarImage src={match.avatarUrl} className="object-cover" />
-                        <AvatarFallback className="bg-amber-50 text-amber-600">{match.name[0]}</AvatarFallback>
-                      </Avatar>
+                      <div className="relative">
+                        <Avatar className="h-12 w-12 border border-amber-200">
+                          <AvatarImage src={match.avatarUrl} className="object-cover" />
+                          <AvatarFallback className="bg-amber-50 text-amber-600">{match.name[0]}</AvatarFallback>
+                        </Avatar>
+                        {match.isOnline && (
+                          <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-white rounded-full" />
+                        )}
+                      </div>
                       <div className="flex-grow min-w-0">
                         <h4 className="font-bold text-gray-800 truncate group-hover:text-amber-600 transition-colors">{match.name}, {match.age}</h4>
                         <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500 mt-0.5">
