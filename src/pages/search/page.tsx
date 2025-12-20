@@ -4,15 +4,16 @@ import { SearchHeader } from './components/SearchHeader';
 import LocationSearch from '@/components/search/LocationSearch';
 import ProfileGrid from '@/components/search/ProfileGrid';
 
-const SearchPage = () => {
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const [profiles, setProfiles] = React.useState<any[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-  
-  React.useEffect(() => {
-    const fetchProfiles = async () => {
+  const SearchPage = () => {
+    const [searchTerm, setSearchTerm] = React.useState('');
+    const [profiles, setProfiles] = React.useState<any[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const [itemsPerPage, setItemsPerPage] = React.useState('8');
+    
+    const fetchProfiles = async (limit: string) => {
+      setIsLoading(true);
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/profile/search/all`);
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/profile/search/all?limit=${limit}`);
         const data = await response.json();
         if (data.success) {
           setProfiles(data.profiles);
@@ -23,31 +24,35 @@ const SearchPage = () => {
         setIsLoading(false);
       }
     };
-    fetchProfiles();
-  }, []);
-  
-  const handleSearch = () => {
-    // Implement search logic
-  };
 
-  const handleAdvancedSearch = () => {
-    // Implement advanced search logic
-  };
+    React.useEffect(() => {
+      fetchProfiles(itemsPerPage);
+    }, [itemsPerPage]);
+    
+    const handleSearch = () => {
+      fetchProfiles(itemsPerPage);
+    };
 
-  const handleLocationSearch = (params: { location: string; distance: number; useCurrentLocation: boolean }) => {
-    // Implement location search logic
-  };
+    const handleAdvancedSearch = () => {
+      // Implement advanced search logic
+    };
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <PageHeader />
-      
-      <SearchHeader
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        onSearch={handleSearch}
-        onAdvancedSearch={handleAdvancedSearch}
-      />
+    const handleLocationSearch = (params: { location: string; distance: number; useCurrentLocation: boolean }) => {
+      // Implement location search logic
+    };
+
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <PageHeader />
+        
+        <SearchHeader
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          onSearch={handleSearch}
+          onAdvancedSearch={handleAdvancedSearch}
+          itemsPerPage={itemsPerPage}
+          onItemsPerPageChange={setItemsPerPage}
+        />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">

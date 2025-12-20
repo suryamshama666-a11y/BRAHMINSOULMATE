@@ -2,23 +2,30 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, SlidersHorizontal } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface SearchHeaderProps {
   searchTerm: string;
-  onSearchTermChange: (value: string) => void;
-  onBasicSearch: () => void;
-  onShowAdvancedSearch: () => void;
-  sortBy: string;
-  onSortChange: (value: string) => void;
+  onSearchChange: (value: string) => void;
+  onSearch: () => void;
+  onAdvancedSearch: () => void;
+  itemsPerPage: string;
+  onItemsPerPageChange: (value: string) => void;
 }
 
 export const SearchHeader = ({
   searchTerm,
-  onSearchTermChange,
-  onBasicSearch,
-  onShowAdvancedSearch,
-  sortBy,
-  onSortChange
+  onSearchChange,
+  onSearch,
+  onAdvancedSearch,
+  itemsPerPage,
+  onItemsPerPageChange,
 }: SearchHeaderProps) => {
   return (
     <div className="bg-white p-8 rounded-lg shadow-lg mb-8">
@@ -28,33 +35,51 @@ export const SearchHeader = ({
           Search through thousands of verified profiles to find your soulmate
         </p>
         
-        <div className="flex gap-4">
-          <div className="flex-1 bg-white rounded-lg border border-gray-600 focus-within:border-amber-500 focus-within:bg-amber-50 transition-colors duration-200">
-            <Input
-              type="text"
-              placeholder="Search by name, location, or profession..."
-              value={searchTerm}
-              onChange={(e) => onSearchTermChange(e.target.value)}
-              className="border-0 focus:ring-0 bg-transparent focus:outline-none focus:bg-transparent"
-              onKeyPress={(e) => e.key === 'Enter' && onBasicSearch()}
-            />
+        <div className="space-y-4">
+          <div className="flex gap-4">
+            <div className="flex-1 bg-white rounded-lg border border-gray-600 focus-within:border-amber-500 focus-within:bg-amber-50 transition-colors duration-200">
+              <Input
+                type="text"
+                placeholder="Search by name, location, or profession..."
+                value={searchTerm}
+                onChange={(e) => onSearchChange(e.target.value)}
+                className="border-0 focus:ring-0 bg-transparent focus:outline-none focus:bg-transparent"
+                onKeyPress={(e) => e.key === 'Enter' && onSearch()}
+              />
+            </div>
+            <Button
+              onClick={onSearch}
+              variant="outline"
+              className="border-2 border-[#FF4500] text-[#FF4500] hover:bg-[#FF4500] hover:text-white"
+            >
+              <Search className="h-4 w-4 mr-2" />
+              Search
+            </Button>
+            <Button
+              variant="outline"
+              onClick={onAdvancedSearch}
+              className="border-2 border-[#FF4500] text-[#FF4500] hover:bg-[#FF4500] hover:text-white"
+            >
+              <SlidersHorizontal className="h-4 w-4 mr-2" />
+              Advanced
+            </Button>
           </div>
-          <Button
-            onClick={onBasicSearch}
-            variant="outline"
-            className="border-2 border-[#FF4500] text-[#FF4500] hover:bg-[#FF4500] hover:text-white"
-          >
-            <Search className="h-4 w-4 mr-2" />
-            Search
-          </Button>
-          <Button
-            variant="outline"
-            onClick={onShowAdvancedSearch}
-            className="border-2 border-[#FF4500] text-[#FF4500] hover:bg-[#FF4500] hover:text-white"
-          >
-            <SlidersHorizontal className="h-4 w-4 mr-2" />
-            Advanced
-          </Button>
+
+          <div className="flex items-center gap-4 text-sm text-gray-600 justify-end">
+            <span className="font-medium">Profiles per page:</span>
+            <div className="w-32">
+              <Select value={itemsPerPage} onValueChange={onItemsPerPageChange}>
+                <SelectTrigger className="border-gray-600">
+                  <SelectValue placeholder="8" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="8">8</SelectItem>
+                  <SelectItem value="16">16</SelectItem>
+                  <SelectItem value="24">24</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
       </div>
     </div>
