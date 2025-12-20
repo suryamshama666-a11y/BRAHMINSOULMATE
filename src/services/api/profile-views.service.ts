@@ -21,6 +21,22 @@ class ProfileViewsService {
     return user;
   }
 
+  private async fetchWithTimeout(url: string, options: any = {}, timeout = 5000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+      clearTimeout(id);
+      return response;
+    } catch (error) {
+      clearTimeout(id);
+      throw error;
+    }
+  }
+
   async trackView(viewedProfileId: string): Promise<void> {
     const user = await this.getCurrentUser();
     if (!user) throw new Error('Not authenticated');
@@ -29,7 +45,7 @@ class ProfileViewsService {
       const { data: session } = await supabase.auth.getSession();
       const token = session?.session?.access_token;
 
-      const response = await fetch(`${this.API_URL}/profile-views`, {
+      const response = await this.fetchWithTimeout(`${this.API_URL}/profile-views`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -79,7 +95,7 @@ class ProfileViewsService {
       const { data: session } = await supabase.auth.getSession();
       const token = session?.session?.access_token;
 
-      const response = await fetch(`${this.API_URL}/profile-views/who-viewed-me?timeFilter=${timeFilter}`, {
+      const response = await this.fetchWithTimeout(`${this.API_URL}/profile-views/who-viewed-me?timeFilter=${timeFilter}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -152,7 +168,7 @@ class ProfileViewsService {
       const { data: session } = await supabase.auth.getSession();
       const token = session?.session?.access_token;
 
-      const response = await fetch(`${this.API_URL}/profile-views/i-viewed?timeFilter=${timeFilter}`, {
+      const response = await this.fetchWithTimeout(`${this.API_URL}/profile-views/i-viewed?timeFilter=${timeFilter}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

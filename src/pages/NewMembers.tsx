@@ -10,6 +10,9 @@ import { Heart, MessageCircle, Eye, UserPlus, Calendar, MapPin, Filter, Users, C
 import ProfileCard from '@/components/ProfileCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { Pagination } from '@/components/ui/pagination';
+
+const ITEMS_PER_PAGE = 6;
 
 const NewMembers = () => {
   const { user } = useAuth();
@@ -17,6 +20,7 @@ const NewMembers = () => {
   const [newMembers, setNewMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   
   const [filterOnline, setFilterOnline] = useState(false);
   const [filterNewMember, setFilterNewMember] = useState(true);
@@ -135,6 +139,19 @@ const NewMembers = () => {
 
     loadNewMembers();
   }, [user]);
+
+  const filteredMembers = newMembers.filter((profile) => {
+    if (filterOnline && profile.lastActive !== 'Online') {
+      // Logic for online check if available
+    }
+    return true;
+  });
+
+  const totalPages = Math.ceil(filteredMembers.length / ITEMS_PER_PAGE);
+  const currentMembers = filteredMembers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handleProfileAction = (action: string, profileId: string) => {
     const targetProfile = newMembers.find(p => p.id === profileId);
@@ -270,23 +287,32 @@ const NewMembers = () => {
                   </CardContent>
                 </Card>
               )}
-              <div className={showFilters ? 'lg:col-span-2' : 'lg:col-span-3'}>
-              {newMembers.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {newMembers.map((profile) => (
-                  <ProfileCard 
-                    key={profile.id}
-                    profile={{
-                      ...profile, 
-                      joinedDate: profile.joinedDate,
-                      gotra: profile.gotra || 'Gotra not specified'
-                    }}
-                    variant="new"
-                    onAction={handleProfileAction}
-                  />
-                ))}
-              </div>
-            ) : (
+                <div className={showFilters ? 'lg:col-span-2' : 'lg:col-span-3'}>
+                {filteredMembers.length > 0 ? (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {currentMembers.map((profile) => (
+                        <ProfileCard 
+                          key={profile.id}
+                          profile={{
+                            ...profile, 
+                            joinedDate: profile.joinedDate,
+                            gotra: profile.gotra || 'Gotra not specified'
+                          }}
+                          variant="new"
+                          onAction={handleProfileAction}
+                        />
+                      ))}
+                    </div>
+
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                    />
+                  </>
+                ) : (
+
               <Card className="text-center py-16">
                 <CardContent>
                   <UserPlus className="h-16 w-16 mx-auto mb-4 text-gray-300" />

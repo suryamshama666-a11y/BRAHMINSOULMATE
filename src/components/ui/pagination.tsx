@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from './button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface PaginationProps {
   currentPage: number;
@@ -9,94 +10,79 @@ interface PaginationProps {
   className?: string;
 }
 
-export const Pagination: React.FC<PaginationProps> = ({
+export const Pagination = ({
   currentPage,
   totalPages,
   onPageChange,
-  className = '',
-}) => {
-  // Generate page numbers to display
-  const getPageNumbers = () => {
-    const pageNumbers = [];
-    
-    // Always show first page
-    pageNumbers.push(1);
-    
-    // Add ellipsis if needed
-    if (currentPage > 3) {
-      pageNumbers.push('...');
-    }
-    
-    // Add pages around current page
-    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
-      if (i !== 1 && i !== totalPages) {
-        pageNumbers.push(i);
-      }
-    }
-    
-    // Add ellipsis if needed
-    if (currentPage < totalPages - 2) {
-      pageNumbers.push('...');
-    }
-    
-    // Always show last page if more than 1 page
-    if (totalPages > 1) {
-      pageNumbers.push(totalPages);
-    }
-    
-    return pageNumbers;
-  };
-
+  className
+}: PaginationProps) => {
   if (totalPages <= 1) return null;
 
+  const getPageNumbers = () => {
+    const pages = [];
+    const showMax = 5;
+
+    if (totalPages <= showMax) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, 'ellipsis', totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1, 'ellipsis', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, 'ellipsis', currentPage - 1, currentPage, currentPage + 1, 'ellipsis', totalPages);
+      }
+    }
+    return pages;
+  };
+
   return (
-    <div className={`flex items-center justify-center gap-1 ${className}`}>
+    <nav className={cn("flex items-center justify-center space-x-2 py-8", className)}>
       <Button
         variant="outline"
         size="icon"
-        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+        onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className="h-8 w-8 border-[#FF4500] text-black disabled:opacity-50"
-        aria-label="Previous page"
+        className="h-9 w-9"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
-      
-      {getPageNumbers().map((page, index) => {
-        if (page === '...') {
-          return <span key={`ellipsis-${index}`} className="px-2 text-black">...</span>;
-        }
-        
-        const isSelected = currentPage === page;
-        
-        return (
-          <Button
-            key={`page-${page}`}
-            variant={isSelected ? "default" : "outline"}
-            onClick={() => onPageChange(page as number)}
-            className={`
-              h-8 w-8 transition-colors duration-200
-              ${isSelected 
-                ? "!bg-[#FF4500] !text-white hover:!bg-[#FF4500] hover:!text-white border-[#FF4500]" 
-                : "bg-white text-black border-[#FF4500] hover:bg-[#FF4500] hover:text-white"
-              }
-            `}
-          >
-            {page}
-          </Button>
-        );
-      })}
-      
+
+      <div className="flex items-center space-x-1">
+        {getPageNumbers().map((page, index) => (
+          <React.Fragment key={index}>
+            {page === 'ellipsis' ? (
+              <div className="px-2">
+                <MoreHorizontal className="h-4 w-4 text-gray-400" />
+              </div>
+            ) : (
+              <Button
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => onPageChange(page as number)}
+                className={cn(
+                  "h-9 w-9",
+                  currentPage === page ? "bg-red-600 hover:bg-red-700 text-white" : ""
+                )}
+              >
+                {page}
+              </Button>
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+
       <Button
         variant="outline"
         size="icon"
-        onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+        onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="h-8 w-8 border-[#FF4500] text-black disabled:opacity-50"
-        aria-label="Next page"
+        className="h-9 w-9"
       >
         <ChevronRight className="h-4 w-4" />
       </Button>
-    </div>
+    </nav>
   );
 };

@@ -17,6 +17,9 @@ import LocationSearch from '@/components/search/LocationSearch';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { interestsService } from '@/services/api';
+import { Pagination } from '@/components/ui/pagination';
+
+const ITEMS_PER_PAGE = 6;
 
 const COUNTRIES = [
   { value: 'india', label: 'India' },
@@ -127,6 +130,7 @@ export default function Search() {
   const [showFilters, setShowFilters] = useState(true);
   const [total, setTotal] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   
   const [basicOpen, setBasicOpen] = useState(true);
   const [locationOpen, setLocationOpen] = useState(false);
@@ -303,350 +307,365 @@ export default function Search() {
 
   const filteredProfiles = profiles.filter(p => {
     const searchLower = searchTerm.toLowerCase();
-    return (
-      p.name.toLowerCase().includes(searchLower) ||
-      p.location.toLowerCase().includes(searchLower) ||
-      p.profession.toLowerCase().includes(searchLower)
+      return (
+        p.name.toLowerCase().includes(searchLower) ||
+        p.location.toLowerCase().includes(searchLower) ||
+        p.profession.toLowerCase().includes(searchLower)
+      );
+    });
+
+    const totalPages = Math.ceil(filteredProfiles.length / ITEMS_PER_PAGE);
+    const currentProfiles = filteredProfiles.slice(
+      (currentPage - 1) * ITEMS_PER_PAGE,
+      currentPage * ITEMS_PER_PAGE
     );
-  });
 
-  return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-serif text-[#FF4500] mb-2">Search Profiles</h1>
-            <p className="text-gray-600">
-              {loading ? 'Searching...' : `Found ${total} matching profiles`}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="relative flex-grow sm:w-64">
-              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search name, location..."
-                className="pl-9 pr-9 h-10 bg-white"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        <main className="flex-grow container mx-auto px-4 py-8">
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-serif text-[#FF4500] mb-2">Search Profiles</h1>
+              <p className="text-gray-600">
+                {loading ? 'Searching...' : `Found ${total} matching profiles`}
+              </p>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 h-10 whitespace-nowrap"
-            >
-              <Filter className="h-4 w-4" />
-              {showFilters ? 'Hide' : 'Show'} Filters
-            </Button>
+            <div className="flex items-center gap-2">
+              <div className="relative flex-grow sm:w-64">
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search name, location..."
+                  className="pl-9 pr-9 h-10 bg-white"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2 h-10 whitespace-nowrap"
+              >
+                <Filter className="h-4 w-4" />
+                {showFilters ? 'Hide' : 'Show'} Filters
+              </Button>
+            </div>
           </div>
-        </div>
 
-        {/* Interest Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="border-2 border-green-100/50 shadow-sm bg-white/50 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
-              <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-1" />
-              <h3 className="text-xl font-bold text-green-600">
-                {sentInterests.filter(i => i.status === 'accepted').length}
-              </h3>
-              <p className="text-xs text-gray-600 uppercase tracking-wider font-semibold">Accepted</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-2 border-yellow-100/50 shadow-sm bg-white/50 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
-              <Clock className="h-6 w-6 text-yellow-500 mx-auto mb-1" />
-              <h3 className="text-xl font-bold text-yellow-600">
-                {sentInterests.filter(i => i.status === 'pending').length}
-              </h3>
-              <p className="text-xs text-gray-600 uppercase tracking-wider font-semibold">Pending</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-2 border-red-100/50 shadow-sm bg-white/50 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
-              <XCircle className="h-6 w-6 text-red-500 mx-auto mb-1" />
-              <h3 className="text-xl font-bold text-red-600">
-                {sentInterests.filter(i => i.status === 'declined').length}
-              </h3>
-              <p className="text-xs text-gray-600 uppercase tracking-wider font-semibold">Declined</p>
-            </CardContent>
-          </Card>
-        </div>
+          {/* Interest Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <Card className="border-2 border-green-100/50 shadow-sm bg-white/50 backdrop-blur-sm">
+              <CardContent className="p-4 text-center">
+                <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-1" />
+                <h3 className="text-xl font-bold text-green-600">
+                  {sentInterests.filter(i => i.status === 'accepted').length}
+                </h3>
+                <p className="text-xs text-gray-600 uppercase tracking-wider font-semibold">Accepted</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-2 border-yellow-100/50 shadow-sm bg-white/50 backdrop-blur-sm">
+              <CardContent className="p-4 text-center">
+                <Clock className="h-6 w-6 text-yellow-500 mx-auto mb-1" />
+                <h3 className="text-xl font-bold text-yellow-600">
+                  {sentInterests.filter(i => i.status === 'pending').length}
+                </h3>
+                <p className="text-xs text-gray-600 uppercase tracking-wider font-semibold">Pending</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-2 border-red-100/50 shadow-sm bg-white/50 backdrop-blur-sm">
+              <CardContent className="p-4 text-center">
+                <XCircle className="h-6 w-6 text-red-500 mx-auto mb-1" />
+                <h3 className="text-xl font-bold text-red-600">
+                  {sentInterests.filter(i => i.status === 'declined').length}
+                </h3>
+                <p className="text-xs text-gray-600 uppercase tracking-wider font-semibold">Declined</p>
+              </CardContent>
+            </Card>
+          </div>
 
-        <div className="grid md:grid-cols-4 gap-6">
-          {showFilters && (
-            <Card className="md:col-span-1 h-fit">
-              <CardContent className="p-4 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-lg">Filters</h3>
-                  <Button variant="ghost" size="sm" onClick={resetFilters} className="text-[#FF4500]">
-                    Reset All
-                  </Button>
-                </div>
-
-                <FilterSection title="Basic Filters" icon={Filter} open={basicOpen} setOpen={setBasicOpen}>
-                  <div className="space-y-3">
-                    <div>
-                      <Label className="text-sm">Age: {ageRange[0]} - {ageRange[1]}</Label>
-                      <Slider min={18} max={60} step={1} value={ageRange} onValueChange={setAgeRange} className="mt-2" />
-                    </div>
-                    <div>
-                      <Label className="text-sm">Height (cm): {heightRange[0]} - {heightRange[1]}</Label>
-                      <Slider min={140} max={200} step={1} value={heightRange} onValueChange={setHeightRange} className="mt-2" />
-                    </div>
-                    <div>
-                      <Label className="text-sm">Marital Status</Label>
-                      <Select value={maritalStatus} onValueChange={setMaritalStatus}>
-                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="any">Any</SelectItem>
-                          <SelectItem value="never_married">Never Married</SelectItem>
-                          <SelectItem value="divorced">Divorced</SelectItem>
-                          <SelectItem value="widowed">Widowed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label className="text-sm">Marriage Timeline</Label>
-                      <Select value={marriageTimeline} onValueChange={setMarriageTimeline}>
-                        <SelectTrigger className="mt-1"><SelectValue placeholder="Select timeline" /></SelectTrigger>
-                        <SelectContent>
-                          {MARRIAGE_TIMELINE.map(t => (
-                            <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+          <div className="grid md:grid-cols-4 gap-6">
+            {showFilters && (
+              <Card className="md:col-span-1 h-fit">
+                <CardContent className="p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-lg">Filters</h3>
+                    <Button variant="ghost" size="sm" onClick={resetFilters} className="text-[#FF4500]">
+                      Reset All
+                    </Button>
                   </div>
-                </FilterSection>
 
-                <div className="border-t pt-3">
-                  <FilterSection title="Location" icon={MapPin} open={locationOpen} setOpen={setLocationOpen}>
-                    <LocationSearch onSearch={handleLocationSearch} />
-                    <Label className="text-sm mt-3 block">Country</Label>
-                    <div className="max-h-32 overflow-y-auto border rounded p-2 mt-1 space-y-1">
-                      {COUNTRIES.map(country => (
-                        <div key={country.value} className="flex items-center gap-2">
-                          <Checkbox
-                            checked={selectedCountries.includes(country.value)}
-                            onCheckedChange={() => toggleArrayItem(selectedCountries, setSelectedCountries, country.value)}
-                          />
-                          <Label className="text-sm cursor-pointer">{country.label}</Label>
-                        </div>
-                      ))}
-                    </div>
-                  </FilterSection>
-                </div>
-
-                <div className="border-t pt-3">
-                  <FilterSection title="Community & Gotra" icon={Users} open={communityOpen} setOpen={setCommunityOpen}>
-                    <div>
-                      <Label className="text-sm">Gotra</Label>
-                      <Input placeholder="Search gotra..." value={gotraSearch} onChange={e => setGotraSearch(e.target.value)} className="mt-1 h-8" />
-                      <div className="max-h-32 overflow-y-auto border rounded p-2 mt-1 space-y-1">
-                        {filteredGotras.map(gotra => (
-                          <div key={gotra} className="flex items-center gap-2">
-                            <Checkbox
-                              checked={selectedGotras.includes(gotra)}
-                              onCheckedChange={() => toggleArrayItem(selectedGotras, setSelectedGotras, gotra)}
-                            />
-                            <Label className="text-xs cursor-pointer">{gotra}</Label>
-                          </div>
-                        ))}
+                  <FilterSection title="Basic Filters" icon={Filter} open={basicOpen} setOpen={setBasicOpen}>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-sm">Age: {ageRange[0]} - {ageRange[1]}</Label>
+                        <Slider min={18} max={60} step={1} value={ageRange} onValueChange={setAgeRange} className="mt-2" />
                       </div>
-                    </div>
-                    <div className="mt-3">
-                      <Label className="text-sm">Brahmin Community</Label>
-                      <Input placeholder="Search community..." value={communitySearch} onChange={e => setCommunitySearch(e.target.value)} className="mt-1 h-8" />
-                      <div className="max-h-32 overflow-y-auto border rounded p-2 mt-1 space-y-1">
-                        {filteredCommunities.map(community => (
-                          <div key={community} className="flex items-center gap-2">
-                            <Checkbox
-                              checked={selectedCommunities.includes(community)}
-                              onCheckedChange={() => toggleArrayItem(selectedCommunities, setSelectedCommunities, community)}
-                            />
-                            <Label className="text-xs cursor-pointer">{community}</Label>
-                          </div>
-                        ))}
+                      <div>
+                        <Label className="text-sm">Height (cm): {heightRange[0]} - {heightRange[1]}</Label>
+                        <Slider min={140} max={200} step={1} value={heightRange} onValueChange={setHeightRange} className="mt-2" />
                       </div>
-                    </div>
-                  </FilterSection>
-                </div>
-
-                <div className="border-t pt-3">
-                  <FilterSection title="Occupation & Income" icon={Briefcase} open={occupationOpen} setOpen={setOccupationOpen}>
-                    <div>
-                      <Label className="text-sm">Occupation</Label>
-                      <Input placeholder="Search occupation..." value={occupationSearch} onChange={e => setOccupationSearch(e.target.value)} className="mt-1 h-8" />
-                      <div className="max-h-32 overflow-y-auto border rounded p-2 mt-1 space-y-1">
-                        {filteredOccupations.map(occ => (
-                          <div key={occ.value} className="flex items-center gap-2">
-                            <Checkbox
-                              checked={selectedOccupations.includes(occ.value)}
-                              onCheckedChange={() => toggleArrayItem(selectedOccupations, setSelectedOccupations, occ.value)}
-                            />
-                            <Label className="text-xs cursor-pointer">{occ.label}</Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="mt-3">
-                      <Label className="text-sm">Education</Label>
-                      <div className="max-h-32 overflow-y-auto border rounded p-2 mt-1 space-y-1">
-                        {EDUCATION_LEVELS.map(edu => (
-                          <div key={edu.value} className="flex items-center gap-2">
-                            <Checkbox
-                              checked={selectedEducation.includes(edu.value)}
-                              onCheckedChange={() => toggleArrayItem(selectedEducation, setSelectedEducation, edu.value)}
-                            />
-                            <Label className="text-xs cursor-pointer">{edu.label}</Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="mt-3">
-                      <Label className="text-sm">Annual Income</Label>
-                      <div className="flex gap-2 mt-1">
-                        <Select value={incomeCurrency} onValueChange={setIncomeCurrency}>
-                          <SelectTrigger className="w-24 h-8"><SelectValue /></SelectTrigger>
+                      <div>
+                        <Label className="text-sm">Marital Status</Label>
+                        <Select value={maritalStatus} onValueChange={setMaritalStatus}>
+                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="INR">₹ INR</SelectItem>
-                            <SelectItem value="USD">$ USD</SelectItem>
-                            <SelectItem value="GBP">£ GBP</SelectItem>
+                            <SelectItem value="any">Any</SelectItem>
+                            <SelectItem value="never_married">Never Married</SelectItem>
+                            <SelectItem value="divorced">Divorced</SelectItem>
+                            <SelectItem value="widowed">Widowed</SelectItem>
                           </SelectContent>
                         </Select>
-                        <Select value={incomeRange} onValueChange={setIncomeRange}>
-                          <SelectTrigger className="flex-1 h-8"><SelectValue placeholder="Select range" /></SelectTrigger>
+                      </div>
+                      <div>
+                        <Label className="text-sm">Marriage Timeline</Label>
+                        <Select value={marriageTimeline} onValueChange={setMarriageTimeline}>
+                          <SelectTrigger className="mt-1"><SelectValue placeholder="Select timeline" /></SelectTrigger>
                           <SelectContent>
-                            {currentIncomeRanges.map(r => (
-                              <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                            {MARRIAGE_TIMELINE.map(t => (
+                              <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
                   </FilterSection>
-                </div>
 
-                <div className="border-t pt-3">
-                  <FilterSection title="Horoscope" icon={Star} open={horoscopeOpen} setOpen={setHoroscopeOpen}>
-                    <div>
-                      <Label className="text-sm">Manglik Status</Label>
-                      <Select value={manglikStatus} onValueChange={setManglikStatus}>
-                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="any">Any</SelectItem>
-                          <SelectItem value="manglik">Manglik</SelectItem>
-                          <SelectItem value="non_manglik">Non-Manglik</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="mt-3">
-                      <Label className="text-sm">Rashi</Label>
-                      <Select value={selectedRashi} onValueChange={setSelectedRashi}>
-                        <SelectTrigger className="mt-1"><SelectValue placeholder="Select Rashi" /></SelectTrigger>
-                        <SelectContent>
-                          {RASHIS.map(rashi => (
-                            <SelectItem key={rashi} value={rashi}>{rashi}</SelectItem>
+                  <div className="border-t pt-3">
+                    <FilterSection title="Location" icon={MapPin} open={locationOpen} setOpen={setLocationOpen}>
+                      <LocationSearch onSearch={handleLocationSearch} />
+                      <Label className="text-sm mt-3 block">Country</Label>
+                      <div className="max-h-32 overflow-y-auto border rounded p-2 mt-1 space-y-1">
+                        {COUNTRIES.map(country => (
+                          <div key={country.value} className="flex items-center gap-2">
+                            <Checkbox
+                              checked={selectedCountries.includes(country.value)}
+                              onCheckedChange={() => toggleArrayItem(selectedCountries, setSelectedCountries, country.value)}
+                            />
+                            <Label className="text-sm cursor-pointer">{country.label}</Label>
+                          </div>
+                        ))}
+                      </div>
+                    </FilterSection>
+                  </div>
+
+                  <div className="border-t pt-3">
+                    <FilterSection title="Community & Gotra" icon={Users} open={communityOpen} setOpen={setCommunityOpen}>
+                      <div>
+                        <Label className="text-sm">Gotra</Label>
+                        <Input placeholder="Search gotra..." value={gotraSearch} onChange={e => setGotraSearch(e.target.value)} className="mt-1 h-8" />
+                        <div className="max-h-32 overflow-y-auto border rounded p-2 mt-1 space-y-1">
+                          {filteredGotras.map(gotra => (
+                            <div key={gotra} className="flex items-center gap-2">
+                              <Checkbox
+                                checked={selectedGotras.includes(gotra)}
+                                onCheckedChange={() => toggleArrayItem(selectedGotras, setSelectedGotras, gotra)}
+                              />
+                              <Label className="text-xs cursor-pointer">{gotra}</Label>
+                            </div>
                           ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </FilterSection>
-                </div>
+                        </div>
+                      </div>
+                      <div className="mt-3">
+                        <Label className="text-sm">Brahmin Community</Label>
+                        <Input placeholder="Search community..." value={communitySearch} onChange={e => setCommunitySearch(e.target.value)} className="mt-1 h-8" />
+                        <div className="max-h-32 overflow-y-auto border rounded p-2 mt-1 space-y-1">
+                          {filteredCommunities.map(community => (
+                            <div key={community} className="flex items-center gap-2">
+                              <Checkbox
+                                checked={selectedCommunities.includes(community)}
+                                onCheckedChange={() => toggleArrayItem(selectedCommunities, setSelectedCommunities, community)}
+                              />
+                              <Label className="text-xs cursor-pointer">{community}</Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </FilterSection>
+                  </div>
 
-                <div className="border-t pt-3">
-                  <FilterSection title="Preferences" icon={Heart} open={preferencesOpen} setOpen={setPreferencesOpen}>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 p-2 bg-green-50 rounded">
-                        <Checkbox checked={onlineOnly} onCheckedChange={(c) => setOnlineOnly(!!c)} />
-                        <Label className="text-sm cursor-pointer">Online Now</Label>
+                  <div className="border-t pt-3">
+                    <FilterSection title="Occupation & Income" icon={Briefcase} open={occupationOpen} setOpen={setOccupationOpen}>
+                      <div>
+                        <Label className="text-sm">Occupation</Label>
+                        <Input placeholder="Search occupation..." value={occupationSearch} onChange={e => setOccupationSearch(e.target.value)} className="mt-1 h-8" />
+                        <div className="max-h-32 overflow-y-auto border rounded p-2 mt-1 space-y-1">
+                          {filteredOccupations.map(occ => (
+                            <div key={occ.value} className="flex items-center gap-2">
+                              <Checkbox
+                                checked={selectedOccupations.includes(occ.value)}
+                                onCheckedChange={() => toggleArrayItem(selectedOccupations, setSelectedOccupations, occ.value)}
+                              />
+                              <Label className="text-xs cursor-pointer">{occ.label}</Label>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 p-2 bg-orange-50 rounded">
-                        <Checkbox checked={verifiedOnly} onCheckedChange={(c) => setVerifiedOnly(!!c)} />
-                        <Label className="text-sm cursor-pointer">Verified Only</Label>
+                      <div className="mt-3">
+                        <Label className="text-sm">Education</Label>
+                        <div className="max-h-32 overflow-y-auto border rounded p-2 mt-1 space-y-1">
+                          {EDUCATION_LEVELS.map(edu => (
+                            <div key={edu.value} className="flex items-center gap-2">
+                              <Checkbox
+                                checked={selectedEducation.includes(edu.value)}
+                                onCheckedChange={() => toggleArrayItem(selectedEducation, setSelectedEducation, edu.value)}
+                              />
+                              <Label className="text-xs cursor-pointer">{edu.label}</Label>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 p-2 bg-orange-50 rounded">
-                        <Checkbox checked={recentlyActive} onCheckedChange={(c) => setRecentlyActive(!!c)} />
-                        <Label className="text-sm cursor-pointer">Active (7 days)</Label>
+                      <div className="mt-3">
+                        <Label className="text-sm">Annual Income</Label>
+                        <div className="flex gap-2 mt-1">
+                          <Select value={incomeCurrency} onValueChange={setIncomeCurrency}>
+                            <SelectTrigger className="w-24 h-8"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="INR">₹ INR</SelectItem>
+                              <SelectItem value="USD">$ USD</SelectItem>
+                              <SelectItem value="GBP">£ GBP</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Select value={incomeRange} onValueChange={setIncomeRange}>
+                            <SelectTrigger className="flex-1 h-8"><SelectValue placeholder="Select range" /></SelectTrigger>
+                            <SelectContent>
+                              {currentIncomeRanges.map(r => (
+                                <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 p-2 bg-orange-50 rounded">
-                        <Checkbox checked={withPhotosOnly} onCheckedChange={(c) => setWithPhotosOnly(!!c)} />
-                        <Label className="text-sm cursor-pointer">With Photos Only</Label>
-                      </div>
-                    </div>
-                  </FilterSection>
-                </div>
+                    </FilterSection>
+                  </div>
 
-                <div className="border-t pt-4 space-y-3">
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Save search as..."
-                      value={saveSearchName}
-                      onChange={e => setSaveSearchName(e.target.value)}
-                      className="h-8 text-sm"
-                    />
-                    <Button size="sm" variant="outline" onClick={saveSearch} disabled={!saveSearchName.trim()} className="h-8">
-                      <Save className="h-3 w-3" />
+                  <div className="border-t pt-3">
+                    <FilterSection title="Horoscope" icon={Star} open={horoscopeOpen} setOpen={setHoroscopeOpen}>
+                      <div>
+                        <Label className="text-sm">Manglik Status</Label>
+                        <Select value={manglikStatus} onValueChange={setManglikStatus}>
+                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="any">Any</SelectItem>
+                            <SelectItem value="manglik">Manglik</SelectItem>
+                            <SelectItem value="non_manglik">Non-Manglik</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="mt-3">
+                        <Label className="text-sm">Rashi</Label>
+                        <Select value={selectedRashi} onValueChange={setSelectedRashi}>
+                          <SelectTrigger className="mt-1"><SelectValue placeholder="Select Rashi" /></SelectTrigger>
+                          <SelectContent>
+                            {RASHIS.map(rashi => (
+                              <SelectItem key={rashi} value={rashi}>{rashi}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </FilterSection>
+                  </div>
+
+                  <div className="border-t pt-3">
+                    <FilterSection title="Preferences" icon={Heart} open={preferencesOpen} setOpen={setPreferencesOpen}>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 p-2 bg-green-50 rounded">
+                          <Checkbox checked={onlineOnly} onCheckedChange={(c) => setOnlineOnly(!!c)} />
+                          <Label className="text-sm cursor-pointer">Online Now</Label>
+                        </div>
+                        <div className="flex items-center gap-2 p-2 bg-orange-50 rounded">
+                          <Checkbox checked={verifiedOnly} onCheckedChange={(c) => setVerifiedOnly(!!c)} />
+                          <Label className="text-sm cursor-pointer">Verified Only</Label>
+                        </div>
+                        <div className="flex items-center gap-2 p-2 bg-orange-50 rounded">
+                          <Checkbox checked={recentlyActive} onCheckedChange={(c) => setRecentlyActive(!!c)} />
+                          <Label className="text-sm cursor-pointer">Active (7 days)</Label>
+                        </div>
+                        <div className="flex items-center gap-2 p-2 bg-orange-50 rounded">
+                          <Checkbox checked={withPhotosOnly} onCheckedChange={(c) => setWithPhotosOnly(!!c)} />
+                          <Label className="text-sm cursor-pointer">With Photos Only</Label>
+                        </div>
+                      </div>
+                    </FilterSection>
+                  </div>
+
+                  <div className="border-t pt-4 space-y-3">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Save search as..."
+                        value={saveSearchName}
+                        onChange={e => setSaveSearchName(e.target.value)}
+                        className="h-8 text-sm"
+                      />
+                      <Button size="sm" variant="outline" onClick={saveSearch} disabled={!saveSearchName.trim()} className="h-8">
+                        <Save className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <Button
+                      className="w-full bg-[#FF4500] hover:bg-[#E03E00] text-white"
+                      onClick={searchProfiles}
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Searching...</>
+                      ) : (
+                        <><SearchIcon className="h-4 w-4 mr-2" />Search</>
+                      )}
                     </Button>
                   </div>
-                  <Button
-                    className="w-full bg-[#FF4500] hover:bg-[#E03E00] text-white"
-                    onClick={searchProfiles}
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Searching...</>
-                    ) : (
-                      <><SearchIcon className="h-4 w-4 mr-2" />Search</>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                </CardContent>
+              </Card>
+            )}
 
-          <div className={showFilters ? 'md:col-span-3' : 'md:col-span-4'}>
-            {loading ? (
-              <div className="text-center py-12">
-                <Loader2 className="h-12 w-12 animate-spin mx-auto text-[#FF4500]" />
-                <p className="mt-4 text-gray-600">Loading profiles...</p>
-              </div>
-            ) : filteredProfiles.length === 0 ? (
-                <Card>
-                  <CardContent className="p-12 text-center">
-                    <SearchIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-700 mb-2">No profiles found</h3>
-                    <p className="text-gray-500 mb-4">Try adjusting your filters or search term</p>
-                    <Button variant="outline" onClick={() => { resetFilters(); setSearchTerm(''); }} className="text-[#FF4500]">Reset All</Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className={cn(
-                  "grid gap-4",
-                  showFilters 
-                    ? "grid-cols-1 lg:grid-cols-2" 
-                    : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-                )}>
-                  {filteredProfiles.map(profile => (
-                    <ProfileCard key={profile.id} profile={profile} showActions onAction={handleProfileAction} />
-                  ))}
+            <div className={showFilters ? 'md:col-span-3' : 'md:col-span-4'}>
+              {loading ? (
+                <div className="text-center py-12">
+                  <Loader2 className="h-12 w-12 animate-spin mx-auto text-[#FF4500]" />
+                  <p className="mt-4 text-gray-600">Loading profiles...</p>
                 </div>
-              )}
+              ) : filteredProfiles.length === 0 ? (
+                  <Card>
+                    <CardContent className="p-12 text-center">
+                      <SearchIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold text-gray-700 mb-2">No profiles found</h3>
+                      <p className="text-gray-500 mb-4">Try adjusting your filters or search term</p>
+                      <Button variant="outline" onClick={() => { resetFilters(); setSearchTerm(''); }} className="text-[#FF4500]">Reset All</Button>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <>
+                    <div className={cn(
+                      "grid gap-4",
+                      showFilters 
+                        ? "grid-cols-1 lg:grid-cols-2" 
+                        : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                    )}>
+                      {currentProfiles.map(profile => (
+                        <ProfileCard key={profile.id} profile={profile} showActions onAction={handleProfileAction} />
+                      ))}
+                    </div>
 
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                    />
+                  </>
+                )}
+
+            </div>
           </div>
-        </div>
-      </main>
-      <Footer />
-    </div>
-  );
+        </main>
+        <Footer />
+      </div>
+    );
+
 }

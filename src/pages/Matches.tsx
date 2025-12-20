@@ -11,12 +11,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { matchingService, interestsService } from '@/services/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Pagination } from '@/components/ui/pagination';
+
+const ITEMS_PER_PAGE = 9;
 
 const Matches = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState<'filters' | 'recalculate' | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
     ageMin: '',
     ageMax: '',
@@ -57,6 +61,12 @@ const Matches = () => {
     }
     return 0;
   });
+
+  const totalPages = Math.ceil(filteredMatches.length / ITEMS_PER_PAGE);
+  const currentMatches = filteredMatches.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const recalculateMutation = useMutation({
     mutationFn: async () => {
@@ -246,54 +256,62 @@ const Matches = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredMatches.map((match: any) => (
-              <Card key={match.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <Badge variant="secondary" className="bg-green-100 text-green-800">
-                      {match.compatibility_score}% Match
-                    </Badge>
-                  </div>
-                  
-                  {match.profile && (
-                    <>
-                      <div className="mb-4">
-                        <h3 className="text-xl font-semibold mb-1">{match.profile.full_name}</h3>
-                        <p className="text-gray-600 text-sm">
-                          {match.profile.age} years • {match.profile.height} cm
-                        </p>
-                      </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {currentMatches.map((match: any) => (
+                <Card key={match.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <Badge variant="secondary" className="bg-green-100 text-green-800">
+                        {match.compatibility_score}% Match
+                      </Badge>
+                    </div>
+                    
+                    {match.profile && (
+                      <>
+                        <div className="mb-4">
+                          <h3 className="text-xl font-semibold mb-1">{match.profile.full_name}</h3>
+                          <p className="text-gray-600 text-sm">
+                            {match.profile.age} years • {match.profile.height} cm
+                          </p>
+                        </div>
 
-                      <div className="space-y-2 mb-4">
-                        <div className="flex items-center text-sm text-gray-600">
-                          <MapPin className="h-4 w-4 mr-2" />
-                          {match.profile.city}, {match.profile.state}
+                        <div className="space-y-2 mb-4">
+                          <div className="flex items-center text-sm text-gray-600">
+                            <MapPin className="h-4 w-4 mr-2" />
+                            {match.profile.city}, {match.profile.state}
+                          </div>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <GraduationCap className="h-4 w-4 mr-2" />
+                            {match.profile.education}
+                          </div>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Briefcase className="h-4 w-4 mr-2" />
+                            {match.profile.occupation}
+                          </div>
                         </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <GraduationCap className="h-4 w-4 mr-2" />
-                          {match.profile.education}
-                        </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Briefcase className="h-4 w-4 mr-2" />
-                          {match.profile.occupation}
-                        </div>
-                      </div>
 
-                      <Button
-                        onClick={() => handleSendInterest(match.profile.user_id)}
-                        disabled={sendInterestMutation.isPending}
-                        className="w-full"
-                      >
-                        <Heart className="h-4 w-4 mr-2" />
-                        Send Interest
-                      </Button>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                        <Button
+                          onClick={() => handleSendInterest(match.profile.user_id)}
+                          disabled={sendInterestMutation.isPending}
+                          className="w-full"
+                        >
+                          <Heart className="h-4 w-4 mr-2" />
+                          Send Interest
+                        </Button>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </>
         )}
       </div>
     </div>

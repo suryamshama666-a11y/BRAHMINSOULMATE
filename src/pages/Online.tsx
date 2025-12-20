@@ -8,11 +8,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { OnlineStats } from './components/OnlineStats';
 import { OnlineSearchBar } from './components/OnlineSearchBar';
 import { OnlineProfileCard } from './components/OnlineProfileCard';
+import { Pagination } from '@/components/ui/pagination';
+
+const ITEMS_PER_PAGE = 9;
 
 const Online = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
   const { isPremium } = useAuth();
 
@@ -93,6 +97,12 @@ const Online = () => {
     profile.location.city.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const totalPages = Math.ceil(filteredProfiles.length / ITEMS_PER_PAGE);
+  const currentProfiles = filteredProfiles.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   return (
     <div className="min-h-screen flex flex-col bg-orange-50/30">
       <main className="flex-grow container mx-auto px-4 py-8">
@@ -112,7 +122,7 @@ const Online = () => {
 
         {/* Online Profiles Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProfiles.map((profile) => (
+          {currentProfiles.map((profile) => (
             <OnlineProfileCard
               key={profile.id}
               profile={profile}
@@ -124,12 +134,12 @@ const Online = () => {
           ))}
         </div>
 
-        {/* Load More */}
-        <div className="text-center mt-8">
-          <Button className="bg-primary text-white hover:bg-primary-dark px-8 py-3">
-            Load More Online Members
-          </Button>
-        </div>
+        {/* Pagination */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </main>
       
       <Footer />

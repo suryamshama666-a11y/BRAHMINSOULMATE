@@ -11,15 +11,19 @@ import { profileViewsService } from '@/services/api';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { ListFilters } from '@/components/ListFilters';
+import { Pagination } from '@/components/ui/pagination';
+
+const ITEMS_PER_PAGE = 9;
 
 const WhoViewedYou = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [viewers, setViewers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const sortOptions = [
     { value: 'newest', label: 'Most Recent' },
@@ -32,7 +36,7 @@ const WhoViewedYou = () => {
       setLoading(true);
       
       try {
-        const data = await profileViewsService.getWhoViewedMe(timeFilter);
+        const data = await profileViewsService.getWhoViewedMe(timeFilter as any);
 
         const formattedViewers = (data || []).map((view: any) => ({
           id: view.viewer?.id || view.id,
@@ -94,10 +98,15 @@ const WhoViewedYou = () => {
       }
     };
 
+    if (authLoading) return;
+
     if (user) {
       loadViewers();
+      setCurrentPage(1); // Reset to first page on filter change
+    } else {
+      setLoading(false);
     }
-  }, [user, timeFilter]);
+  }, [user, authLoading, timeFilter]);
 
   const filteredAndSortedViewers = useMemo(() => {
     let result = [...viewers];
@@ -128,6 +137,12 @@ const WhoViewedYou = () => {
 
     return result;
   }, [viewers, searchTerm, sortBy]);
+
+  const totalPages = Math.ceil(filteredAndSortedViewers.length / ITEMS_PER_PAGE);
+  const currentViewers = filteredAndSortedViewers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const formatViewTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -222,23 +237,31 @@ const WhoViewedYou = () => {
         />
 
         {filteredAndSortedViewers.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredAndSortedViewers.map((profile) => (
-              <div key={profile.id} className="relative">
-                <div className="absolute top-4 right-4 z-10">
-                  <Badge variant="secondary" className="bg-blue-100/90 text-blue-800 backdrop-blur-sm shadow-sm">
-                    <Clock className="h-3 w-3 mr-1" />
-                    Viewed {formatViewTime(profile.viewedAt)}
-                  </Badge>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {currentViewers.map((profile) => (
+                <div key={profile.id} className="relative">
+                  <div className="absolute top-4 right-4 z-10">
+                    <Badge variant="secondary" className="bg-blue-100/90 text-blue-800 backdrop-blur-sm shadow-sm">
+                      <Clock className="h-3 w-3 mr-1" />
+                      Viewed {formatViewTime(profile.viewedAt)}
+                    </Badge>
+                  </div>
+                  <ProfileCard 
+                    profile={profile}
+                    variant="default"
+                    onAction={handleProfileAction}
+                  />
                 </div>
-                <ProfileCard 
-                  profile={profile}
-                  variant="default"
-                  onAction={handleProfileAction}
-                />
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </>
         ) : (
           <Card className="text-center py-16">
             <CardContent>
