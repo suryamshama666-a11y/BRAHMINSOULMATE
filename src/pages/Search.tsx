@@ -9,11 +9,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import ProfileCard from '@/components/ProfileCard';
-import { Search as SearchIcon, Filter, Loader2, ChevronDown, ChevronUp, Save, MapPin, Briefcase, GraduationCap, Heart, Star, Users } from 'lucide-react';
+import { Search as SearchIcon, Filter, Loader2, ChevronDown, ChevronUp, Save, MapPin, Briefcase, GraduationCap, Heart, Star, Users, X } from 'lucide-react';
 import { toast } from 'sonner';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import LocationSearch from '@/components/search/LocationSearch';
+import { cn } from '@/lib/utils';
 
 const COUNTRIES = [
   { value: 'india', label: 'India' },
@@ -123,6 +124,7 @@ export default function Search() {
   const [loading, setLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
   const [total, setTotal] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
   
   const [basicOpen, setBasicOpen] = useState(true);
   const [locationOpen, setLocationOpen] = useState(false);
@@ -288,24 +290,52 @@ export default function Search() {
     </Collapsible>
   );
 
+  const filteredProfiles = profiles.filter(p => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      p.name.toLowerCase().includes(searchLower) ||
+      p.location.toLowerCase().includes(searchLower) ||
+      p.profession.toLowerCase().includes(searchLower)
+    );
+  });
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <main className="flex-grow container mx-auto px-4 py-8">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-serif text-[#FF4500] mb-2">Search Profiles</h1>
             <p className="text-gray-600">
               {loading ? 'Searching...' : `Found ${total} matching profiles`}
             </p>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2"
-          >
-            <Filter className="h-4 w-4" />
-            {showFilters ? 'Hide' : 'Show'} Filters
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="relative flex-grow sm:w-64">
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search name, location..."
+                className="pl-9 pr-9 h-10 bg-white"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2 h-10 whitespace-nowrap"
+            >
+              <Filter className="h-4 w-4" />
+              {showFilters ? 'Hide' : 'Show'} Filters
+            </Button>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-4 gap-6">
@@ -547,22 +577,28 @@ export default function Search() {
                 <Loader2 className="h-12 w-12 animate-spin mx-auto text-[#FF4500]" />
                 <p className="mt-4 text-gray-600">Loading profiles...</p>
               </div>
-            ) : profiles.length === 0 ? (
-              <Card>
-                <CardContent className="p-12 text-center">
-                  <SearchIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-700 mb-2">No profiles found</h3>
-                  <p className="text-gray-500 mb-4">Try adjusting your filters</p>
-                  <Button variant="outline" onClick={resetFilters} className="text-[#FF4500]">Reset Filters</Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {profiles.map(profile => (
-                  <ProfileCard key={profile.id} profile={profile} showActions onAction={handleProfileAction} />
-                ))}
-              </div>
-            )}
+            ) : filteredProfiles.length === 0 ? (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <SearchIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-700 mb-2">No profiles found</h3>
+                    <p className="text-gray-500 mb-4">Try adjusting your filters or search term</p>
+                    <Button variant="outline" onClick={() => { resetFilters(); setSearchTerm(''); }} className="text-[#FF4500]">Reset All</Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className={cn(
+                  "grid gap-4",
+                  showFilters 
+                    ? "grid-cols-1 lg:grid-cols-2" 
+                    : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                )}>
+                  {filteredProfiles.map(profile => (
+                    <ProfileCard key={profile.id} profile={profile} showActions onAction={handleProfileAction} />
+                  ))}
+                </div>
+              )}
+
           </div>
         </div>
       </main>
