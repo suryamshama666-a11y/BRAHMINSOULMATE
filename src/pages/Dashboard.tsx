@@ -128,6 +128,30 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          {[
+            { label: 'Profile Views', value: stats.profileViews, icon: Heart, color: 'bg-red-500' },
+            { label: 'Messages', value: stats.messageCount, icon: MessageCircle, color: 'bg-amber-500' },
+            { label: 'Matches', value: stats.interestsSent, icon: Users, color: 'bg-red-500' },
+            { label: 'V-Dates', value: stats.vDatesCount, icon: Video, color: 'bg-amber-500' },
+          ].map((stat, i) => (
+            <Card key={i} className="border-2 border-red-100/50 hover:shadow-md transition-all duration-300 bg-white/80 backdrop-blur-sm">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">{stat.label}</p>
+                    <p className="text-2xl font-bold text-red-600">{stat.value}</p>
+                  </div>
+                  <div className={`p-2.5 rounded-full ${stat.color} shadow-lg shadow-red-500/20`}>
+                    <stat.icon className="h-5 w-5 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
         {/* Online Members - CIRCULAR STORIES STYLE */}
         <section className="mb-10 overflow-hidden">
           <div className="flex items-center justify-between mb-4">
@@ -251,30 +275,6 @@ const Dashboard = () => {
               </CardContent>
             </Card>
           </section>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-          {[
-            { label: 'Profile Views', value: stats.profileViews, icon: Heart, color: 'bg-red-500' },
-            { label: 'Messages', value: stats.messageCount, icon: MessageCircle, color: 'bg-amber-500' },
-            { label: 'Matches', value: stats.interestsSent, icon: Users, color: 'bg-red-500' },
-            { label: 'V-Dates', value: stats.vDatesCount, icon: Video, color: 'bg-amber-500' },
-          ].map((stat, i) => (
-            <Card key={i} className="border-2 border-red-100/50 hover:shadow-md transition-all duration-300 bg-white/80 backdrop-blur-sm">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">{stat.label}</p>
-                    <p className="text-2xl font-bold text-red-600">{stat.value}</p>
-                  </div>
-                  <div className={`p-2.5 rounded-full ${stat.color} shadow-lg shadow-red-500/20`}>
-                    <stat.icon className="h-5 w-5 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
         </div>
 
         {/* Quick Actions */}
