@@ -191,15 +191,15 @@ const Dashboard = () => {
         {/* Two-Column Layout for New Members & Recommended */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           
-          {/* New Members - LEFT COLUMN */}
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-serif font-bold text-gray-800">New Members</h2>
-              <Link to="/search" className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center group">
-                VIEW ALL
-                <ChevronRight className="h-3 w-3 ml-0.5 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </div>
+            {/* New Members - LEFT COLUMN */}
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-serif font-bold text-gray-800">New Members</h2>
+                <Link to="/new-members" className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center group">
+                  VIEW ALL
+                  <ChevronRight className="h-3 w-3 ml-0.5 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
             <Card className="border-2 border-red-100/50 overflow-hidden shadow-sm">
               <CardContent className="p-0 divide-y divide-red-50">
                 {newMembers.length > 0 ? (
