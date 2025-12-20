@@ -322,10 +322,10 @@ export default function Search() {
       );
     });
 
-    const totalPages = Math.ceil(filteredProfiles.length / ITEMS_PER_PAGE);
+    const totalPages = Math.ceil(filteredProfiles.length / itemsPerPage);
     const currentProfiles = filteredProfiles.slice(
-      (currentPage - 1) * ITEMS_PER_PAGE,
-      currentPage * ITEMS_PER_PAGE
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
     );
 
     return (
@@ -653,8 +653,8 @@ export default function Search() {
                     <div className={cn(
                       "grid gap-4",
                       showFilters 
-                        ? "grid-cols-1 lg:grid-cols-2" 
-                        : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                        ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-2" 
+                        : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3"
                     )}>
                       {currentProfiles.map(profile => (
                         <ProfileCard key={profile.id} profile={profile} showActions onAction={handleProfileAction} />
