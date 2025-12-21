@@ -3,19 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Heart, MapPin, Briefcase, GraduationCap, RefreshCw, Filter, SlidersHorizontal } from 'lucide-react';
+import { Heart, MapPin, Briefcase, GraduationCap, RefreshCw, SlidersHorizontal } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { MIN_AGE, DEFAULT_CASTE, GOTRAS } from '@/data/constants';
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
+import { MIN_AGE, GOTRAS } from '@/data/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { matchingService, interestsService, paymentsService } from '@/services/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pagination } from '@/components/ui/pagination';
-
-const ITEMS_PER_PAGE = 9;
 
 const Matches = () => {
   const { user } = useAuth();
@@ -23,8 +21,8 @@ const Matches = () => {
   const queryClient = useQueryClient();
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState<'filters' | 'recalculate' | null>(null);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(9);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(9);
 
   const [filters, setFilters] = useState({
     ageMin: user?.gender === 'male' ? MIN_AGE.FEMALE.toString() : MIN_AGE.MALE.toString(),
@@ -38,8 +36,7 @@ const Matches = () => {
     queryKey: ['matches', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const data = await matchingService.getMatches(user.id, 20);
-      return data;
+      return await matchingService.getMatches(user.id, 20);
     },
     enabled: !!user?.id
   });
@@ -54,9 +51,9 @@ const Matches = () => {
     if (filters.gotra !== 'all' && profile.gotra !== filters.gotra) return false;
 
     return true;
-    }).sort((a: any, b: any) => {
+  }).sort((a: any, b: any) => {
     if (filters.sortBy === 'compatibility') {
-      return b.compatibility_score - a.compatibility_score;
+      return (b.compatibility_score || 0) - (a.compatibility_score || 0);
     } else if (filters.sortBy === 'age_asc') {
       return (a.profile?.age || 0) - (b.profile?.age || 0);
     } else if (filters.sortBy === 'age_desc') {
@@ -81,8 +78,6 @@ const Matches = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['matches'] });
       toast.success('Matches recalculated successfully!');
-      // Keep activeTab as 'recalculate' or clear it? 
-      // User said "stay red when selected", so we keep it.
     },
     onError: () => {
       toast.error('Failed to recalculate matches');
@@ -105,21 +100,23 @@ const Matches = () => {
   const handleSendInterest = async (profileId: string) => {
     if (!user?.id) return;
     
-    // Check limits before sending interest
-    const canSend = await paymentsService.checkSubscriptionLimits(user.id, 'interests_sent');
-    if (!canSend) {
-      toast.error('Daily limit reached. Please upgrade your plan to send more interests.');
-      navigate('/plans');
-      return;
-    }
+    try {
+      const canSend = await paymentsService.checkSubscriptionLimits(user.id, 'interests_sent');
+      if (!canSend) {
+        toast.error('Daily limit reached. Please upgrade your plan to send more interests.');
+        navigate('/plans');
+        return;
+      }
 
-    sendInterestMutation.mutate({
-      profileId,
-      message: 'Hi! I found your profile interesting and would like to connect.'
-    });
-    
-    // Record activity
-    await paymentsService.recordActivity(user.id, 'interests_sent');
+      sendInterestMutation.mutate({
+        profileId,
+        message: 'Hi! I found your profile interesting and would like to connect.'
+      });
+      
+      await paymentsService.recordActivity(user.id, 'interests_sent');
+    } catch (error) {
+      toast.error('Error checking limits');
+    }
   };
 
   const handleRecalculate = () => {
@@ -153,7 +150,7 @@ const Matches = () => {
     return `${feet}' ${inches} inch`;
   };
 
-  const uniqueLocations = [...new Set(matches.map((m: any) => m.profile?.state).filter(Boolean))];
+  const uniqueLocations = Array.from(new Set(matches.map((m: any) => m.profile?.state).filter(Boolean))) as string[];
 
   if (loading) {
     return (
@@ -199,59 +196,57 @@ const Matches = () => {
         </div>
 
         <Collapsible open={showFilters} onOpenChange={handleToggleFilters}>
-
           <CollapsibleContent>
             <Card className="mb-6">
               <CardContent className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium mb-2 block">Min Age</Label>
-                      <Input
-                        type="number"
-                        min={user?.gender === 'male' ? MIN_AGE.FEMALE : MIN_AGE.MALE}
-                        placeholder={user?.gender === 'male' ? MIN_AGE.FEMALE.toString() : MIN_AGE.MALE.toString()}
-                        value={filters.ageMin}
-                        onChange={(e) => setFilters({ ...filters, ageMin: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium mb-2 block">Max Age</Label>
-                      <Input
-                        type="number"
-                        placeholder="50"
-                        value={filters.ageMax}
-                        onChange={(e) => setFilters({ ...filters, ageMax: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium mb-2 block">Location</Label>
-                      <Select value={filters.location} onValueChange={(v) => setFilters({ ...filters, location: v })}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="All Locations" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Locations</SelectItem>
-                          {uniqueLocations.map((loc: string) => (
-                            <SelectItem key={loc} value={loc}>{loc}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium mb-2 block">Gotra</Label>
-                      <Select value={filters.gotra} onValueChange={(v) => setFilters({ ...filters, gotra: v })}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="All Gotras" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Gotras</SelectItem>
-                          {GOTRAS.map((gotra) => (
-                            <SelectItem key={gotra} value={gotra}>{gotra}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Min Age</Label>
+                    <Input
+                      type="number"
+                      min={user?.gender === 'male' ? MIN_AGE.FEMALE : MIN_AGE.MALE}
+                      placeholder={user?.gender === 'male' ? MIN_AGE.FEMALE.toString() : MIN_AGE.MALE.toString()}
+                      value={filters.ageMin}
+                      onChange={(e) => setFilters({ ...filters, ageMin: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Max Age</Label>
+                    <Input
+                      type="number"
+                      placeholder="50"
+                      value={filters.ageMax}
+                      onChange={(e) => setFilters({ ...filters, ageMax: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Location</Label>
+                    <Select value={filters.location} onValueChange={(v) => setFilters({ ...filters, location: v })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Locations" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Locations</SelectItem>
+                        {uniqueLocations.map((loc) => (
+                          <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Gotra</Label>
+                    <Select value={filters.gotra} onValueChange={(v) => setFilters({ ...filters, gotra: v })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Gotras" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Gotras</SelectItem>
+                        {GOTRAS.map((gotra) => (
+                          <SelectItem key={gotra} value={gotra}>{gotra}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div>
                     <Label className="text-sm font-medium mb-2 block">Sort By</Label>
                     <Select value={filters.sortBy} onValueChange={(v) => setFilters({ ...filters, sortBy: v })}>
@@ -284,28 +279,32 @@ const Matches = () => {
           </Card>
         ) : (
           <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {currentMatches.map((match: any) => {
-                  return (
-                    <Card key={match.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <Badge variant="secondary" className="bg-green-100 text-green-800">
-                            {match.compatibility_score}% Match
-                          </Badge>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {currentMatches.map((match: any) => (
+                <Card key={match.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <Badge variant="secondary" className="bg-green-100 text-green-800">
+                        {match.compatibility_score}% Match
+                      </Badge>
+                    </div>
+                    
+                    {match.profile && (
+                      <>
+                        <div className="mb-4">
+                          <h3 className="text-xl font-semibold mb-0.5">{match.profile.full_name}</h3>
+                          <div className="flex flex-col">
+                            <p className="text-gray-600 text-sm font-medium">
+                              {match.profile.age} years • {formatHeightInch(match.profile.height)} • Brahmin
+                            </p>
+                            <p className="text-gray-500 text-xs font-medium">
+                              {match.profile.city}, {match.profile.state}
+                            </p>
+                            <p className="text-red-500 text-xs font-semibold">
+                              {match.profile.occupation || 'Professional'}
+                            </p>
+                          </div>
                         </div>
-                        
-                        {match.profile && (
-                          <>
-                                    <div className="mb-4">
-                                      <h3 className="text-xl font-semibold mb-0.5">{match.profile.full_name}</h3>
-                                      <div className="flex flex-col">
-                                          <p className="text-gray-600 text-sm font-medium">{match.profile.age} years • {formatHeightInch(match.profile.height)} • Brahmin</p>
-                                        <p className="text-gray-500 text-xs font-medium">{match.profile.city}, {match.profile.state}</p>
-                                        <p className="text-red-500 text-xs font-semibold">{match.profile.occupation || 'Professional'}</p>
-                                      </div>
-                                    </div>
-
 
                         <div className="space-y-2 mb-4">
                           <div className="flex items-center text-sm text-gray-600">
@@ -316,17 +315,16 @@ const Matches = () => {
                             <GraduationCap className="h-4 w-4 mr-2" />
                             {match.profile.education}
                           </div>
-                            <div className="flex items-center text-sm text-gray-600">
-                              <Briefcase className="h-4 w-4 mr-2" />
-                              {match.profile.occupation}
-                            </div>
-                            <div className="flex items-center text-sm text-gray-600">
-                              <Badge variant="outline" className="font-normal">
-                                Gotra: {match.profile.gotra || 'Not specified'}
-                              </Badge>
-                            </div>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Briefcase className="h-4 w-4 mr-2" />
+                            {match.profile.occupation}
                           </div>
-
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Badge variant="outline" className="font-normal">
+                              Gotra: {match.profile.gotra || 'Not specified'}
+                            </Badge>
+                          </div>
+                        </div>
 
                         <Button
                           onClick={() => handleSendInterest(match.profile.user_id)}
@@ -343,6 +341,7 @@ const Matches = () => {
               ))}
             </div>
 
+            <div className="mt-8">
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
@@ -354,6 +353,7 @@ const Matches = () => {
                 }}
                 itemsPerPageOptions={[9, 15, 21]}
               />
+            </div>
           </>
         )}
       </div>
