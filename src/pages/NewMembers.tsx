@@ -299,25 +299,46 @@ const NewMembers = () => {
                   <div className={showFilters ? 'lg:col-span-2' : 'lg:col-span-3'}>
                   {filteredMembers.length > 0 ? (
                     <>
-                          <div className={cn(
-                            "grid gap-4",
-                            showFilters 
-                              ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-2" 
-                              : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3"
-                          )}>
-                        {currentMembers.map((profile) => (
-                          <ProfileCard 
-                            key={profile.id}
-                            profile={{
-                              ...profile, 
-                              joinedDate: profile.joinedDate,
-                              gotra: profile.gotra || 'Gotra not specified'
-                            }}
-                            variant="new"
-                            onAction={handleProfileAction}
-                          />
-                        ))}
-                      </div>
+                            <div className={cn(
+                              "grid gap-4",
+                              showFilters 
+                                ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-2" 
+                                : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3"
+                            )}>
+                          {currentMembers.map((profile) => {
+                            const formatHeight = (height: any) => {
+                              if (!height) return "5' 11 inch";
+                              if (typeof height === 'number') {
+                                const totalInches = height / 2.54;
+                                const feet = Math.floor(totalInches / 12);
+                                const inches = Math.round(totalInches % 12);
+                                return `${feet}' ${inches} inch`;
+                              }
+                              if (typeof height === 'string' && !isNaN(Number(height))) {
+                                const h = Number(height);
+                                const totalInches = h / 2.54;
+                                const feet = Math.floor(totalInches / 12);
+                                const inches = Math.round(totalInches % 12);
+                                return `${feet}' ${inches} inch`;
+                              }
+                              return height;
+                            };
+
+                            return (
+                              <ProfileCard 
+                                key={profile.id}
+                                profile={{
+                                  ...profile, 
+                                  height: formatHeight(profile.height),
+                                  joinedDate: profile.joinedDate,
+                                  gotra: profile.gotra || 'Gotra not specified'
+                                }}
+                                variant="new"
+                                onAction={handleProfileAction}
+                              />
+                            )
+                          })}
+                        </div>
   
                         <div className="mt-8">
                           <Pagination

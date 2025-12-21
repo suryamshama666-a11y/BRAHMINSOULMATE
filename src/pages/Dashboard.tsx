@@ -63,21 +63,41 @@ const Dashboard = () => {
           .eq('gender', oppositeGender)
           .limit(4);
 
-        const transformProfile = (p: any, type: string) => ({
-          id: p.id,
-          name: type === 'new' ? 'Female Profile' : 'Female Match',
-          age: p.age || 25,
-          gender: p.gender,
-          location: `${p.city || 'Mumbai'}, ${p.state || 'Maharashtra'}`,
-          profession: p.occupation || 'Professional',
-          avatarUrl: p.profile_picture_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
-          subscription_type: p.subscription_type || (Math.random() > 0.5 ? 'premium' : 'free'),
-          gotra: p.gotra || 'Bharadwaja Gotra',
-          community: p.community || (Math.random() > 0.5 ? 'Iyer' : 'Deshastha'),
-          height: p.height || "5' 11 inch",
-          matchPercentage: Math.floor(Math.random() * 20) + 80,
-          lastSeen: 'Active now'
-        });
+        const transformProfile = (p: any, type: string) => {
+          const formatHeight = (height: any) => {
+            if (!height) return "5' 11 inch";
+            if (typeof height === 'number') {
+              const totalInches = height / 2.54;
+              const feet = Math.floor(totalInches / 12);
+              const inches = Math.round(totalInches % 12);
+              return `${feet}' ${inches} inch`;
+            }
+            if (typeof height === 'string' && !isNaN(Number(height))) {
+              const h = Number(height);
+              const totalInches = h / 2.54;
+              const feet = Math.floor(totalInches / 12);
+              const inches = Math.round(totalInches % 12);
+              return `${feet}' ${inches} inch`;
+            }
+            return height;
+          };
+
+          return {
+            id: p.id,
+            name: type === 'new' ? 'Female Profile' : 'Female Match',
+            age: p.age || 25,
+            gender: p.gender,
+            location: `${p.city || 'Mumbai'}, ${p.state || 'Maharashtra'}`,
+            profession: p.occupation || 'Professional',
+            avatarUrl: p.profile_picture_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
+            subscription_type: p.subscription_type || (Math.random() > 0.5 ? 'premium' : 'free'),
+            gotra: p.gotra || 'Bharadwaja Gotra',
+            community: p.community || (Math.random() > 0.5 ? 'Iyer' : 'Deshastha'),
+            height: formatHeight(p.height),
+            matchPercentage: Math.floor(Math.random() * 20) + 80,
+            lastSeen: 'Active now'
+          };
+        };
 
         setOnlineMembers(onlineData?.map((p, i) => ({ ...transformProfile(p, 'online'), name: `Online user ${i + 1}` })) || []);
         setNewMembers(newData?.map(p => transformProfile(p, 'new')) || []);
