@@ -288,9 +288,9 @@ const Matches = () => {
                       <>
                         <div className="mb-4">
                           <h3 className="text-xl font-semibold mb-1">{match.profile.full_name}</h3>
-                          <p className="text-gray-600 text-sm">
-                            {match.profile.age} years • {match.profile.height} cm
-                          </p>
+                            <p className="text-gray-600 text-sm">
+                              {match.profile.age} years
+                            </p>
                         </div>
 
                         <div className="space-y-2 mb-4">

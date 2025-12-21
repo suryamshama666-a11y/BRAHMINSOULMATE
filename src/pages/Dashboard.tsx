@@ -213,7 +213,7 @@ const Dashboard = () => {
                   </Avatar>
                   <div className="flex-grow">
                     <h4 className="text-xl font-serif font-bold text-gray-900 mb-1 group-hover:text-rose-600 transition-colors">{member.name}</h4>
-                    <p className="text-sm text-gray-600 mb-2">{member.height} • {member.community}</p>
+                      <p className="text-sm text-gray-600 mb-2">{member.age} yrs • {member.community}</p>
                     <div className="flex gap-2">
                       <Badge className="bg-rose-50 text-rose-600 border-none font-medium px-3 py-1 text-[10px] rounded-full">
                         {member.gotra}
@@ -263,7 +263,7 @@ const Dashboard = () => {
                   </Avatar>
                   <div className="flex-grow">
                     <h4 className="text-xl font-serif font-bold text-gray-900 mb-1 group-hover:text-orange-600 transition-colors">{member.name}</h4>
-                    <p className="text-sm text-gray-600 mb-2">{member.height} • {member.community}</p>
+                      <p className="text-sm text-gray-600 mb-2">{member.age} yrs • {member.community}</p>
                     <div className="flex gap-2 items-center flex-wrap">
                       <Badge className="bg-orange-50 text-orange-700 border-none font-medium px-3 py-1 text-[10px] rounded-full">
                         {member.gotra}

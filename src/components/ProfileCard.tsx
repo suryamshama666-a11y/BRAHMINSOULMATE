@@ -256,7 +256,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                   <h3 className="font-bold text-lg text-gray-900 leading-tight truncate max-w-[140px]" title={profile.name}>
                     {profile.name}
                   </h3>
-                  <p className="text-xs text-gray-500 font-medium">{profile.age} yrs, {profile.height}cm</p>
+                    <p className="text-xs text-gray-500 font-medium">{profile.age} yrs</p>
                 </div>
               </div>
 
