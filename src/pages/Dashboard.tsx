@@ -170,9 +170,9 @@ const Dashboard = () => {
               <div className="h-3 w-3 bg-[#10b981] rounded-full animate-pulse" />
               <h2 className="text-2xl font-bold text-teal-900">Online Now</h2>
             </div>
-            <div className="bg-white px-4 py-1.5 rounded-full border border-teal-100 shadow-sm">
-              <span className="text-sm font-bold text-[#10b981]">65 Online</span>
-            </div>
+              <div className="bg-white px-4 py-1.5 rounded-full border border-teal-100 shadow-sm">
+                <span className="text-sm font-bold text-[#10b981]">{onlineMembers.length} Online</span>
+              </div>
           </div>
           <div className="flex gap-8 overflow-x-auto pb-4 scrollbar-hide">
             {onlineMembers.length > 0 ? (
