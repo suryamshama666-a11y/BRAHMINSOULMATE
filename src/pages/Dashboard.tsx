@@ -181,28 +181,29 @@ const Dashboard = () => {
                 </Link>
               </div>
             </div>
-          <div className="flex gap-8 overflow-x-auto pb-4 scrollbar-hide">
+          <div className="flex flex-wrap gap-x-8 gap-y-10">
             {onlineMembers.length > 0 ? (
               onlineMembers.map((member, i) => (
                 <div 
                   key={member.id} 
-                  className="flex flex-col items-center min-w-[100px] cursor-pointer group"
+                  className="flex flex-col items-center w-[100px] cursor-pointer group"
                   onClick={() => navigate(`/profile/${member.id}`)}
                 >
                   <div className="relative mb-3">
-                    <div className="p-1 rounded-full border-2 border-[#10b981] shadow-lg shadow-teal-100">
+                    <div className="p-1 rounded-full border-2 border-[#10b981] shadow-lg shadow-teal-100 transform group-hover:scale-110 transition-transform duration-300">
                       <Avatar className="h-20 w-20 border-2 border-white">
                         <AvatarImage src={member.avatarUrl} alt={member.name} className="object-cover" />
                         <AvatarFallback className="bg-teal-50 text-teal-600 font-bold">{member.name[0]}</AvatarFallback>
                       </Avatar>
+                      <div className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
                     </div>
-                    </div>
-                    <span className="text-xs font-bold text-teal-900 text-center line-clamp-1">{member.name}</span>
-                    <span className="text-[10px] text-teal-600 font-medium capitalize">{member.gender}</span>
                   </div>
+                  <span className="text-xs font-bold text-teal-900 text-center line-clamp-1">{member.name}</span>
+                  <span className="text-[10px] text-teal-600 font-medium capitalize">{member.gender}</span>
+                </div>
               ))
             ) : (
-              <p className="text-gray-500 text-sm italic">No members online right now.</p>
+              <p className="text-gray-500 text-sm italic w-full">No members online right now.</p>
             )}
           </div>
         </section>
