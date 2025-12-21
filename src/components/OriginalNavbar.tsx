@@ -12,13 +12,13 @@ import {
 import { 
   Menu, X, Bell, MessageCircle, Heart, Search, User,
   Home, Video, ChevronDown, DollarSign, Info, Eye,
-  HelpCircle, Star, BookOpen, Settings, Users, Calendar
+  HelpCircle, Star, BookOpen, Settings, Users, Calendar, LogOut
 } from 'lucide-react';
 
 import ConnectionsDropdown from './navbar/ConnectionsDropdown';
 
 export default function OriginalNavbar() {
-  const { user, profile } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const isAuthenticated = !!user;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
@@ -195,52 +195,7 @@ export default function OriginalNavbar() {
           <div className="flex items-center space-x-4">
             {isAuthenticated ? (
               <>
-                {/* Notification Icons */}
-                <div className="hidden sm:flex items-center space-x-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="relative text-[#FF4500]/70 hover:text-[#FF4500] hover:bg-[#FFF1E6]"
-                    onClick={() => navigate('/messages')}
-                  >
-                    <MessageCircle className="h-5 w-5" />
-                    {profile?.unreadMessages && profile.unreadMessages > 0 && (
-                      <span className="absolute -top-1 -right-1 h-4 w-4 bg-[#FF4500] text-white text-xs rounded-full flex items-center justify-center">
-                        {profile.unreadMessages}
-                      </span>
-                    )}
-                  </Button>
-                  
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="relative text-[#FF4500]/70 hover:text-[#FF4500] hover:bg-[#FFF1E6]"
-                    onClick={() => navigate('/matches')}
-                  >
-                    <Heart className="h-5 w-5" />
-                    {profile?.newMatches && profile.newMatches > 0 && (
-                      <span className="absolute -top-1 -right-1 h-4 w-4 bg-[#FF4500] text-white text-xs rounded-full flex items-center justify-center">
-                        {profile.newMatches}
-                      </span>
-                    )}
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="relative text-[#FF4500]/70 hover:text-[#FF4500] hover:bg-[#FFF1E6]"
-                    onClick={() => navigate('/notifications')}
-                  >
-                    <Bell className="h-5 w-5" />
-                    {profile?.notifications && profile.notifications > 0 && (
-                      <span className="absolute -top-1 -right-1 h-4 w-4 bg-[#FF4500] text-white text-xs rounded-full flex items-center justify-center">
-                        {profile.notifications}
-                      </span>
-                    )}
-                  </Button>
-                </div>
-
-                {/* User Menu */}
+                {/* User Avatar */}
                 <div className="flex items-center">
                   <Button
                     variant="ghost"
@@ -256,6 +211,20 @@ export default function OriginalNavbar() {
                     <span className="hidden sm:block">{userDisplayName}</span>
                   </Button>
                 </div>
+
+                {/* Logout Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center space-x-2 border-[#FF4500] text-[#FF4500] hover:bg-[#FF4500] hover:text-white"
+                  onClick={() => {
+                    signOut();
+                    navigate('/');
+                  }}
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden sm:block">Logout</span>
+                </Button>
               </>
             ) : (
               <div className="flex items-center space-x-2">
