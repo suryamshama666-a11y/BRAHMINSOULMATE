@@ -63,24 +63,17 @@ const Dashboard = () => {
           .eq('gender', oppositeGender)
           .limit(4);
 
-        const transformProfile = (p: any, type: string) => {
-          const formatHeight = (height: any) => {
-            if (!height) return "5' 11 inch";
-            if (typeof height === 'number') {
-              const totalInches = height / 2.54;
-              const feet = Math.floor(totalInches / 12);
-              const inches = Math.round(totalInches % 12);
-              return `${feet}' ${inches} inch`;
-            }
-            if (typeof height === 'string' && !isNaN(Number(height))) {
-              const h = Number(height);
-              const totalInches = h / 2.54;
-              const feet = Math.floor(totalInches / 12);
-              const inches = Math.round(totalInches % 12);
-              return `${feet}' ${inches} inch`;
-            }
-            return height;
-          };
+          const transformProfile = (p: any, type: string) => {
+            const formatHeight = (height: any) => {
+              if (!height) return "160 cm";
+              if (typeof height === 'number') {
+                return `${height} cm`;
+              }
+              if (typeof height === 'string' && !isNaN(Number(height))) {
+                return `${height} cm`;
+              }
+              return height;
+            };
 
           return {
             id: p.id,

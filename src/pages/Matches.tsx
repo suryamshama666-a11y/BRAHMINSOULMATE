@@ -133,13 +133,10 @@ export default function Matches() {
     });
   };
 
-  const formatHeightInch = (cm: number) => {
-    if (!cm) return "";
-    const totalInches = cm / 2.54;
-    const feet = Math.floor(totalInches / 12);
-    const inches = Math.round(totalInches % 12);
-    return `${feet}' ${inches} inch`;
-  };
+    const formatHeightInch = (cm: number) => {
+      if (!cm) return "";
+      return `${cm} cm`;
+    };
 
   const uniqueLocations = Array.from(new Set(matches.map((m: any) => m.profile?.state).filter(Boolean))) as string[];
 

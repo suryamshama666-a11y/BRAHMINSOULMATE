@@ -187,16 +187,14 @@ export default function BasicInfoStep({ data, onUpdate, onComplete }: BasicInfoS
                   <SelectValue placeholder="Select height" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from({ length: 61 }, (_, i) => {
-                    const height = 140 + i;
-                    const feet = Math.floor(height / 30.48);
-                    const inches = Math.round((height % 30.48) / 2.54);
-                    return (
-                      <SelectItem key={height} value={height.toString()}>
-                        {height} cm ({feet}'{inches}")
-                      </SelectItem>
-                    );
-                  })}
+                    {Array.from({ length: 61 }, (_, i) => {
+                      const height = 140 + i;
+                      return (
+                        <SelectItem key={height} value={height.toString()}>
+                          {height} cm
+                        </SelectItem>
+                      );
+                    })}
                 </SelectContent>
               </Select>
             </div>
