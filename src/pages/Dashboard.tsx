@@ -75,24 +75,24 @@ const Dashboard = () => {
               return height;
             };
 
-          return {
-            id: p.id,
-            name: type === 'new' ? 'Female Profile' : 'Female Match',
-            age: p.age || 25,
-            gender: p.gender,
-            location: `${p.city || 'Mumbai'}, ${p.state || 'Maharashtra'}`,
-            profession: p.occupation || 'Professional',
-            avatarUrl: p.profile_picture_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
-            subscription_type: p.subscription_type || (Math.random() > 0.5 ? 'premium' : 'free'),
-            gotra: p.gotra || 'Bharadwaja Gotra',
-            community: p.community || (Math.random() > 0.5 ? 'Iyer' : 'Deshastha'),
-            height: formatHeight(p.height),
-            matchPercentage: Math.floor(Math.random() * 20) + 80,
-            lastSeen: 'Active now'
+            return {
+              id: p.id,
+              name: p.first_name || (oppositeGender === 'female' ? 'Female Profile' : 'Male Profile'),
+              age: p.age || 25,
+              gender: p.gender,
+              location: `${p.city || 'Mumbai'}, ${p.state || 'Maharashtra'}`,
+              profession: p.occupation || 'Professional',
+              avatarUrl: p.profile_picture_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
+              subscription_type: p.subscription_type || (Math.random() > 0.5 ? 'premium' : 'free'),
+              gotra: p.gotra || 'Bharadwaja Gotra',
+              community: p.community || (Math.random() > 0.5 ? 'Iyer' : 'Deshastha'),
+              height: formatHeight(p.height),
+              matchPercentage: Math.floor(Math.random() * 20) + 80,
+              lastSeen: 'Active now'
+            };
           };
-        };
-
-        setOnlineMembers(onlineData?.map((p, i) => ({ ...transformProfile(p, 'online'), name: `Online user ${i + 1}` })) || []);
+  
+          setOnlineMembers(onlineData?.map((p, i) => ({ ...transformProfile(p, 'online') })) || []);
         setNewMembers(newData?.map(p => transformProfile(p, 'new')) || []);
         setRecommendedMatches(matchesData?.map(p => transformProfile(p, 'recommended')) || []);
 
@@ -189,10 +189,10 @@ const Dashboard = () => {
                         <AvatarFallback className="bg-teal-50 text-teal-600 font-bold">{member.name[0]}</AvatarFallback>
                       </Avatar>
                     </div>
+                    </div>
+                    <span className="text-xs font-bold text-teal-900 text-center line-clamp-1">{member.name}</span>
+                    <span className="text-[10px] text-teal-600 font-medium capitalize">{member.gender}</span>
                   </div>
-                  <span className="text-xs font-bold text-teal-900 text-center line-clamp-1">{member.name}</span>
-                  <span className="text-[10px] text-teal-600 font-medium">Male</span>
-                </div>
               ))
             ) : (
               <p className="text-gray-500 text-sm italic">No members online right now.</p>
