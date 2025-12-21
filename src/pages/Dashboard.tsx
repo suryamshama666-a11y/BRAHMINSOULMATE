@@ -24,91 +24,84 @@ const Dashboard = () => {
   const [recommendedMatches, setRecommendedMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-      const loadDashboardData = async () => {
-        if (!user?.id) {
-          setLoading(false);
-          return;
-        }
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        setLoading(true);
+
+        const userGender = profile?.gender || 'male';
+        const oppositeGender = userGender === 'male' ? 'female' : 'male';
+
+        // Fetch online members (active in last 60 mins)
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+        const { data: onlineData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('gender', oppositeGender)
+          .gt('last_active', oneHourAgo)
+          .order('last_active', { ascending: false })
+          .limit(10);
+
+        // Fetch new members
+        const { data: newData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('gender', oppositeGender)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        // Fetch recommended matches
+        const { data: matchesData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('gender', oppositeGender)
+          .limit(5);
+
+        // Fetch activity stats
+        const { data: activityData } = await supabase
+          .from('user_activity')
+          .select('action, count')
+          .eq('user_id', user.id);
+
+        const activityStats = {
+          profileViews: activityData?.find(a => a.action === 'profile_view')?.count || 0,
+          interestsSent: activityData?.find(a => a.action === 'interest_sent')?.count || 0,
+          messageCount: activityData?.find(a => a.action === 'message_sent')?.count || 0,
+          vDatesCount: activityData?.find(a => a.action === 'vdate_joined')?.count || 0,
+        };
+
+        setStats(activityStats);
         
-        try {
-          setLoading(true);
+        const transformProfile = (p: any) => ({
+          id: p.id,
+          name: p.first_name + (p.last_name ? ` ${p.last_name}` : ''),
+          age: p.age || 25,
+          gender: p.gender,
+          location: `${p.city || 'Mumbai'}, ${p.state || 'Maharashtra'}`,
+          profession: p.occupation || 'Professional',
+          avatarUrl: p.profile_picture_url,
+          subscription_type: p.subscription_type || 'free',
+          lastSeen: 'Active now'
+        });
 
-          const userGender = profile?.gender || 'male';
-          const oppositeGender = userGender === 'male' ? 'female' : 'male';
+        setOnlineMembers(onlineData?.map(transformProfile) || []);
+        setNewMembers(newData?.map(transformProfile) || []);
+        setRecommendedMatches(matchesData?.map(transformProfile) || []);
 
-          // Fetch online members (active in last 60 mins)
-          const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-          const { data: onlineData } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('gender', oppositeGender)
-            .gt('last_active', oneHourAgo)
-            .order('last_active', { ascending: false })
-            .limit(10);
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-          // Fetch new members
-          const { data: newData } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('gender', oppositeGender)
-            .order('created_at', { ascending: false })
-            .limit(5);
-
-          // Fetch recommended matches
-          const { data: matchesData } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('gender', oppositeGender)
-            .limit(5);
-
-          // Fetch activity stats
-          const { data: activityData } = await supabase
-            .from('user_activity')
-            .select('action, count')
-            .eq('user_id', user?.id || '');
-
-          const activityStats = {
-            profileViews: activityData?.find(a => a.action === 'profile_view')?.count || 0,
-            interestsSent: activityData?.find(a => a.action === 'interest_sent')?.count || 0,
-            messageCount: activityData?.find(a => a.action === 'message_sent')?.count || 0,
-            vDatesCount: activityData?.find(a => a.action === 'vdate_joined')?.count || 0,
-          };
-
-          setStats(activityStats);
-          
-          const transformProfile = (p: any) => {
-            const lastActive = p.last_active ? new Date(p.last_active).getTime() : 0;
-            const now = Date.now();
-            // Consider online if active in last 12 hours for better visibility in dev
-            const isOnline = lastActive > (now - 12 * 60 * 60 * 1000); 
-            return {
-              id: p.id,
-              name: p.first_name + (p.last_name ? ` ${p.last_name}` : ''),
-              age: p.age || 25,
-              gender: p.gender,
-              location: `${p.city || 'Mumbai'}, ${p.state || 'Maharashtra'}`,
-              profession: p.occupation || 'Professional',
-              avatarUrl: p.profile_picture_url,
-              subscription_type: p.subscription_type || 'free',
-              isOnline,
-              lastSeen: isOnline ? 'Active now' : 'Recently active'
-            };
-          };
-
-          setOnlineMembers(onlineData?.map(transformProfile) || []);
-          setNewMembers(newData?.map(transformProfile) || []);
-          setRecommendedMatches(matchesData?.map(transformProfile) || []);
-
-        } catch (error) {
-          console.error('Error loading dashboard data:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      loadDashboardData();
-    }, [user?.id, profile?.gender]);
+    loadDashboardData();
+  }, [user?.id, profile?.gender]);
 
   if (loading) {
     return (
@@ -198,37 +191,30 @@ const Dashboard = () => {
         {/* Two-Column Layout for New Members & Recommended */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           
-            {/* New Members - LEFT COLUMN */}
-            <section>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-serif font-bold text-gray-800">New Members</h2>
-                <Link to="/new-members" className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center group">
-                  VIEW ALL
-                  <ChevronRight className="h-3 w-3 ml-0.5 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </div>
+          {/* New Members - LEFT COLUMN */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-serif font-bold text-gray-800">New Members</h2>
+              <Link to="/search" className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center group">
+                VIEW ALL
+                <ChevronRight className="h-3 w-3 ml-0.5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
             <Card className="border-2 border-red-100/50 overflow-hidden shadow-sm">
               <CardContent className="p-0 divide-y divide-red-50">
                 {newMembers.length > 0 ? (
                   newMembers.map((member) => (
-                      <div 
-                        key={member.id} 
-                        className="p-4 flex items-center gap-4 hover:bg-red-50/50 transition-colors cursor-pointer group"
-                        onClick={() => navigate(`/profile/${member.id}`)}
-                      >
-                          <div className="relative flex-shrink-0">
-                            <div className="relative inline-block">
-                              <Avatar className="h-12 w-12 border border-red-200 shadow-sm">
-                                <AvatarImage src={member.avatarUrl} className="object-cover" />
-                                <AvatarFallback className="bg-red-50 text-red-600 font-bold">{member.name[0]}</AvatarFallback>
-                              </Avatar>
-                              {member.isOnline && (
-                                <span className="absolute bottom-0 right-0 block h-3.5 w-3.5 rounded-full bg-green-500 ring-2 ring-white z-20 shadow-sm" />
-                              )}
-                            </div>
-                          </div>
-                        <div className="flex-grow min-w-0">
-                          <h4 className="font-bold text-gray-800 truncate group-hover:text-red-600 transition-colors">{member.name}, {member.age}</h4>
+                    <div 
+                      key={member.id} 
+                      className="p-4 flex items-center gap-4 hover:bg-red-50/50 transition-colors cursor-pointer group"
+                      onClick={() => navigate(`/profile/${member.id}`)}
+                    >
+                      <Avatar className="h-12 w-12 border border-red-200">
+                        <AvatarImage src={member.avatarUrl} className="object-cover" />
+                        <AvatarFallback className="bg-red-50 text-red-600">{member.name[0]}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-grow min-w-0">
+                        <h4 className="font-bold text-gray-800 truncate group-hover:text-red-600 transition-colors">{member.name}, {member.age}</h4>
                         <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500 mt-0.5">
                           <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {member.location.split(',')[0]}</span>
                           <span className="flex items-center gap-1"><Briefcase className="h-3 w-3" /> {member.profession}</span>
@@ -262,22 +248,15 @@ const Dashboard = () => {
               <CardContent className="p-0 divide-y divide-amber-50">
                 {recommendedMatches.length > 0 ? (
                   recommendedMatches.map((match) => (
-                      <div 
-                        key={match.id} 
-                        className="p-4 flex items-center gap-4 hover:bg-amber-50/50 transition-colors cursor-pointer group"
-                        onClick={() => navigate(`/profile/${match.id}`)}
-                      >
-                        <div className="relative">
-                          <div className="relative inline-block">
-                            <Avatar className="h-12 w-12 border border-amber-200">
-                              <AvatarImage src={match.avatarUrl} className="object-cover" />
-                              <AvatarFallback className="bg-amber-50 text-amber-600">{match.name[0]}</AvatarFallback>
-                            </Avatar>
-                            {match.isOnline && (
-                              <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-white z-20 shadow-sm" />
-                            )}
-                          </div>
-                        </div>
+                    <div 
+                      key={match.id} 
+                      className="p-4 flex items-center gap-4 hover:bg-amber-50/50 transition-colors cursor-pointer group"
+                      onClick={() => navigate(`/profile/${match.id}`)}
+                    >
+                      <Avatar className="h-12 w-12 border border-amber-200">
+                        <AvatarImage src={match.avatarUrl} className="object-cover" />
+                        <AvatarFallback className="bg-amber-50 text-amber-600">{match.name[0]}</AvatarFallback>
+                      </Avatar>
                       <div className="flex-grow min-w-0">
                         <h4 className="font-bold text-gray-800 truncate group-hover:text-amber-600 transition-colors">{match.name}, {match.age}</h4>
                         <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500 mt-0.5">
