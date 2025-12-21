@@ -214,7 +214,7 @@ const Dashboard = () => {
                     <div className="flex-grow">
                         <h4 className="text-xl font-serif font-bold text-gray-900 mb-0.5 group-hover:text-rose-600 transition-colors">{member.name}</h4>
                           <div className="mb-2">
-                            <p className="text-sm text-gray-600 font-medium">{member.age} yrs • {member.height || "5'11\""} • {member.community}</p>
+                              <p className="text-sm text-gray-600 font-medium">{member.age} yrs • {member.height || "5' 11 inch"} • {member.community}</p>
                             <p className="text-xs text-gray-500 font-medium">{member.location || "Mumbai, Maharashtra"}</p>
                             <p className="text-xs text-rose-500 font-semibold">{member.profession}</p>
                           </div>

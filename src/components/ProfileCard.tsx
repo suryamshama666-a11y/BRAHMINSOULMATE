@@ -257,7 +257,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                         {profile.name}
                       </h3>
                       <div className="flex flex-col mt-0.5">
-                        <p className="text-xs text-secondary font-semibold">{profile.age} yrs • {profile.height || "5'11\""} • {profile.community || profile.caste}</p>
+                          <p className="text-xs text-secondary font-semibold">{profile.age} yrs • {profile.height || "5' 11 inch"} • {profile.community || profile.caste}</p>
                         <p className="text-xs text-gray-600 font-medium">{profile.location || profile.city || "Mumbai, MH"}</p>
                         <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-1">{profile.profession || profile.occupation || 'Professional'}</p>
                       </div>

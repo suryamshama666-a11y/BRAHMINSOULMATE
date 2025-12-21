@@ -55,9 +55,9 @@ const FeaturedProfiles: React.FC = () => {
             <CardContent className="p-4">
               <h3 className="text-xl font-medium text-gray-900">{profile.name}</h3>
                   <div className="flex flex-wrap gap-1 mt-1 mb-2">
-                      <Badge variant="outline" className="text-xs bg-gray-100">
-                        {profile.age} yrs • {profile.height || "5'11\""}
-                      </Badge>
+                        <Badge variant="outline" className="text-xs bg-gray-100">
+                          {profile.age} yrs • {profile.height || "5' 11 inch"}
+                        </Badge>
                       <Badge variant="outline" className="text-xs bg-gray-100">
                         {profile.employment?.profession || 'Professional'}
                       </Badge>

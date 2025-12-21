@@ -289,7 +289,7 @@ const Matches = () => {
                               <div className="mb-4">
                                 <h3 className="text-xl font-semibold mb-0.5">{match.profile.full_name}</h3>
                                 <div className="flex flex-col">
-                                  <p className="text-gray-600 text-sm font-medium">{match.profile.age} years • {match.profile.height || "5'11\""}</p>
+                                    <p className="text-gray-600 text-sm font-medium">{match.profile.age} years • {match.profile.height || "5' 11 inch"}</p>
                                   <p className="text-gray-500 text-xs font-medium">{match.profile.city}, {match.profile.state}</p>
                                   <p className="text-red-500 text-xs font-semibold">{match.profile.occupation || 'Professional'}</p>
                                 </div>
