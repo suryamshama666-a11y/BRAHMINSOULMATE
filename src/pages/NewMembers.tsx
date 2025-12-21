@@ -149,7 +149,15 @@ const NewMembers = () => {
     loadNewMembers();
   }, [user]);
 
-  const filteredMembers = newMembers.filter((profile) => {
+    const formatHeightInch = (cm: number) => {
+      if (!cm) return "";
+      const totalInches = cm / 2.54;
+      const feet = Math.floor(totalInches / 12);
+      const inches = Math.round(totalInches % 12);
+      return `${feet}' ${inches} inch`;
+    };
+
+    const filteredMembers = newMembers.filter((profile) => {
     if (filterOnline && profile.lastActive !== 'Online') {
       // Logic for online check if available
     }
@@ -305,20 +313,21 @@ const NewMembers = () => {
                                 ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-2" 
                                 : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3"
                             )}>
-                            {currentMembers.map((profile) => {
-                              return (
-                                <ProfileCard 
-                                  key={profile.id}
-                                  profile={{
-                                    ...profile, 
-                                    joinedDate: profile.joinedDate,
-                                    gotra: profile.gotra || 'Gotra not specified'
-                                  }}
-                                  variant="new"
-                                  onAction={handleProfileAction}
-                                />
-                              )
-                            })}
+                              {currentMembers.map((profile) => {
+                                return (
+                                  <ProfileCard 
+                                    key={profile.id}
+                                    profile={{
+                                      ...profile, 
+                                      joinedDate: profile.joinedDate,
+                                      height: formatHeightInch(profile.height),
+                                      gotra: profile.gotra || 'Gotra not specified'
+                                    }}
+                                    variant="new"
+                                    onAction={handleProfileAction}
+                                  />
+                                )
+                              })}
 
                         </div>
   

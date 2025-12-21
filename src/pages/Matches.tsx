@@ -11,7 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { MIN_AGE, DEFAULT_CASTE, GOTRAS } from '@/data/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { matchingService, interestsService, PaymentService } from '@/services/api';
+import { matchingService, interestsService, paymentsService } from '@/services/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pagination } from '@/components/ui/pagination';
 
@@ -106,7 +106,7 @@ const Matches = () => {
     if (!user?.id) return;
     
     // Check limits before sending interest
-    const canSend = await PaymentService.checkSubscriptionLimits(user.id, 'interests_sent');
+    const canSend = await paymentsService.checkSubscriptionLimits(user.id, 'interests_sent');
     if (!canSend) {
       toast.error('Daily limit reached. Please upgrade your plan to send more interests.');
       navigate('/plans');
@@ -119,7 +119,7 @@ const Matches = () => {
     });
     
     // Record activity
-    await PaymentService.recordActivity(user.id, 'interests_sent');
+    await paymentsService.recordActivity(user.id, 'interests_sent');
   };
 
   const handleRecalculate = () => {
@@ -143,6 +143,14 @@ const Matches = () => {
       gotra: 'all',
       sortBy: 'compatibility'
     });
+  };
+
+  const formatHeightInch = (cm: number) => {
+    if (!cm) return "";
+    const totalInches = cm / 2.54;
+    const feet = Math.floor(totalInches / 12);
+    const inches = Math.round(totalInches % 12);
+    return `${feet}' ${inches} inch`;
   };
 
   const uniqueLocations = [...new Set(matches.map((m: any) => m.profile?.state).filter(Boolean))];
@@ -289,14 +297,14 @@ const Matches = () => {
                         
                         {match.profile && (
                           <>
-                                  <div className="mb-4">
-                                    <h3 className="text-xl font-semibold mb-0.5">{match.profile.full_name}</h3>
-                                    <div className="flex flex-col">
-                                        <p className="text-gray-600 text-sm font-medium">{match.profile.age} years • {match.profile.height} cm • Brahmin</p>
-                                      <p className="text-gray-500 text-xs font-medium">{match.profile.city}, {match.profile.state}</p>
-                                      <p className="text-red-500 text-xs font-semibold">{match.profile.occupation || 'Professional'}</p>
+                                    <div className="mb-4">
+                                      <h3 className="text-xl font-semibold mb-0.5">{match.profile.full_name}</h3>
+                                      <div className="flex flex-col">
+                                          <p className="text-gray-600 text-sm font-medium">{match.profile.age} years • {formatHeightInch(match.profile.height)} • Brahmin</p>
+                                        <p className="text-gray-500 text-xs font-medium">{match.profile.city}, {match.profile.state}</p>
+                                        <p className="text-red-500 text-xs font-semibold">{match.profile.occupation || 'Professional'}</p>
+                                      </div>
                                     </div>
-                                  </div>
 
 
                         <div className="space-y-2 mb-4">
