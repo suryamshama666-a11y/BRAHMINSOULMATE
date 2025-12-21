@@ -233,11 +233,10 @@ const Dashboard = () => {
                   </Avatar>
                     <div className="flex-grow">
                         <h4 className="text-xl font-serif font-bold text-gray-900 mb-0.5 group-hover:text-rose-600 transition-colors">{member.name}</h4>
-                            <div className="mb-2">
-                                <p className="text-sm text-gray-600 font-medium">{member.age} yrs • {member.height} • Brahmin</p>
-                              <p className="text-xs text-gray-500 font-medium">{member.location || "Mumbai, Maharashtra"}</p>
-                              <p className="text-xs text-rose-500 font-semibold">{member.profession}</p>
-                            </div>
+                              <div className="mb-2">
+                                  <p className="text-sm text-gray-600 font-medium">{member.age} yrs • {member.height}</p>
+                                <p className="text-xs text-rose-500 font-semibold">{member.profession}</p>
+                              </div>
 
                       <div className="flex gap-2">
                       <Badge className="bg-rose-50 text-rose-600 border-none font-medium px-3 py-1 text-[10px] rounded-full">
@@ -288,11 +287,10 @@ const Dashboard = () => {
                   </Avatar>
                     <div className="flex-grow">
                       <h4 className="text-xl font-serif font-bold text-gray-900 mb-0.5 group-hover:text-orange-600 transition-colors">{member.name}</h4>
-                        <div className="mb-2">
-                          <p className="text-sm text-gray-600 font-medium">{member.age} yrs • {member.height} • Brahmin</p>
-                          <p className="text-xs text-gray-500 font-medium">{member.location || "Mumbai, Maharashtra"}</p>
-                          <p className="text-xs text-orange-600 font-semibold">{member.profession}</p>
-                        </div>
+                          <div className="mb-2">
+                            <p className="text-sm text-gray-600 font-medium">{member.age} yrs • {member.height}</p>
+                            <p className="text-xs text-orange-600 font-semibold">{member.profession}</p>
+                          </div>
                       <div className="flex gap-2 items-center flex-wrap">
                       <Badge className="bg-orange-50 text-orange-700 border-none font-medium px-3 py-1 text-[10px] rounded-full">
                         {member.gotra}
