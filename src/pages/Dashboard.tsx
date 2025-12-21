@@ -43,10 +43,10 @@ const Dashboard = () => {
         const { data: onlineData } = await supabase
           .from('profiles')
           .select('*')
-          .eq('gender', oppositeGender)
-          .gt('last_active', oneHourAgo)
-          .order('last_active', { ascending: false })
-          .limit(10);
+            .eq('gender', oppositeGender)
+            .gt('last_active', oneHourAgo)
+            .order('last_active', { ascending: false })
+            .limit(20);
 
         // Fetch new members
         const { data: newData } = await supabase
@@ -165,15 +165,22 @@ const Dashboard = () => {
 
         {/* Online Now Section */}
         <section className="mb-12 bg-[#f0fdfa]/30 p-8 rounded-3xl border border-[#ccfbf1]/50">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <div className="h-3 w-3 bg-[#10b981] rounded-full animate-pulse" />
-              <h2 className="text-2xl font-bold text-teal-900">Online Now</h2>
-            </div>
-              <div className="bg-white px-4 py-1.5 rounded-full border border-teal-100 shadow-sm">
-                <span className="text-sm font-bold text-[#10b981]">{onlineMembers.length} Online</span>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <div className="h-3 w-3 bg-[#10b981] rounded-full animate-pulse" />
+                <h2 className="text-2xl font-bold text-teal-900">Online Now</h2>
               </div>
-          </div>
+              <div className="flex items-center gap-4">
+                <div className="bg-white px-4 py-1.5 rounded-full border border-teal-100 shadow-sm hidden sm:block">
+                  <span className="text-sm font-bold text-[#10b981]">{onlineMembers.length} Online</span>
+                </div>
+                <Link to="/online-profiles">
+                  <Button variant="outline" className="rounded-full border-teal-200 text-teal-700 hover:bg-teal-50 hover:text-teal-800 h-9 px-5">
+                    View All
+                  </Button>
+                </Link>
+              </div>
+            </div>
           <div className="flex gap-8 overflow-x-auto pb-4 scrollbar-hide">
             {onlineMembers.length > 0 ? (
               onlineMembers.map((member, i) => (

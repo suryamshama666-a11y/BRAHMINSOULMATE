@@ -11,6 +11,7 @@ import { Heart, MessageCircle, Eye, Clock, MapPin, Filter, Users, UserPlus } fro
 import ProfileCard from '@/components/ProfileCard';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const OnlineProfiles = () => {
   const { user } = useAuth();
@@ -28,104 +29,39 @@ const OnlineProfiles = () => {
   useEffect(() => {
     const loadOnlineProfiles = async () => {
       setLoading(true);
-      
-      const mockOnlineProfiles = [
-        {
-          id: '1',
-          name: 'Priya Sharma',
-          age: 26,
-          gender: 'female',
-          height: 165,
-          religion: 'Hindu',
-          caste: 'Brahmin',
-          location: 'Mumbai, Maharashtra',
-          education: 'MBA',
-          profession: 'Software Engineer',
-          subscription_type: 'premium',
-          onlineStatus: 'Online now',
-          lastSeen: 'Active now'
-        },
-        {
-          id: '2',
-          name: 'Arjun Patel',
-          age: 29,
-          gender: 'male',
-          height: 178,
-          religion: 'Hindu',
-          caste: 'Brahmin',
-          location: 'Bangalore, Karnataka',
-          education: 'M.Tech',
-          profession: 'Data Scientist',
-          subscription_type: 'premium',
-          onlineStatus: 'Online now',
-          lastSeen: 'Active now'
-        },
-        {
-          id: '3',
-          name: 'Kavya Iyer',
-          age: 24,
-          gender: 'female',
-          height: 160,
-          religion: 'Hindu',
-          caste: 'Brahmin',
-          location: 'Chennai, Tamil Nadu',
-          education: 'CA',
-          profession: 'Chartered Accountant',
-          subscription_type: 'free',
-          onlineStatus: 'Online now',
-          lastSeen: 'Active 2 min ago'
-        },
-        {
-          id: '4',
-          name: 'Rohit Gupta',
-          age: 31,
-          gender: 'male',
-          height: 175,
-          religion: 'Hindu',
-          caste: 'Brahmin',
-          location: 'Delhi, NCR',
-          education: 'MBA',
-          profession: 'Marketing Manager',
-          subscription_type: 'premium',
-          onlineStatus: 'Online now',
-          lastSeen: 'Active 5 min ago'
-        },
-        {
-          id: '5',
-          name: 'Ananya Reddy',
-          age: 25,
-          gender: 'female',
-          height: 162,
-          religion: 'Hindu',
-          caste: 'Brahmin',
-          location: 'Hyderabad, Telangana',
-          education: 'M.Sc',
-          profession: 'Research Scientist',
-          subscription_type: 'premium',
-          onlineStatus: 'Online now',
-          lastSeen: 'Active 1 min ago'
-        },
-        {
-          id: '6',
-          name: 'Vikram Singh',
-          age: 30,
-          gender: 'male',
-          height: 180,
-          religion: 'Hindu',
-          caste: 'Brahmin',
-          location: 'Jaipur, Rajasthan',
-          education: 'CA',
-          profession: 'Financial Analyst',
-          subscription_type: 'free',
-          onlineStatus: 'Online now',
-          lastSeen: 'Active 3 min ago'
-        }
-      ];
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .gt('last_active', new Date(Date.now() - 60 * 60 * 1000).toISOString())
+          .order('last_active', { ascending: false });
 
-      setTimeout(() => {
-        setOnlineProfiles(mockOnlineProfiles);
+        if (error) throw error;
+
+        const transformed = (data || []).map(p => ({
+          id: p.id,
+          name: p.first_name + (p.last_name ? ' ' + p.last_name : ''),
+          age: p.age || 25,
+          gender: p.gender,
+          height: p.height || 160,
+          religion: p.religion || 'Hindu',
+          caste: p.caste || 'Brahmin',
+          location: `${p.city || 'Mumbai'}, ${p.state || 'Maharashtra'}`,
+          education: p.education_level || 'Graduate',
+          profession: p.occupation || 'Professional',
+          subscription_type: p.subscription_type || 'free',
+          onlineStatus: 'Online now',
+          lastSeen: 'Active now',
+          profile_picture_url: p.profile_picture_url
+        }));
+        
+        setOnlineProfiles(transformed);
+      } catch (error) {
+        console.error('Error loading online profiles:', error);
+        toast.error('Failed to load online profiles');
+      } finally {
         setLoading(false);
-      }, 1000);
+      }
     };
 
     loadOnlineProfiles();
