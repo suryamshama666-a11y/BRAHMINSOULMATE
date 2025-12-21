@@ -111,10 +111,10 @@ export default function ProfileCardEnhanced({ profile, showActions = true }: Pro
             <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">Gotra:</span>
             <p className="font-bold text-brahmin-dark mt-0.5">{profile.family.gotra || 'Not specified'}</p>
           </div>
-          <div>
-            <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">Height:</span>
-            <p className="font-bold text-brahmin-dark mt-0.5">{formatHeight(profile.height)}</p>
-          </div>
+            <div>
+              <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">Community:</span>
+              <p className="font-bold text-brahmin-dark mt-0.5">{profile.family?.community || 'Brahmin'}</p>
+            </div>
         </div>
         
         {/* Mini Horoscope Preview */}

@@ -212,8 +212,8 @@ const Dashboard = () => {
                     <AvatarFallback className="bg-rose-50 text-rose-600">{member.name[0]}</AvatarFallback>
                   </Avatar>
                   <div className="flex-grow">
-                    <h4 className="text-xl font-serif font-bold text-gray-900 mb-1 group-hover:text-rose-600 transition-colors">{member.name}</h4>
-                      <p className="text-sm text-gray-600 mb-2">{member.age} yrs • {member.community}</p>
+                      <h4 className="text-xl font-serif font-bold text-gray-900 mb-1 group-hover:text-rose-600 transition-colors">{member.name}</h4>
+                        <p className="text-sm text-gray-600 mb-2">{member.age} yrs • {member.community} • {member.profession}</p>
                     <div className="flex gap-2">
                       <Badge className="bg-rose-50 text-rose-600 border-none font-medium px-3 py-1 text-[10px] rounded-full">
                         {member.gotra}

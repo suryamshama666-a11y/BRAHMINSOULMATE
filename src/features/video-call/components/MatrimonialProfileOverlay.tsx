@@ -57,10 +57,10 @@ export const MatrimonialProfileOverlay = ({
                   {profile.name.charAt(0)}
                 </AvatarFallback>
               </Avatar>
-              <div>
-                <h3 className="font-semibold text-gray-900">{profile.name}</h3>
-                <p className="text-sm text-gray-600">{profile.age} years</p>
-              </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">{profile.name}</h3>
+                  <p className="text-sm text-gray-600">{profile.age} yrs • {getProfession()}</p>
+                </div>
             </div>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-4 w-4" />
