@@ -252,12 +252,15 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             {/* Header Section */}
             <div className="flex-1">
               <div className="flex items-start justify-between mb-1.5">
-                  <div>
-                    <h3 className="font-bold text-lg text-gray-900 leading-tight truncate max-w-[140px]" title={profile.name}>
-                      {profile.name}
-                    </h3>
-                      <p className="text-xs text-gray-500 font-medium">{profile.age} yrs • {profile.profession || profile.occupation || 'Professional'}</p>
-                  </div>
+                    <div>
+                      <h3 className="font-bold text-lg text-gray-900 leading-tight truncate max-w-[140px]" title={profile.name}>
+                        {profile.name}
+                      </h3>
+                      <div className="flex flex-col mt-0.5">
+                        <p className="text-xs text-secondary font-semibold">{profile.age} yrs • {profile.community || profile.caste}</p>
+                        <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-1">{profile.profession || profile.occupation || 'Professional'}</p>
+                      </div>
+                    </div>
               </div>
 
               {/* Key Details */}

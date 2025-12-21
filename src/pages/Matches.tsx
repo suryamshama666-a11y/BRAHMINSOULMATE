@@ -286,12 +286,13 @@ const Matches = () => {
                     
                     {match.profile && (
                       <>
-                          <div className="mb-4">
-                            <h3 className="text-xl font-semibold mb-1">{match.profile.full_name}</h3>
-                              <p className="text-gray-600 text-sm">
-                                {match.profile.age} years • {match.profile.occupation || 'Professional'}
-                              </p>
-                          </div>
+                            <div className="mb-4">
+                              <h3 className="text-xl font-semibold mb-0.5">{match.profile.full_name}</h3>
+                              <div className="flex flex-col">
+                                <p className="text-gray-600 text-sm font-medium">{match.profile.age} years</p>
+                                <p className="text-red-500 text-xs font-semibold italic">{match.profile.occupation || 'Professional'}</p>
+                              </div>
+                            </div>
 
                         <div className="space-y-2 mb-4">
                           <div className="flex items-center text-sm text-gray-600">

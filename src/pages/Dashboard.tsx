@@ -103,7 +103,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans">
-      <div className="container mx-auto px-4 py-8 flex-grow">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
         
         {/* Welcome Section */}
         <div className="mb-8">
@@ -211,10 +211,13 @@ const Dashboard = () => {
                     <AvatarImage src={member.avatarUrl} className="object-cover" />
                     <AvatarFallback className="bg-rose-50 text-rose-600">{member.name[0]}</AvatarFallback>
                   </Avatar>
-                  <div className="flex-grow">
-                      <h4 className="text-xl font-serif font-bold text-gray-900 mb-1 group-hover:text-rose-600 transition-colors">{member.name}</h4>
-                        <p className="text-sm text-gray-600 mb-2">{member.age} yrs • {member.community} • {member.profession}</p>
-                    <div className="flex gap-2">
+                    <div className="flex-grow">
+                        <h4 className="text-xl font-serif font-bold text-gray-900 mb-0.5 group-hover:text-rose-600 transition-colors">{member.name}</h4>
+                        <div className="mb-2">
+                          <p className="text-sm text-gray-600 font-medium">{member.age} yrs • {member.community}</p>
+                          <p className="text-xs text-rose-500 font-semibold italic">{member.profession}</p>
+                        </div>
+                      <div className="flex gap-2">
                       <Badge className="bg-rose-50 text-rose-600 border-none font-medium px-3 py-1 text-[10px] rounded-full">
                         {member.gotra}
                       </Badge>
@@ -261,10 +264,13 @@ const Dashboard = () => {
                     <AvatarImage src={member.avatarUrl} className="object-cover" />
                     <AvatarFallback className="bg-orange-50 text-orange-600">{member.name[0]}</AvatarFallback>
                   </Avatar>
-                  <div className="flex-grow">
-                    <h4 className="text-xl font-serif font-bold text-gray-900 mb-1 group-hover:text-orange-600 transition-colors">{member.name}</h4>
-                      <p className="text-sm text-gray-600 mb-2">{member.age} yrs • {member.community}</p>
-                    <div className="flex gap-2 items-center flex-wrap">
+                    <div className="flex-grow">
+                      <h4 className="text-xl font-serif font-bold text-gray-900 mb-0.5 group-hover:text-orange-600 transition-colors">{member.name}</h4>
+                      <div className="mb-2">
+                        <p className="text-sm text-gray-600 font-medium">{member.age} yrs • {member.community}</p>
+                        <p className="text-xs text-orange-600 font-semibold italic">{member.profession}</p>
+                      </div>
+                      <div className="flex gap-2 items-center flex-wrap">
                       <Badge className="bg-orange-50 text-orange-700 border-none font-medium px-3 py-1 text-[10px] rounded-full">
                         {member.gotra}
                       </Badge>
