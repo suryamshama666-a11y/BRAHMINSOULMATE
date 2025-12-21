@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Heart, MapPin, Briefcase, GraduationCap, RefreshCw, SlidersHorizontal } from 'lucide-react';
+import { Heart, MapPin, Briefcase, GraduationCap, RefreshCw, SlidersHorizontal, MapPin as MapPinIcon, GraduationCap as EducationIcon, Briefcase as OccupationIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,8 +15,8 @@ import { matchingService, interestsService, paymentsService } from '@/services/a
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pagination } from '@/components/ui/pagination';
 
-const Matches = () => {
-  const { user } = useAuth();
+export default function Matches() {
+  const { user, profile: authProfile } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showFilters, setShowFilters] = useState(false);
@@ -25,7 +25,7 @@ const Matches = () => {
   const [itemsPerPage, setItemsPerPage] = useState(9);
 
   const [filters, setFilters] = useState({
-    ageMin: user?.gender === 'male' ? MIN_AGE.FEMALE.toString() : MIN_AGE.MALE.toString(),
+    ageMin: authProfile?.gender === 'male' ? MIN_AGE.FEMALE.toString() : MIN_AGE.MALE.toString(),
     ageMax: '',
     location: 'all',
     gotra: 'all',
@@ -123,18 +123,9 @@ const Matches = () => {
     recalculateMutation.mutate();
   };
 
-  const handleToggleFilters = (open: boolean) => {
-    setShowFilters(open);
-    if (open) {
-      setActiveTab('filters');
-    } else if (activeTab === 'filters') {
-      setActiveTab(null);
-    }
-  };
-
   const resetFilters = () => {
     setFilters({
-      ageMin: user?.gender === 'male' ? MIN_AGE.FEMALE.toString() : MIN_AGE.MALE.toString(),
+      ageMin: authProfile?.gender === 'male' ? MIN_AGE.FEMALE.toString() : MIN_AGE.MALE.toString(),
       ageMax: '',
       location: 'all',
       gotra: 'all',
@@ -174,7 +165,11 @@ const Matches = () => {
             <Button
               variant={activeTab === 'filters' ? 'default' : 'outline'}
               className={activeTab === 'filters' ? 'bg-red-600 hover:bg-red-700 text-white' : ''}
-              onClick={() => handleToggleFilters(!showFilters)}
+              onClick={() => {
+                setShowFilters(!showFilters);
+                if (!showFilters) setActiveTab('filters');
+                else if (activeTab === 'filters') setActiveTab(null);
+              }}
             >
               <SlidersHorizontal className="h-4 w-4 mr-2" />
               Filters
@@ -195,7 +190,7 @@ const Matches = () => {
           </div>
         </div>
 
-        <Collapsible open={showFilters} onOpenChange={handleToggleFilters}>
+        <Collapsible open={showFilters} onOpenChange={setShowFilters}>
           <CollapsibleContent>
             <Card className="mb-6">
               <CardContent className="p-6">
@@ -204,8 +199,8 @@ const Matches = () => {
                     <Label className="text-sm font-medium mb-2 block">Min Age</Label>
                     <Input
                       type="number"
-                      min={user?.gender === 'male' ? MIN_AGE.FEMALE : MIN_AGE.MALE}
-                      placeholder={user?.gender === 'male' ? MIN_AGE.FEMALE.toString() : MIN_AGE.MALE.toString()}
+                      min={authProfile?.gender === 'male' ? MIN_AGE.FEMALE : MIN_AGE.MALE}
+                      placeholder={authProfile?.gender === 'male' ? MIN_AGE.FEMALE.toString() : MIN_AGE.MALE.toString()}
                       value={filters.ageMin}
                       onChange={(e) => setFilters({ ...filters, ageMin: e.target.value })}
                     />
@@ -290,7 +285,7 @@ const Matches = () => {
                     </div>
                     
                     {match.profile && (
-                      <>
+                      <div className="space-y-4">
                         <div className="mb-4">
                           <h3 className="text-xl font-semibold mb-0.5">{match.profile.full_name}</h3>
                           <div className="flex flex-col">
@@ -308,15 +303,15 @@ const Matches = () => {
 
                         <div className="space-y-2 mb-4">
                           <div className="flex items-center text-sm text-gray-600">
-                            <MapPin className="h-4 w-4 mr-2" />
+                            <MapPinIcon className="h-4 w-4 mr-2" />
                             {match.profile.city}, {match.profile.state}
                           </div>
                           <div className="flex items-center text-sm text-gray-600">
-                            <GraduationCap className="h-4 w-4 mr-2" />
+                            <EducationIcon className="h-4 w-4 mr-2" />
                             {match.profile.education}
                           </div>
                           <div className="flex items-center text-sm text-gray-600">
-                            <Briefcase className="h-4 w-4 mr-2" />
+                            <OccupationIcon className="h-4 w-4 mr-2" />
                             {match.profile.occupation}
                           </div>
                           <div className="flex items-center text-sm text-gray-600">
@@ -334,7 +329,7 @@ const Matches = () => {
                           <Heart className="h-4 w-4 mr-2" />
                           Send Interest
                         </Button>
-                      </>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
@@ -359,6 +354,4 @@ const Matches = () => {
       </div>
     </div>
   );
-};
-
-export default Matches;
+}
