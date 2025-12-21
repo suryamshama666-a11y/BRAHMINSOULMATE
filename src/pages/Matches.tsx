@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { MIN_AGE, DEFAULT_CASTE, GOTRAS } from '@/data/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { matchingService, interestsService } from '@/services/api';
+import { matchingService, interestsService, PaymentService } from '@/services/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pagination } from '@/components/ui/pagination';
 
@@ -18,6 +19,7 @@ const ITEMS_PER_PAGE = 9;
 
 const Matches = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState<'filters' | 'recalculate' | null>(null);
@@ -274,45 +276,28 @@ const Matches = () => {
           </Card>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {currentMatches.map((match: any) => {
-                const formatHeight = (height: any) => {
-                  if (!height) return "5' 11 inch";
-                  if (typeof height === 'number') {
-                    const totalInches = height / 2.54;
-                    const feet = Math.floor(totalInches / 12);
-                    const inches = Math.round(totalInches % 12);
-                    return `${feet}' ${inches} inch`;
-                  }
-                  if (typeof height === 'string' && !isNaN(Number(height))) {
-                    const h = Number(height);
-                    const totalInches = h / 2.54;
-                    const feet = Math.floor(totalInches / 12);
-                    const inches = Math.round(totalInches % 12);
-                    return `${feet}' ${inches} inch`;
-                  }
-                  return height;
-                };
-                
-                return (
-                  <Card key={match.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <Badge variant="secondary" className="bg-green-100 text-green-800">
-                          {match.compatibility_score}% Match
-                        </Badge>
-                      </div>
-                      
-                      {match.profile && (
-                        <>
-                                <div className="mb-4">
-                                  <h3 className="text-xl font-semibold mb-0.5">{match.profile.full_name}</h3>
-                                  <div className="flex flex-col">
-                                      <p className="text-gray-600 text-sm font-medium">{match.profile.age} years • {formatHeight(match.profile.height)}</p>
-                                    <p className="text-gray-500 text-xs font-medium">{match.profile.city}, {match.profile.state}</p>
-                                    <p className="text-red-500 text-xs font-semibold">{match.profile.occupation || 'Professional'}</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {currentMatches.map((match: any) => {
+                  return (
+                    <Card key={match.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <Badge variant="secondary" className="bg-green-100 text-green-800">
+                            {match.compatibility_score}% Match
+                          </Badge>
+                        </div>
+                        
+                        {match.profile && (
+                          <>
+                                  <div className="mb-4">
+                                    <h3 className="text-xl font-semibold mb-0.5">{match.profile.full_name}</h3>
+                                    <div className="flex flex-col">
+                                        <p className="text-gray-600 text-sm font-medium">{match.profile.age} years • {match.profile.height} cm • Brahmin</p>
+                                      <p className="text-gray-500 text-xs font-medium">{match.profile.city}, {match.profile.state}</p>
+                                      <p className="text-red-500 text-xs font-semibold">{match.profile.occupation || 'Professional'}</p>
+                                    </div>
                                   </div>
-                                </div>
+
 
                         <div className="space-y-2 mb-4">
                           <div className="flex items-center text-sm text-gray-600">
