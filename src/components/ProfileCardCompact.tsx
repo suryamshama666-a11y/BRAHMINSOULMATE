@@ -82,7 +82,7 @@ export const ProfileCardCompact: React.FC<ProfileCardCompactProps> = ({
       <div className="flex-1 flex flex-col">
         <div className="flex justify-between items-center">
           <h3 className="font-medium text-base">
-            {profile.name || `${profile.first_name || ''} ${profile.last_name || ''}`}, {profile.age || '30'} 
+            {profile.name || `${profile.first_name || ''} ${profile.last_name || ''}`}, {profile.age || '30'} • {profile.height || "5'11\""}
             {profile.is_verified && <CheckCircle className="inline-block w-4 h-4 ml-1 text-blue-500" />}
           </h3>
         </div>
