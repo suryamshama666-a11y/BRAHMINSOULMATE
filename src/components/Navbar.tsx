@@ -167,7 +167,7 @@ export default function Navbar() {
                       <span className="font-bold text-sm">My Profile</span>
                     </DropdownMenuItem>
                     {!isPremium && (
-                      <DropdownMenuItem onClick={() => navigate('/premium')} className="rounded-xl py-3 px-4 cursor-pointer bg-orange-50 hover:bg-orange-100 focus:bg-orange-100 text-[#FF4500]">
+                      <DropdownMenuItem onClick={() => navigate('/plans')} className="rounded-xl py-3 px-4 cursor-pointer bg-orange-50 hover:bg-orange-100 focus:bg-orange-100 text-[#FF4500]">
                         <Crown className="h-4 w-4 mr-3" />
                         <span className="font-black text-sm">Upgrade to Gold</span>
                       </DropdownMenuItem>

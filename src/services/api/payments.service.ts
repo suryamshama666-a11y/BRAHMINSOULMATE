@@ -366,6 +366,59 @@ class PaymentsService {
         .in('user_id', userIds);
     }
   }
+
+  // Check subscription limits for a specific activity
+  async checkSubscriptionLimits(userId: string, activityType: string): Promise<boolean> {
+    // Get user's subscription status
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('subscription_type')
+      .eq('user_id', userId)
+      .single();
+
+    const isPremium = profile?.subscription_type === 'premium';
+
+    // Define daily limits based on subscription type
+    const limits: Record<string, { free: number; premium: number }> = {
+      interests_sent: { free: 5, premium: 50 },
+      profile_views: { free: 20, premium: -1 }, // -1 = unlimited
+      messages_sent: { free: 10, premium: -1 }
+    };
+
+    const limit = isPremium ? limits[activityType]?.premium : limits[activityType]?.free;
+    
+    // Unlimited
+    if (limit === -1) return true;
+    if (!limit) return true;
+
+    // Check today's activity count
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const { count } = await supabase
+      .from('user_activity')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('activity_type', activityType)
+      .gte('created_at', today.toISOString());
+
+    return (count || 0) < limit;
+  }
+
+  // Record user activity for limit tracking
+  async recordActivity(userId: string, activityType: string): Promise<void> {
+    const { error } = await supabase
+      .from('user_activity')
+      .insert({
+        user_id: userId,
+        activity_type: activityType,
+        created_at: new Date().toISOString()
+      });
+
+    if (error) {
+      console.error('Failed to record activity:', error);
+    }
+  }
 }
 
 export const paymentsService = new PaymentsService();

@@ -69,19 +69,23 @@ const Dashboard = () => {
 
         // Mock online profiles data
         const mockOnlineProfiles = oppositeGender === 'female' ? [
-          { id: 'online1', first_name: 'Priya', age: 26, gender: 'female', city: 'Mumbai', state: 'Maharashtra', occupation: 'Software Engineer', profile_picture_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150', subscription_type: 'premium', gotra: 'Kashyap Gotra' },
-          { id: 'online2', first_name: 'Anjali', age: 24, gender: 'female', city: 'Bangalore', state: 'Karnataka', occupation: 'Doctor', profile_picture_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150', subscription_type: 'free', gotra: 'Bharadwaja Gotra' },
-          { id: 'online3', first_name: 'Kavya', age: 27, gender: 'female', city: 'Chennai', state: 'Tamil Nadu', occupation: 'Teacher', profile_picture_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', subscription_type: 'premium', gotra: 'Vasishtha Gotra' },
-          { id: 'online4', first_name: 'Meera', age: 25, gender: 'female', city: 'Pune', state: 'Maharashtra', occupation: 'CA', profile_picture_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150', subscription_type: 'free', gotra: 'Atri Gotra' },
-          { id: 'online5', first_name: 'Divya', age: 28, gender: 'female', city: 'Hyderabad', state: 'Telangana', occupation: 'Architect', profile_picture_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150', subscription_type: 'premium', gotra: 'Gautam Gotra' },
-          { id: 'online6', first_name: 'Sneha', age: 23, gender: 'female', city: 'Delhi', state: 'Delhi', occupation: 'Designer', profile_picture_url: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=150', subscription_type: 'free', gotra: 'Jamadagni Gotra' },
+          { id: 'online1', first_name: 'Priya', age: 26, gender: 'female', city: 'Mumbai', state: 'Maharashtra', occupation: 'Software Engineer', profile_picture_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop', subscription_type: 'premium', gotra: 'Kashyap Gotra' },
+          { id: 'online2', first_name: 'Anjali', age: 24, gender: 'female', city: 'Bangalore', state: 'Karnataka', occupation: 'Doctor', profile_picture_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop', subscription_type: 'free', gotra: 'Bharadwaja Gotra' },
+          { id: 'online3', first_name: 'Kavya', age: 27, gender: 'female', city: 'Chennai', state: 'Tamil Nadu', occupation: 'Teacher', profile_picture_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop', subscription_type: 'premium', gotra: 'Vasishtha Gotra' },
+          { id: 'online4', first_name: 'Meera', age: 25, gender: 'female', city: 'Pune', state: 'Maharashtra', occupation: 'CA', profile_picture_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&h=150&fit=crop', subscription_type: 'free', gotra: 'Atri Gotra' },
+          { id: 'online5', first_name: 'Divya', age: 28, gender: 'female', city: 'Hyderabad', state: 'Telangana', occupation: 'Architect', profile_picture_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop', subscription_type: 'premium', gotra: 'Gautam Gotra' },
+          { id: 'online6', first_name: 'Sneha', age: 23, gender: 'female', city: 'Delhi', state: 'Delhi', occupation: 'Designer', profile_picture_url: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=150&h=150&fit=crop', subscription_type: 'free', gotra: 'Jamadagni Gotra' },
+          { id: 'online7', first_name: 'Riya', age: 26, gender: 'female', city: 'Kolkata', state: 'West Bengal', occupation: 'Lawyer', profile_picture_url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150&h=150&fit=crop', subscription_type: 'premium', gotra: 'Kashyap Gotra' },
+          { id: 'online8', first_name: 'Neha', age: 25, gender: 'female', city: 'Jaipur', state: 'Rajasthan', occupation: 'Manager', profile_picture_url: 'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=150&h=150&fit=crop', subscription_type: 'free', gotra: 'Bharadwaja Gotra' },
         ] : [
-          { id: 'online1', first_name: 'Rahul', age: 28, gender: 'male', city: 'Mumbai', state: 'Maharashtra', occupation: 'Software Engineer', profile_picture_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', subscription_type: 'premium', gotra: 'Kashyap Gotra' },
-          { id: 'online2', first_name: 'Aditya', age: 30, gender: 'male', city: 'Bangalore', state: 'Karnataka', occupation: 'Doctor', profile_picture_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150', subscription_type: 'free', gotra: 'Bharadwaja Gotra' },
-          { id: 'online3', first_name: 'Vikram', age: 27, gender: 'male', city: 'Chennai', state: 'Tamil Nadu', occupation: 'Lawyer', profile_picture_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150', subscription_type: 'premium', gotra: 'Vasishtha Gotra' },
-          { id: 'online4', first_name: 'Arjun', age: 29, gender: 'male', city: 'Pune', state: 'Maharashtra', occupation: 'CA', profile_picture_url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150', subscription_type: 'free', gotra: 'Atri Gotra' },
-          { id: 'online5', first_name: 'Karthik', age: 26, gender: 'male', city: 'Hyderabad', state: 'Telangana', occupation: 'Architect', profile_picture_url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150', subscription_type: 'premium', gotra: 'Gautam Gotra' },
-          { id: 'online6', first_name: 'Sanjay', age: 31, gender: 'male', city: 'Delhi', state: 'Delhi', occupation: 'Business', profile_picture_url: 'https://images.unsplash.com/photo-1463453091185-61582044d556?w=150', subscription_type: 'free', gotra: 'Jamadagni Gotra' },
+          { id: 'online1', first_name: 'Rahul', age: 28, gender: 'male', city: 'Mumbai', state: 'Maharashtra', occupation: 'Software Engineer', profile_picture_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop', subscription_type: 'premium', gotra: 'Kashyap Gotra' },
+          { id: 'online2', first_name: 'Aditya', age: 30, gender: 'male', city: 'Bangalore', state: 'Karnataka', occupation: 'Doctor', profile_picture_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop', subscription_type: 'free', gotra: 'Bharadwaja Gotra' },
+          { id: 'online3', first_name: 'Vikram', age: 27, gender: 'male', city: 'Chennai', state: 'Tamil Nadu', occupation: 'Lawyer', profile_picture_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop', subscription_type: 'premium', gotra: 'Vasishtha Gotra' },
+          { id: 'online4', first_name: 'Arjun', age: 29, gender: 'male', city: 'Pune', state: 'Maharashtra', occupation: 'CA', profile_picture_url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&h=150&fit=crop', subscription_type: 'free', gotra: 'Atri Gotra' },
+          { id: 'online5', first_name: 'Karthik', age: 26, gender: 'male', city: 'Hyderabad', state: 'Telangana', occupation: 'Architect', profile_picture_url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop', subscription_type: 'premium', gotra: 'Gautam Gotra' },
+          { id: 'online6', first_name: 'Sanjay', age: 31, gender: 'male', city: 'Delhi', state: 'Delhi', occupation: 'Business', profile_picture_url: 'https://images.unsplash.com/photo-1463453091185-61582044d556?w=150&h=150&fit=crop', subscription_type: 'free', gotra: 'Jamadagni Gotra' },
+          { id: 'online7', first_name: 'Rohan', age: 28, gender: 'male', city: 'Kolkata', state: 'West Bengal', occupation: 'Engineer', profile_picture_url: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&h=150&fit=crop', subscription_type: 'premium', gotra: 'Kashyap Gotra' },
+          { id: 'online8', first_name: 'Amit', age: 29, gender: 'male', city: 'Jaipur', state: 'Rajasthan', occupation: 'Manager', profile_picture_url: 'https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=150&h=150&fit=crop', subscription_type: 'free', gotra: 'Bharadwaja Gotra' },
         ];
 
         // Fetch online members (active in last 60 mins)
@@ -201,15 +205,27 @@ const Dashboard = () => {
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="h-5 w-5 text-yellow-300" />
                 <h1 className="text-4xl font-bold">
-                  Welcome back, {profile?.first_name || 'User'}!
+                  Welcome, {profile?.first_name || 'User'}!
                 </h1>
               </div>
               <p className="text-xl text-white/90">Your perfect match is waiting for you</p>
             </div>
             <div className="relative z-10 hidden md:block">
-              <div className="bg-white/20 backdrop-blur-md rounded-full px-6 py-3 border border-white/30 flex items-center gap-2">
-                <Crown className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                <span className="font-bold uppercase tracking-wider text-sm">Free Member</span>
+              <div className={`backdrop-blur-md rounded-full px-6 py-3 border flex items-center gap-2 ${
+                profile?.subscription_type === 'premium'
+                  ? 'bg-yellow-400/30 border-yellow-300/50'
+                  : 'bg-white/20 border-white/30'
+              }`}>
+                <Crown className={`h-5 w-5 ${
+                  profile?.subscription_type === 'premium'
+                    ? 'text-yellow-300 fill-yellow-300'
+                    : 'text-yellow-400 fill-yellow-400'
+                }`} />
+                <span className="font-bold uppercase tracking-wider text-sm">
+                  {profile?.subscription_type === 'premium' 
+                    ? 'Premium Member' 
+                    : 'Free Member'}
+                </span>
               </div>
             </div>
           </div>
@@ -257,20 +273,21 @@ const Dashboard = () => {
                 </Link>
               </div>
             </div>
-          <div className="flex flex-wrap gap-x-8 gap-y-10">
+          <div className="flex justify-between">
             {onlineMembers.length > 0 ? (
-              onlineMembers.map((member, i) => (
+              onlineMembers.map((member) => (
                 <div 
                   key={member.id} 
-                  className="flex flex-col items-center w-[100px] cursor-pointer group"
+                  className="flex flex-col items-center cursor-pointer group"
                   onClick={() => navigate(`/profile/${member.id}`)}
                 >
                   <div className="relative mb-3">
                     <div className="p-1 rounded-full border-2 border-[#10b981] shadow-lg shadow-teal-100 transform group-hover:scale-110 transition-transform duration-300">
-                      <Avatar className="h-20 w-20 border-2 border-white">
-                        <AvatarImage src={member.avatarUrl} alt={member.name} className="object-cover" />
-                        <AvatarFallback className="bg-teal-50 text-teal-600 font-bold">{member.name[0]}</AvatarFallback>
-                      </Avatar>
+                      <img 
+                        src={member.avatarUrl} 
+                        alt={member.name} 
+                        className="h-20 w-20 rounded-full object-cover border-2 border-white"
+                      />
                       <div className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
                     </div>
                   </div>
@@ -448,6 +465,68 @@ const Dashboard = () => {
             </div>
           </section>
         </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          <Link to="/search">
+            <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer border-2 border-red-100/50 bg-white/90 rounded-2xl">
+              <CardContent className="p-6 text-center">
+                <div className="bg-red-500 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-red-500/20">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="font-serif font-bold text-lg mb-2">Search Profiles</h3>
+                <p className="text-gray-600 text-sm">Find your perfect match</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/v-dates">
+            <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer border-2 border-amber-100/50 bg-white/90 rounded-2xl">
+              <CardContent className="p-6 text-center">
+                <div className="bg-amber-500 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-amber-500/20">
+                  <Video className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="font-serif font-bold text-lg mb-2">Video Dates</h3>
+                <p className="text-gray-600 text-sm">Meet virtually first</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/messages">
+            <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer border-2 border-red-100/50 bg-white/90 rounded-2xl">
+              <CardContent className="p-6 text-center">
+                <div className="bg-red-500 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-red-500/20">
+                  <MessageCircle className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="font-serif font-bold text-lg mb-2">Messages</h3>
+                <p className="text-gray-600 text-sm">Connect with matches</p>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
+        {/* Premium Membership - Only show for free members */}
+        {profile?.subscription_type !== 'premium' && (
+          <Card className="border-0 bg-gradient-to-r from-red-600 to-amber-600 text-white rounded-2xl shadow-xl p-8 relative overflow-hidden group mb-8">
+            <div className="absolute top-0 right-0 w-64 h-full bg-white/10 -skew-x-12 translate-x-32" />
+            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-6">
+                <div className="bg-yellow-400 p-4 rounded-2xl shadow-lg">
+                  <Crown className="h-8 w-8 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-bold text-2xl mb-2 text-white">Premium Membership</h3>
+                  <p className="text-red-50 font-medium">Unlock unlimited matches, priority messaging, and advanced horoscope matching.</p>
+                </div>
+              </div>
+              <Link to="/plans">
+                <Button className="bg-white text-red-600 hover:bg-red-50 font-bold px-8 h-12 rounded-xl shadow-lg transition-transform hover:scale-105">
+                  Upgrade Now
+                </Button>
+              </Link>
+            </div>
+          </Card>
+        )}
       </div>
       <Footer />
     </div>

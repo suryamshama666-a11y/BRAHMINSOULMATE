@@ -14,16 +14,16 @@ const Logout = () => {
       try {
         await signOut();
         toast.success("You have been successfully logged out");
-        navigate("/");
+        navigate("/login");
       } catch (error) {
         console.error("Logout error:", error);
         toast.error("There was a problem logging you out. Please try again.");
-        navigate("/dashboard");
+        navigate("/login");
       }
     };
     
     performLogout();
-  }, [logout, navigate]);
+  }, [signOut, navigate]);
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-orange-50/30">

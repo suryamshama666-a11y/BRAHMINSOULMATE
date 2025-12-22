@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import SimpleNavbar from '@/components/SimpleNavbar';
 import { DevModeIndicator } from '@/components/DevModeIndicator';
@@ -85,6 +86,15 @@ const queryClient = new QueryClient({
 // Import the landing page
 const Landing = React.lazy(() => import(/* webpackChunkName: "landing" */ '@/pages/Landing'));
 
+// Home redirect component - shows landing page (no redirect for logged in users)
+const HomeRedirect = () => {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <Landing />
+    </Suspense>
+  );
+};
+
 // Add a simple test component
 const TestPage = () => {
   return (
@@ -113,10 +123,14 @@ const Authenticated: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 // Wrapper component that uses useLocation inside Router
 const AppContent = () => {
   const location = useLocation();
+  const { user } = useAuth();
   const path = location.pathname;
-  // Only show SimpleNavbar on login and register pages
+  // Show SimpleNavbar on login, register pages and landing page (always for landing)
   const simpleNavbarPages = ['/login', '/register', '/signup'];
-  const isSimpleNavbar = simpleNavbarPages.some((p) => path.startsWith(p));
+  const isAuthPage = simpleNavbarPages.some((p) => path.startsWith(p));
+  const isLandingPage = path === '/';
+  // Landing page always shows SimpleNavbar, auth pages too
+  const isSimpleNavbar = isAuthPage || isLandingPage;
 
   return (
     <>
@@ -179,10 +193,10 @@ const AppContent = () => {
                 <Route path="/connections/who-viewed" element={<Authenticated><WhoViewedYou /></Authenticated>} />
                 <Route path="/connections/you-viewed" element={<Authenticated><YouViewed /></Authenticated>} />
 
-                {/* Landing page as root */}
+                {/* Landing page as root - redirects to dashboard if logged in */}
                 <Route
                   path="/"
-                  element={<Landing />}
+                  element={<HomeRedirect />}
                 />
 
                 {/* Catch all route */}

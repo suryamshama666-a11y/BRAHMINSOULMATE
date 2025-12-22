@@ -219,7 +219,7 @@ export default function OriginalNavbar() {
                   className="flex items-center space-x-2 border-[#FF4500] text-[#FF4500] hover:bg-[#FF4500] hover:text-white"
                   onClick={() => {
                     signOut();
-                    navigate('/');
+                    navigate('/login');
                   }}
                 >
                   <LogOut className="h-4 w-4" />

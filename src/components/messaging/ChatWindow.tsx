@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar } from '@/components/ui/avatar';
-import { Send, Phone, Video, MoreVertical, Image, FileText, Star, StarOff, UserX, Flag, X, Mic } from 'lucide-react';
+import { Send, Phone, Video, MoreVertical, Image, FileText, Star, StarOff, UserX, Flag, X, Mic, Smile } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { messagesService } from '@/services/api';
@@ -14,6 +14,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 interface ChatWindowProps {
   partnerId: string;
@@ -30,9 +35,24 @@ export const ChatWindow = ({ partnerId, partnerName, partnerImage }: ChatWindowP
   const [isBlocked, setIsBlocked] = useState(false);
   const [showPhoneCall, setShowPhoneCall] = useState(false);
   const [showVideoCall, setShowVideoCall] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
+
+  // Common emojis for quick access
+  const emojis = [
+    '😊', '😍', '🥰', '😘', '💕', '❤️', '💖', '💗',
+    '😂', '🤣', '😄', '😁', '😃', '🙂', '😉', '😎',
+    '🤗', '🥺', '😇', '🙏', '👍', '👋', '🎉', '✨',
+    '💐', '🌹', '🌸', '💝', '💞', '💓', '💘', '💑',
+    '🤔', '😅', '😌', '🤭', '😏', '🙈', '🙊', '🙉'
+  ];
+
+  const addEmoji = (emoji: string) => {
+    setNewMessage(prev => prev + emoji);
+    setShowEmojiPicker(false);
+  };
 
   // Fetch conversation
   const { data: messages = [] } = useQuery({
@@ -208,7 +228,10 @@ export const ChatWindow = ({ partnerId, partnerName, partnerImage }: ChatWindowP
             {isTyping ? (
               <p className="text-xs text-blue-600">typing...</p>
             ) : (
-              <p className="text-xs text-green-600">Online</p>
+              <p className="text-xs text-green-600 flex items-center gap-1">
+                <span className="w-2 h-2 bg-green-500 rounded-full inline-block"></span>
+                Online
+              </p>
             )}
           </div>
         </div>
@@ -311,6 +334,31 @@ export const ChatWindow = ({ partnerId, partnerName, partnerImage }: ChatWindowP
           >
             <FileText className="h-5 w-5" />
           </Button>
+          <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                title="Add emoji"
+                className="text-[#FF4500] hover:text-[#FF4500] hover:bg-[#FF4500]/10"
+              >
+                <Smile className="h-5 w-5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-2" side="top" align="start">
+              <div className="grid grid-cols-8 gap-1">
+                {emojis.map((emoji, index) => (
+                  <button
+                    key={index}
+                    onClick={() => addEmoji(emoji)}
+                    className="text-xl hover:bg-gray-100 rounded p-1 transition-colors"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
           <Input
             value={newMessage}
             onChange={(e) => handleTyping(e.target.value)}

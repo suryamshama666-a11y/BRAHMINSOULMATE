@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { 
@@ -15,6 +15,7 @@ interface MobileMenuProps {
 
 const MobileMenu = ({ onClose }: MobileMenuProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { signOut } = useAuth();
 
   const mainLinks = [
@@ -45,6 +46,7 @@ const MobileMenu = ({ onClose }: MobileMenuProps) => {
   const handleLogout = async () => {
     await signOut();
     onClose();
+    navigate('/login');
   };
 
   const renderLinks = (links: typeof mainLinks) => {

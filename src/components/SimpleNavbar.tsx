@@ -4,18 +4,6 @@ import { Heart, LogIn, UserPlus } from 'lucide-react';
 
 const SimpleNavbar = () => {
   const location = useLocation();
-  
-  const isActive = (path: string) => location.pathname === path;
-  
-  const linkStyle = (path: string) => ({
-    textDecoration: 'none',
-    color: isActive(path) ? '#dc2626' : '#333',
-    fontWeight: isActive(path) ? 'bold' : 'normal',
-    padding: '0.5rem 1rem',
-    borderRadius: '0.5rem',
-    backgroundColor: isActive(path) ? '#fef2f2' : 'transparent',
-    transition: 'all 0.2s ease'
-  });
 
   const isLoginActive = location.pathname === '/login';
   const isRegisterActive = location.pathname === '/register';
@@ -31,15 +19,6 @@ const SimpleNavbar = () => {
             </div>
             <span className="text-xl font-bold">BrahminSoulmate</span>
           </Link>
-          
-          {/* Navigation Links */}
-          <div className="hidden md:flex items-center space-x-1">
-            <Link to="/" style={linkStyle('/')}>Home</Link>
-            <Link to="/dashboard" style={linkStyle('/dashboard')}>Dashboard</Link>
-            <Link to="/search" style={linkStyle('/search')}>Search</Link>
-            <Link to="/matches" style={linkStyle('/matches')}>Matches</Link>
-            <Link to="/messages" style={linkStyle('/messages')}>Messages</Link>
-          </div>
           
           {/* Auth Links */}
           <div className="flex items-center space-x-2">

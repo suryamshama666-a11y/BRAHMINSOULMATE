@@ -120,11 +120,15 @@ const Messages = () => {
                           : 'hover:bg-gray-100'
                       }`}
                     >
-                      <Avatar 
-                        src={conversation.profile_picture} 
-                        fallback={conversation.full_name[0]} 
-                        className="h-10 w-10"
-                      />
+                      <div className="relative">
+                        <Avatar 
+                          src={conversation.profile_picture} 
+                          fallback={conversation.full_name[0]} 
+                          className="h-10 w-10"
+                        />
+                        {/* Online indicator */}
+                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <h4 className="font-semibold truncate">{conversation.full_name}</h4>

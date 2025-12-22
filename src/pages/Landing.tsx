@@ -132,12 +132,6 @@ const Landing = () => {
           </div>
         </div>
 
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          <div className="w-5 h-8 sm:w-6 sm:h-10 border-2 border-gray-400 rounded-full flex justify-center pt-2">
-            <div className="w-1 h-2 sm:h-3 bg-gray-400 rounded-full animate-pulse" />
-          </div>
-        </div>
       </section>
 
       {/* Stats Section */}

@@ -1,20 +1,25 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import ProfileCard from '@/components/ProfileCard';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { Heart, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Heart, Clock, CheckCircle, XCircle, Users, Calendar } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { interestsService } from '@/services/api';
 import { useQuery } from '@tanstack/react-query';
 import { ListFilters } from '@/components/ListFilters';
 import { Pagination } from '@/components/ui/pagination';
 
+type StatusFilter = 'all' | 'accepted' | 'pending' | 'declined';
+type DateFilter = 'all' | '7days' | '30days' | '90days';
+
 const MyInterests = () => {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(9);
 
@@ -47,6 +52,19 @@ const MyInterests = () => {
   const filteredAndSortedInterests = useMemo(() => {
     let result = [...interests];
 
+    // Status filter
+    if (statusFilter !== 'all') {
+      result = result.filter(i => i.status === statusFilter);
+    }
+
+    // Date filter
+    if (dateFilter !== 'all') {
+      const now = new Date();
+      const daysMap = { '7days': 7, '30days': 30, '90days': 90 };
+      const cutoffDate = new Date(now.getTime() - daysMap[dateFilter] * 24 * 60 * 60 * 1000);
+      result = result.filter(i => new Date(i.created_at) >= cutoffDate);
+    }
+
     // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
@@ -72,7 +90,15 @@ const MyInterests = () => {
     });
 
     return result;
-  }, [interests, searchTerm, sortBy]);
+  }, [interests, searchTerm, sortBy, statusFilter, dateFilter]);
+
+  // Counts for tabs
+  const counts = useMemo(() => ({
+    all: interests.length,
+    accepted: interests.filter(i => i.status === 'accepted').length,
+    pending: interests.filter(i => i.status === 'pending').length,
+    declined: interests.filter(i => i.status === 'declined').length,
+  }), [interests]);
 
   const totalPages = Math.ceil(filteredAndSortedInterests.length / itemsPerPage);
   const paginatedInterests = useMemo(() => {
@@ -82,7 +108,7 @@ const MyInterests = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, sortBy, itemsPerPage]);
+  }, [searchTerm, sortBy, itemsPerPage, statusFilter, dateFilter]);
 
   if (loading) {
     return (
@@ -121,40 +147,67 @@ const MyInterests = () => {
             sortOptions={sortOptions}
           />
 
-          {/* Stats Cards */}
-          {!searchTerm && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <Card className="border-2 border-green-100/50 shadow-sm">
-                <CardContent className="p-6 text-center">
-                  <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                  <h3 className="text-2xl font-bold text-green-600">
-                    {interests.filter(i => i.status === 'accepted').length}
-                  </h3>
-                  <p className="text-sm text-gray-600">Accepted</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="border-2 border-yellow-100/50 shadow-sm">
-                <CardContent className="p-6 text-center">
-                  <Clock className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
-                  <h3 className="text-2xl font-bold text-yellow-600">
-                    {interests.filter(i => i.status === 'pending').length}
-                  </h3>
-                  <p className="text-sm text-gray-600">Pending</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="border-2 border-red-100/50 shadow-sm">
-                <CardContent className="p-6 text-center">
-                  <XCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
-                  <h3 className="text-2xl font-bold text-red-600">
-                    {interests.filter(i => i.status === 'declined').length}
-                  </h3>
-                  <p className="text-sm text-gray-600">Declined</p>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+          {/* Status Filter Tabs */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            <Button
+              variant={statusFilter === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter('all')}
+              className={statusFilter === 'all' ? 'bg-gray-700 hover:bg-gray-800 text-white' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-gray-700'}
+            >
+              <Users className="h-4 w-4 mr-1.5" />
+              All ({counts.all})
+            </Button>
+            <Button
+              variant={statusFilter === 'accepted' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter('accepted')}
+              className={statusFilter === 'accepted' ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-white text-green-600 border-green-300 hover:bg-green-50 hover:text-green-700'}
+            >
+              <CheckCircle className="h-4 w-4 mr-1.5" />
+              Accepted ({counts.accepted})
+            </Button>
+            <Button
+              variant={statusFilter === 'pending' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter('pending')}
+              className={statusFilter === 'pending' ? 'bg-yellow-500 hover:bg-yellow-600 text-white' : 'bg-white text-yellow-600 border-yellow-300 hover:bg-yellow-50 hover:text-yellow-700'}
+            >
+              <Clock className="h-4 w-4 mr-1.5" />
+              Pending ({counts.pending})
+            </Button>
+            <Button
+              variant={statusFilter === 'declined' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter('declined')}
+              className={statusFilter === 'declined' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-white text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700'}
+            >
+              <XCircle className="h-4 w-4 mr-1.5" />
+              Declined ({counts.declined})
+            </Button>
+          </div>
+
+          {/* Date Range Filter */}
+          <div className="flex flex-wrap items-center gap-2 mb-6">
+            <Calendar className="h-4 w-4 text-gray-500" />
+            <span className="text-sm text-gray-600 mr-1">Time:</span>
+            {[
+              { value: 'all', label: 'All Time' },
+              { value: '7days', label: 'Last 7 Days' },
+              { value: '30days', label: 'Last 30 Days' },
+              { value: '90days', label: 'Last 90 Days' },
+            ].map((option) => (
+              <Button
+                key={option.value}
+                variant={dateFilter === option.value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setDateFilter(option.value as DateFilter)}
+                className={dateFilter === option.value ? 'bg-amber-600 hover:bg-amber-700 text-white h-7 text-xs' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:text-gray-700 h-7 text-xs'}
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
 
               {/* Interests Grid */}
               {paginatedInterests.length > 0 ? (
