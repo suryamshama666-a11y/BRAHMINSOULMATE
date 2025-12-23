@@ -9,16 +9,37 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// SendGrid configuration (optional - install @sendgrid/mail if needed)
-let sgMail: any = null;
-try {
-  sgMail = require('@sendgrid/mail');
-  if (process.env.SENDGRID_API_KEY) {
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  }
-} catch (e) {
-  console.log('SendGrid not installed. Email notifications will be disabled.');
+// Helper function to get error message
+const getErrorMessage = (error: unknown): string => {
+  return error instanceof Error ? error.message : 'Unknown error';
+};
+
+// SendGrid mail interface
+interface SendGridMail {
+  setApiKey: (key: string) => void;
+  send: (msg: { to: string; from: string; subject: string; html: string }) => Promise<void>;
 }
+
+// SendGrid configuration (optional - install @sendgrid/mail if needed)
+let sgMail: SendGridMail | null = null;
+
+// Initialize SendGrid asynchronously using dynamic import with string literal
+const initSendGrid = async (): Promise<void> => {
+  try {
+    // Use string variable to prevent TypeScript from checking the module
+    const moduleName = '@sendgrid/mail';
+    const sendgridModule = await (Function('moduleName', 'return import(moduleName)')(moduleName) as Promise<{ default: SendGridMail }>).catch(() => null);
+    if (sendgridModule && process.env.SENDGRID_API_KEY) {
+      sendgridModule.default.setApiKey(process.env.SENDGRID_API_KEY);
+      sgMail = sendgridModule.default;
+    }
+  } catch {
+    console.log('SendGrid not installed. Email notifications will be disabled.');
+  }
+};
+
+// Initialize on module load
+initSendGrid();
 
 // Twilio client
 const twilioClient = process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
@@ -116,8 +137,8 @@ router.get('/', authMiddleware, async (req, res) => {
 
     if (error) throw error;
     res.json({ success: true, notifications: data });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch (error) {
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
 
@@ -135,8 +156,8 @@ router.post('/:id/read', authMiddleware, async (req, res) => {
 
     if (error) throw error;
     res.json({ success: true });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch (error) {
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
 
@@ -153,8 +174,8 @@ router.post('/read-all', authMiddleware, async (req, res) => {
 
     if (error) throw error;
     res.json({ success: true });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch (error) {
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
 
@@ -173,7 +194,20 @@ router.post('/email', authMiddleware, async (req, res) => {
     
     if (type && emailTemplates[type as keyof typeof emailTemplates]) {
       const templateData = req.body.templateData || {};
-      emailContent = (emailTemplates[type as keyof typeof emailTemplates] as any)(...Object.values(templateData));
+      // Call template function based on type
+      if (type === 'interestReceived') {
+        const { senderName = '', profileUrl = '' } = templateData as { senderName?: string; profileUrl?: string };
+        emailContent = emailTemplates.interestReceived(senderName, profileUrl);
+      } else if (type === 'interestAccepted') {
+        const { receiverName = '', chatUrl = '' } = templateData as { receiverName?: string; chatUrl?: string };
+        emailContent = emailTemplates.interestAccepted(receiverName, chatUrl);
+      } else if (type === 'newMessage') {
+        const { senderName = '', messagePreview = '', chatUrl = '' } = templateData as { senderName?: string; messagePreview?: string; chatUrl?: string };
+        emailContent = emailTemplates.newMessage(senderName, messagePreview, chatUrl);
+      } else if (type === 'subscriptionExpiring') {
+        const { daysLeft = 0, renewUrl = '' } = templateData as { daysLeft?: number; renewUrl?: string };
+        emailContent = emailTemplates.subscriptionExpiring(daysLeft, renewUrl);
+      }
     }
 
     const msg = {
@@ -185,9 +219,9 @@ router.post('/email', authMiddleware, async (req, res) => {
 
     await sgMail.send(msg);
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Email send error:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
 
@@ -210,9 +244,9 @@ router.post('/sms', authMiddleware, async (req, res) => {
     });
 
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error('SMS send error:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
 
@@ -235,8 +269,8 @@ router.put('/preferences', authMiddleware, async (req, res) => {
 
     if (error) throw error;
     res.json({ success: true });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch (error) {
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
 

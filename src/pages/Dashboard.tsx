@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Heart, MessageCircle, Users, Video, Loader2, Crown, Sparkles, ChevronRight, MapPin, Briefcase, Eye, UserCheck
+  Heart, MessageCircle, Users, Video, Loader2, Crown, Sparkles, MapPin, Eye
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,18 +11,50 @@ import Footer from '@/components/Footer';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 
+// Type definitions
+interface MemberProfile {
+  id: string;
+  name: string;
+  age: number;
+  gender: string;
+  location: string;
+  profession: string;
+  avatarUrl: string;
+  subscription_type: string;
+  gotra: string;
+  community: string;
+  height: string;
+  matchPercentage: number;
+  lastSeen: string;
+}
+
+interface RawProfile {
+  id: string;
+  first_name?: string;
+  age?: number;
+  gender?: string;
+  city?: string;
+  state?: string;
+  occupation?: string;
+  profile_picture_url?: string;
+  subscription_type?: string;
+  gotra?: string;
+  community?: string;
+  height?: number | string;
+}
+
 const Dashboard = () => {
   const { profile, user } = useAuth();
   const navigate = useNavigate();
-  const [stats, setStats] = useState({
+  const [stats] = useState({
     profileViews: 237,
     interestsSent: 10,
     messageCount: 4,
     vDatesCount: 1,
   });
-  const [onlineMembers, setOnlineMembers] = useState<any[]>([]);
-  const [newMembers, setNewMembers] = useState<any[]>([]);
-  const [recommendedMatches, setRecommendedMatches] = useState<any[]>([]);
+  const [onlineMembers, setOnlineMembers] = useState<MemberProfile[]>([]);
+  const [newMembers, setNewMembers] = useState<MemberProfile[]>([]);
+  const [recommendedMatches, setRecommendedMatches] = useState<MemberProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [likedMembers, setLikedMembers] = useState<Set<string>>(new Set());
   const [interestSentMembers, setInterestSentMembers] = useState<Set<string>>(new Set());
@@ -113,8 +145,8 @@ const Dashboard = () => {
           .eq('gender', oppositeGender)
           .limit(4);
 
-          const transformProfile = (p: any, type: string) => {
-            const formatHeight = (height: any) => {
+          const transformProfile = (p: RawProfile): MemberProfile => {
+            const formatHeight = (height: number | string | undefined): string => {
               if (!height) return "160 cm";
               if (typeof height === 'number') {
                 return `${height} cm`;
@@ -129,7 +161,7 @@ const Dashboard = () => {
               id: p.id,
               name: p.first_name || (oppositeGender === 'female' ? 'Female Profile' : 'Male Profile'),
               age: p.age || 25,
-              gender: p.gender,
+              gender: p.gender || oppositeGender,
               location: `${p.city || 'Mumbai'}, ${p.state || 'Maharashtra'}`,
               profession: p.occupation || 'Professional',
               avatarUrl: p.profile_picture_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
@@ -144,7 +176,7 @@ const Dashboard = () => {
   
           // Use mock data if no online members from database
           const onlineProfilesToUse = onlineData && onlineData.length > 0 ? onlineData : mockOnlineProfiles;
-          setOnlineMembers(onlineProfilesToUse.map((p, i) => ({ ...transformProfile(p, 'online') })));
+          setOnlineMembers(onlineProfilesToUse.map((p) => transformProfile(p as RawProfile)));
           
           // Use mock data if no new members from database
           const mockNewMembers = oppositeGender === 'female' ? [
@@ -159,7 +191,7 @@ const Dashboard = () => {
             { id: 'new4', first_name: 'Krishna', age: 27, gender: 'male', city: 'Jaipur', state: 'Rajasthan', occupation: 'Professor', profile_picture_url: 'https://images.unsplash.com/photo-1528892952291-009c663ce843?w=150', subscription_type: 'free', gotra: 'Atri Gotra', height: 170 },
           ];
           const newProfilesToUse = newData && newData.length > 0 ? newData : mockNewMembers;
-          setNewMembers(newProfilesToUse.map(p => transformProfile(p, 'new')));
+          setNewMembers(newProfilesToUse.map(p => transformProfile(p as RawProfile)));
           
           // Use mock data if no recommended matches from database
           const mockRecommendedMatches = oppositeGender === 'female' ? [
@@ -174,7 +206,7 @@ const Dashboard = () => {
             { id: 'rec4', first_name: 'Nikhil', age: 31, gender: 'male', city: 'Nagpur', state: 'Maharashtra', occupation: 'Consultant', profile_picture_url: 'https://images.unsplash.com/photo-1480455624313-e29b44bbfde1?w=150', subscription_type: 'free', gotra: 'Agastya Gotra', height: 173 },
           ];
           const recommendedProfilesToUse = matchesData && matchesData.length > 0 ? matchesData : mockRecommendedMatches;
-          setRecommendedMatches(recommendedProfilesToUse.map(p => transformProfile(p, 'recommended')));
+          setRecommendedMatches(recommendedProfilesToUse.map(p => transformProfile(p as RawProfile)));
 
       } catch (error) {
         console.error('Error loading dashboard data:', error);

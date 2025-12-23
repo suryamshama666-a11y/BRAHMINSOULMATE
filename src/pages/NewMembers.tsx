@@ -253,7 +253,7 @@ const NewMembers = () => {
                           id="new" 
                           checked={filterNewMember} 
                           onCheckedChange={(checked) => setFilterNewMember(!!checked)}
-                          className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
+                          className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600 [&_svg]:text-white"
                         />
                       </div>
                       

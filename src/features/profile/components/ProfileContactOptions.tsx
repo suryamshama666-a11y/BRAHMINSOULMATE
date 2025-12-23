@@ -115,8 +115,6 @@ export default function ProfileContactOptions({ profile }: ProfileContactOptions
       {/* Image Management Card */}
       <Card className="rounded-2xl bg-gradient-to-br from-white via-blue-50/20 to-green-50/30 border-2 border-blue-100/50 shadow-lg">
         <CardContent className="p-6">
-          <h3 className="text-lg font-semibold mb-4 bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">View Photos</h3>
-          
           {/* Upload Section */}
           <div className="mb-4">
             <label htmlFor="image-upload" className="cursor-pointer">

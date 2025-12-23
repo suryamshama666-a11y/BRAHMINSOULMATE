@@ -8,6 +8,11 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// Helper function to get error message
+const getErrorMessage = (error: unknown): string => {
+  return error instanceof Error ? error.message : 'Unknown error';
+};
+
 // Get all events
 router.get('/', async (req, res) => {
   try {
@@ -19,8 +24,8 @@ router.get('/', async (req, res) => {
 
     if (error) throw error;
     res.json({ success: true, events: data });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch (error) {
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
 
@@ -56,8 +61,8 @@ router.post('/:id/register', authMiddleware, async (req, res) => {
 
     if (error) throw error;
     res.json({ success: true });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch (error) {
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
 

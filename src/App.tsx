@@ -44,7 +44,8 @@ const Settings = React.lazy(() => import(/* webpackChunkName: "settings" */ '@/p
 const AuthCallback = React.lazy(() => import(/* webpackChunkName: "auth" */ '@/pages/auth/callback'));
 const Search = React.lazy(() => import(/* webpackChunkName: "search" */ '@/pages/Search'));
 const VDates = React.lazy(() => import(/* webpackChunkName: "vdates" */ '@/pages/VDates'));
-const Community = React.lazy(() => import(/* webpackChunkName: "community" */ '@/pages/Community'));
+// Direct import for Community to avoid lazy loading issues
+import Community from '@/pages/Community';
 
 // Import Connections pages
 const MyFavorites = React.lazy(() => import(/* webpackChunkName: "connections" */ '@/pages/MyFavorites'));
@@ -179,7 +180,7 @@ const AppContent = () => {
                 <Route path="/settings" element={<Authenticated><Settings /></Authenticated>} />
                 <Route path="/search" element={<Authenticated><Search /></Authenticated>} />
                 <Route path="/v-dates" element={<Authenticated><VDates /></Authenticated>} />
-                <Route path="/community" element={<Authenticated><Community /></Authenticated>} />
+                <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
                 <Route path="/plans" element={<Authenticated><Plans /></Authenticated>} />
                 <Route path="/events" element={<Authenticated><Events /></Authenticated>} />
                 <Route path="/events/:id" element={<Authenticated><EventDetails /></Authenticated>} />

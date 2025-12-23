@@ -40,7 +40,7 @@ export default function OriginalNavbar() {
   const moreLinks = [
     { path: '/account', label: 'Account', icon: Settings },
     { path: '/plans', label: 'Plans', icon: DollarSign },
-    { path: '/community', label: 'Community', icon: Users },
+    { path: '/community', label: 'Blog', icon: Users },
     { path: '/events', label: 'Events', icon: Calendar },
     { path: '/help', label: 'Help', icon: HelpCircle },
     { path: '/about', label: 'About', icon: Info },

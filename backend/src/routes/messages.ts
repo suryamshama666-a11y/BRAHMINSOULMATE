@@ -8,6 +8,18 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// Helper function to get error message
+const getErrorMessage = (error: unknown): string => {
+  return error instanceof Error ? error.message : 'Unknown error';
+};
+
+// Conversation type
+interface Conversation {
+  profile: Record<string, unknown> | null;
+  lastMessage: Record<string, unknown> | null;
+  unreadCount: number;
+}
+
 // Send message
 router.post('/send', authMiddleware, async (req, res) => {
   try {
@@ -51,8 +63,8 @@ router.post('/send', authMiddleware, async (req, res) => {
     });
 
     res.json({ success: true, message: data });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch (error) {
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
 
@@ -81,8 +93,8 @@ router.get('/conversation/:userId', authMiddleware, async (req, res) => {
       .eq('read', false);
 
     res.json({ success: true, messages: data });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch (error) {
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
 
@@ -107,7 +119,7 @@ router.get('/conversations', authMiddleware, async (req, res) => {
       if (msg.receiver_id !== userId) partners.add(msg.receiver_id);
     });
 
-    const conversations: any[] = [];
+    const conversations: Conversation[] = [];
     for (const partnerId of partners) {
       // Get partner profile
       const { data: profile } = await supabase
@@ -141,14 +153,15 @@ router.get('/conversations', authMiddleware, async (req, res) => {
     }
 
     // Sort by last message time
-    conversations.sort((a, b) => 
-      new Date(b.lastMessage?.created_at || 0).getTime() - 
-      new Date(a.lastMessage?.created_at || 0).getTime()
-    );
+    conversations.sort((a, b) => {
+      const aTime = a.lastMessage?.created_at as string | undefined;
+      const bTime = b.lastMessage?.created_at as string | undefined;
+      return new Date(bTime || 0).getTime() - new Date(aTime || 0).getTime();
+    });
 
     res.json({ success: true, conversations });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch (error) {
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
 
@@ -167,8 +180,8 @@ router.post('/mark-read/:userId', authMiddleware, async (req, res) => {
 
     if (error) throw error;
     res.json({ success: true });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch (error) {
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
 
@@ -186,8 +199,8 @@ router.delete('/:messageId', authMiddleware, async (req, res) => {
 
     if (error) throw error;
     res.json({ success: true });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch (error) {
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
 

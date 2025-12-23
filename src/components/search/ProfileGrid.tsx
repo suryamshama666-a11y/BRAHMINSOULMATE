@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,9 @@ import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 // Custom ConnectIcon component for the pointing fingers
 const ConnectIcon = ({ className }: { className?: string }) => (
-  // ... svg code
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M7 11l5 5 5-5" />
+  </svg>
 );
 
 interface ProfileGridProps {

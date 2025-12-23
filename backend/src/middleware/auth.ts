@@ -1,7 +1,13 @@
-import { Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { supabase } from '../config/supabase';
+import { User } from '@supabase/supabase-js';
 
-export const authMiddleware = async (req: any, res: Response, next: NextFunction) => {
+// Extend Express Request type
+export interface AuthenticatedRequest extends Request {
+  user?: User;
+}
+
+export const authMiddleware = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
     

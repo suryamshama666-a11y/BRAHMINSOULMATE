@@ -21,6 +21,7 @@ export { vdatesService } from './vdates.service';
 export { successStoriesService } from './success-stories.service';
 export { forumService } from './forum.service';
 export { profileViewsService } from './profile-views.service';
+export { blogService } from './blog.service';
 
 // Re-export types
 export type { UserProfile } from '@/types';
@@ -38,3 +39,4 @@ export type { Event, EventRegistration } from './events.service';
 export type { VDate, VDateFeedback } from './vdates.service';
 export type { SuccessStory } from './success-stories.service';
 export type { ForumPost, ForumComment, ForumReport } from './forum.service';
+export type { BlogArticle, Announcement } from './blog.service';

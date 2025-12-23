@@ -31,7 +31,7 @@ const MobileMenu = ({ onClose }: MobileMenuProps) => {
     { path: '/account', label: 'Account', icon: Settings },
     { path: '/plans', label: 'Plans', icon: DollarSign },
     { path: '/astrological-services', label: 'Astrological Services', icon: Star },
-    { path: '/community', label: 'Community', icon: Users },
+    { path: '/community', label: 'Blog', icon: Users },
     { path: '/events', label: 'Events', icon: Calendar },
   ];
 

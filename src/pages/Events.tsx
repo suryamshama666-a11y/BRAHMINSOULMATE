@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Users, ArrowRight, Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, MapPin, Users, ArrowRight, Loader2, CalendarCheck, Clock } from 'lucide-react';
 import Footer from '@/components/Footer';
-import { eventsService, Event } from '@/services/api/events.service';
+import { eventsService, Event, EventRegistration } from '@/services/api/events.service';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Events() {
   const [events, setEvents] = useState<Event[]>([]);
+  const [myRegistrations, setMyRegistrations] = useState<EventRegistration[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingRegistrations, setLoadingRegistrations] = useState(false);
   const [registeringId, setRegisteringId] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -22,8 +26,9 @@ export default function Events() {
     try {
       const eventsData = await eventsService.getUpcomingEvents();
       setEvents(eventsData);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error loading events:', error);
+      // Fallback mock data
       setEvents([
         {
           id: '1',
@@ -64,6 +69,19 @@ export default function Events() {
     }
   };
 
+  const loadMyRegistrations = async () => {
+    setLoadingRegistrations(true);
+    try {
+      const registrations = await eventsService.getMyRegistrations();
+      setMyRegistrations(registrations);
+    } catch (error) {
+      console.error('Error loading registrations:', error);
+      setMyRegistrations([]);
+    } finally {
+      setLoadingRegistrations(false);
+    }
+  };
+
   const handleRegister = async (eventId: string) => {
     setRegisteringId(eventId);
     try {
@@ -73,10 +91,12 @@ export default function Events() {
         description: 'You have been registered for this event.'
       });
       await loadEvents();
-    } catch (error: any) {
+      await loadMyRegistrations();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to register';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to register',
+        description: message,
         variant: 'destructive'
       });
     } finally {
@@ -93,10 +113,12 @@ export default function Events() {
         description: 'Your registration has been cancelled.'
       });
       await loadEvents();
-    } catch (error: any) {
+      await loadMyRegistrations();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to cancel registration';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to cancel registration',
+        description: message,
         variant: 'destructive'
       });
     } finally {
@@ -122,112 +144,203 @@ export default function Events() {
     });
   };
 
+  const isEventFull = (event: Event) => (event.participant_count || 0) >= event.capacity;
+  const isVirtual = (location: string) => location.toLowerCase().includes('online') || location.toLowerCase().includes('virtual');
+
+  const EventCard = ({ event, showActions = true }: { event: Event; showActions?: boolean }) => (
+    <Card className="hover:shadow-lg transition-shadow flex flex-col h-full">
+      <CardHeader>
+        <div className="flex items-center justify-between mb-2">
+          <Badge variant={isVirtual(event.location) ? "secondary" : "outline"}>
+            {isVirtual(event.location) ? 'Virtual' : 'In-Person'}
+          </Badge>
+          <div className="flex items-center text-gray-500">
+            <Users className="h-4 w-4 mr-1" />
+            <span className="text-sm">{event.participant_count || 0}/{event.capacity}</span>
+          </div>
+        </div>
+        <CardTitle className="text-xl font-serif">{event.title}</CardTitle>
+      </CardHeader>
+      <CardContent className="flex-1 flex flex-col">
+        <div className="space-y-3 flex-1">
+          <div className="flex items-start">
+            <Calendar className="h-5 w-5 text-red-600 mr-2 mt-0.5" />
+            <div>
+              <p className="font-medium">{formatDate(event.event_date)}</p>
+              <p className="text-sm text-gray-500">{formatTime(event.event_date)}</p>
+            </div>
+          </div>
+          <div className="flex items-start">
+            <MapPin className="h-5 w-5 text-red-600 mr-2 mt-0.5" />
+            <p>{event.location}</p>
+          </div>
+          <p className="text-gray-600 pt-2 line-clamp-3">{event.description}</p>
+        </div>
+        {showActions && (
+          <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
+            {event.is_registered ? (
+              <Button 
+                variant="outline"
+                onClick={() => handleCancelRegistration(event.id)}
+                disabled={registeringId === event.id}
+              >
+                {registeringId === event.id && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Cancel Registration
+              </Button>
+            ) : (
+              <Button 
+                onClick={() => handleRegister(event.id)}
+                disabled={registeringId === event.id || isEventFull(event)}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {registeringId === event.id && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                {isEventFull(event) ? 'Event Full' : 'Register'}
+              </Button>
+            )}
+            <Link 
+              to={`/events/${event.id}`}
+              className="flex items-center text-red-600 hover:text-red-700 transition-colors"
+            >
+              View Details
+              <ArrowRight className="h-4 w-4 ml-1" />
+            </Link>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-grow container mx-auto px-4 py-12">
         <div className="text-center mb-12">
-          <h1 
-            className="text-4xl font-serif mb-4"
-            style={{ color: '#E30613' }}
-          >
-            Upcoming Events
+          <h1 className="text-4xl font-serif mb-4 bg-gradient-to-r from-red-600 to-amber-600 bg-clip-text text-transparent">
+            Matrimonial Events
           </h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
             Join our exclusive matrimonial events to meet potential matches and their families
           </p>
         </div>
 
-        {loading ? (
-          <div className="flex justify-center items-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-[#E30613]" />
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {events.map((event) => (
-              <Card key={event.id} className="hover:shadow-lg transition-shadow flex flex-col h-full">
-                <CardHeader>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="px-3 py-1 bg-[#FFF1E6] text-[#FF4500] rounded-full text-sm">
-                      {event.location.includes('Online') ? 'Virtual' : 'In-Person'}
-                    </span>
-                    <div className="flex items-center text-gray-500">
-                      <Users className="h-4 w-4 mr-1" />
-                      <span className="text-sm">{event.participant_count || 0}/{event.capacity}</span>
-                    </div>
-                  </div>
-                  <CardTitle className="text-xl font-serif">{event.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col">
-                  <div className="space-y-3 flex-1">
-                    <div className="flex items-start">
-                      <Calendar className="h-5 w-5 text-[#FF4500] mr-2 mt-0.5" />
-                      <div>
-                        <p className="font-medium">{formatDate(event.event_date)}</p>
-                        <p className="text-sm text-gray-500">{formatTime(event.event_date)}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start">
-                      <MapPin className="h-5 w-5 text-[#FF4500] mr-2 mt-0.5" />
-                      <p>{event.location}</p>
-                    </div>
-                    <p className="text-gray-600 pt-2">{event.description}</p>
-                  </div>
-                  <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
-                    {event.is_registered ? (
-                      <Button 
-                        variant="outline"
-                        onClick={() => handleCancelRegistration(event.id)}
-                        disabled={registeringId === event.id}
-                      >
-                        {registeringId === event.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        ) : null}
-                        Cancel Registration
-                      </Button>
-                    ) : (
-                      <Button 
-                        onClick={() => handleRegister(event.id)}
-                        disabled={registeringId === event.id || (event.participant_count || 0) >= event.capacity}
-                        style={{ backgroundColor: '#E30613', color: 'white' }}
-                      >
-                        {registeringId === event.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        ) : null}
-                        {(event.participant_count || 0) >= event.capacity ? 'Event Full' : 'Register'}
-                      </Button>
-                    )}
-                    <Link 
-                      to={`/events/${event.id}`}
-                      className="flex items-center text-[#FF4500] hover:text-[#FF4500]/80 transition-colors"
-                    >
-                      View Details
-                      <ArrowRight className="h-4 w-4 ml-1" />
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+        <Tabs defaultValue="upcoming" className="space-y-6" onValueChange={(v) => v === 'registered' && loadMyRegistrations()}>
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 bg-orange-50 border border-orange-200">
+            <TabsTrigger value="upcoming" className="data-[state=active]:bg-red-800 data-[state=active]:text-white">
+              <Calendar className="h-4 w-4 mr-2" />
+              Upcoming Events
+            </TabsTrigger>
+            <TabsTrigger value="registered" className="data-[state=active]:bg-red-800 data-[state=active]:text-white">
+              <CalendarCheck className="h-4 w-4 mr-2" />
+              My Registrations
+            </TabsTrigger>
+          </TabsList>
 
-        <div className="mt-16 bg-[#FFF1E6] rounded-xl p-8 text-center">
-          <h2 
-            className="text-2xl font-serif mb-4"
-            style={{ color: '#E30613' }}
-          >
+          <TabsContent value="upcoming">
+            {loading ? (
+              <div className="flex justify-center items-center py-16">
+                <Loader2 className="h-8 w-8 animate-spin text-red-600" />
+              </div>
+            ) : events.length === 0 ? (
+              <div className="text-center py-16">
+                <Calendar className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                <h3 className="text-xl font-semibold text-gray-600 mb-2">No Upcoming Events</h3>
+                <p className="text-gray-500">Check back soon for new matrimonial events!</p>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {events.map((event) => (
+                  <EventCard key={event.id} event={event} />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="registered">
+            {loadingRegistrations ? (
+              <div className="flex justify-center items-center py-16">
+                <Loader2 className="h-8 w-8 animate-spin text-red-600" />
+              </div>
+            ) : myRegistrations.length === 0 ? (
+              <div className="text-center py-16">
+                <CalendarCheck className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                <h3 className="text-xl font-semibold text-gray-600 mb-2">No Registrations Yet</h3>
+                <p className="text-gray-500 mb-4">You haven't registered for any events yet.</p>
+                <Button 
+                  variant="outline"
+                  onClick={() => document.querySelector('[data-state="inactive"]')?.dispatchEvent(new MouseEvent('click'))}
+                >
+                  Browse Events
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {myRegistrations.map((registration) => (
+                  registration.event && (
+                    <Card key={registration.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-6">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant={isVirtual(registration.event.location) ? "secondary" : "outline"}>
+                                {isVirtual(registration.event.location) ? 'Virtual' : 'In-Person'}
+                              </Badge>
+                              <Badge variant="default" className="bg-green-600">Registered</Badge>
+                            </div>
+                            <h3 className="text-lg font-semibold mb-2">{registration.event.title}</h3>
+                            <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-4 w-4" />
+                                {formatDate(registration.event.event_date)}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-4 w-4" />
+                                {formatTime(registration.event.event_date)}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <MapPin className="h-4 w-4" />
+                                {registration.event.location}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleCancelRegistration(registration.event!.id)}
+                              disabled={registeringId === registration.event.id}
+                            >
+                              {registeringId === registration.event.id && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                              Cancel
+                            </Button>
+                            <Link to={`/events/${registration.event.id}`}>
+                              <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white">
+                                View Details
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+
+        <div className="mt-16 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-8 text-center border border-orange-200">
+          <h2 className="text-2xl font-serif mb-4 text-red-800">
             Want to Host a Matrimonial Event?
           </h2>
           <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
             If you're interested in organizing a matrimonial event in your city, we can help you reach the right audience
             and manage the event successfully.
           </p>
-          <button
+          <Button
             onClick={() => window.location.href = '/help'}
-            className="px-8 py-3 rounded-lg hover:bg-[#E30613]/90 transition-colors"
-            style={{ backgroundColor: '#E30613', color: 'white' }}
+            className="bg-red-600 hover:bg-red-700 text-white px-8"
           >
             Contact Us to Host
-          </button>
+          </Button>
         </div>
       </main>
       

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import ProfileCard from '@/components/ProfileCard';
-import { Search as SearchIcon, Filter, Loader2, ChevronDown, ChevronUp, Save, MapPin, Briefcase, GraduationCap, Heart, Star, Users, X, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Search as SearchIcon, Filter, Loader2, ChevronDown, ChevronUp, Save, MapPin, Briefcase, Heart, Star, Users, X, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,6 +19,30 @@ import { useQuery } from '@tanstack/react-query';
 import { interestsService } from '@/services/api';
 import { Pagination } from '@/components/ui/pagination';
 
+// Type definitions
+interface SearchProfile {
+  id: string;
+  name: string;
+  age: number;
+  gender: string;
+  height: number;
+  location: string;
+  education: string;
+  profession: string;
+  religion: string;
+  caste: string;
+  gotra: string;
+  subscription_type: string;
+  profile_picture: string;
+}
+
+interface FilterSectionProps {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  open: boolean;
+  setOpen: (val: boolean) => void;
+  children: React.ReactNode;
+}
 
 const COUNTRIES = [
   { value: 'india', label: 'India' },
@@ -124,7 +148,7 @@ const RASHIS = [
 export default function Search() {
   const { profile } = useAuth();
   const navigate = useNavigate();
-  const [profiles, setProfiles] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<SearchProfile[]>([]);
   const [loading, setLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
   const [total, setTotal] = useState(0);
@@ -132,13 +156,16 @@ export default function Search() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(9);
   
-  const itemsPerPageOptions = showFilters ? [8, 16, 24] : [9, 15, 18];
+  const itemsPerPageOptions = useMemo(() => 
+    showFilters ? [8, 16, 24] : [9, 15, 18], 
+    [showFilters]
+  );
 
   useEffect(() => {
     if (!itemsPerPageOptions.includes(itemsPerPage)) {
       setItemsPerPage(itemsPerPageOptions[0]);
     }
-  }, [showFilters]);
+  }, [itemsPerPage, itemsPerPageOptions]);
   
   const [basicOpen, setBasicOpen] = useState(true);
   const [locationOpen, setLocationOpen] = useState(false);
@@ -212,27 +239,27 @@ export default function Search() {
   const userGender = profile?.gender || 'male';
   const oppositeGender = userGender === 'male' ? 'female' : 'male';
 
-  const mockProfiles = [
+  const mockProfiles: SearchProfile[] = useMemo(() => [
     { id: '1', name: oppositeGender === 'female' ? 'Priya Sharma' : 'Raj Sharma', age: 26, gender: oppositeGender, height: 165, location: 'Mumbai, Maharashtra', education: 'MBA', profession: 'Software Engineer', religion: 'Hindu', caste: 'Brahmin', gotra: 'Bharadwaja', subscription_type: 'premium', profile_picture: 'https://randomuser.me/api/portraits/women/1.jpg' },
     { id: '2', name: oppositeGender === 'female' ? 'Anjali Patel' : 'Arjun Patel', age: 28, gender: oppositeGender, height: 162, location: 'Bangalore, Karnataka', education: 'M.Tech', profession: 'Data Scientist', religion: 'Hindu', caste: 'Brahmin', gotra: 'Kashyapa', subscription_type: 'premium', profile_picture: 'https://randomuser.me/api/portraits/women/2.jpg' },
     { id: '3', name: oppositeGender === 'female' ? 'Kavya Iyer' : 'Karthik Iyer', age: 25, gender: oppositeGender, height: 160, location: 'Chennai, Tamil Nadu', education: 'CA', profession: 'Chartered Accountant', religion: 'Hindu', caste: 'Brahmin', gotra: 'Atri', subscription_type: 'free', profile_picture: `https://randomuser.me/api/portraits/${oppositeGender === 'female' ? 'women' : 'men'}/3.jpg` },
     { id: '4', name: oppositeGender === 'female' ? 'Rohini Gupta' : 'Rohit Gupta', age: 30, gender: oppositeGender, height: 175, location: 'Delhi, NCR', education: 'MBA', profession: 'Marketing Manager', religion: 'Hindu', caste: 'Brahmin', gotra: 'Vasishtha', subscription_type: 'premium', profile_picture: `https://randomuser.me/api/portraits/${oppositeGender === 'female' ? 'women' : 'men'}/4.jpg` },
     { id: '5', name: oppositeGender === 'female' ? 'Vidya Singh' : 'Vikram Singh', age: 29, gender: oppositeGender, height: 178, location: 'Jaipur, Rajasthan', education: 'B.Tech', profession: 'Software Developer', religion: 'Hindu', caste: 'Brahmin', gotra: 'Gautama', subscription_type: 'premium', profile_picture: `https://randomuser.me/api/portraits/${oppositeGender === 'female' ? 'women' : 'men'}/5.jpg` },
     { id: '6', name: oppositeGender === 'female' ? 'Deepika Nair' : 'Deepak Nair', age: 27, gender: oppositeGender, height: 164, location: 'Kochi, Kerala', education: 'MBBS', profession: 'Doctor', religion: 'Hindu', caste: 'Brahmin', gotra: 'Jamadagni', subscription_type: 'premium', profile_picture: `https://randomuser.me/api/portraits/${oppositeGender === 'female' ? 'women' : 'men'}/6.jpg` },
-  ];
+  ], [oppositeGender]);
 
-  useEffect(() => {
-    loadProfiles();
-  }, []);
-
-  const loadProfiles = () => {
+  const loadProfiles = useCallback(() => {
     setLoading(true);
     setTimeout(() => {
       setProfiles(mockProfiles);
       setTotal(mockProfiles.length);
       setLoading(false);
     }, 500);
-  };
+  }, [mockProfiles]);
+
+  useEffect(() => {
+    loadProfiles();
+  }, [loadProfiles]);
 
   const searchProfiles = () => {
     setLoading(true);
@@ -298,7 +325,7 @@ export default function Search() {
   const filteredOccupations = OCCUPATIONS.filter(o => o.label.toLowerCase().includes(occupationSearch.toLowerCase()));
   const currentIncomeRanges = INCOME_RANGES[incomeCurrency as keyof typeof INCOME_RANGES] || INCOME_RANGES.INR;
 
-  const FilterSection = ({ title, icon: Icon, open, setOpen, children }: { title: string; icon: any; open: boolean; setOpen: (val: boolean) => void; children: React.ReactNode }) => (
+  const FilterSection = ({ title, icon: Icon, open, setOpen, children }: FilterSectionProps) => (
     <Collapsible open={open} onOpenChange={setOpen}>
       <CollapsibleTrigger className="flex items-center justify-between w-full py-2 text-left font-medium text-gray-700 hover:text-[#FF4500]">
         <span className="flex items-center gap-2">

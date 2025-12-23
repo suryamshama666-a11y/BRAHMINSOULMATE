@@ -8,6 +8,11 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// Helper function to get error message
+const getErrorMessage = (error: unknown): string => {
+  return error instanceof Error ? error.message : 'Unknown error';
+};
+
 // Track profile view
 router.post('/', authMiddleware, async (req, res) => {
   try {
@@ -51,9 +56,9 @@ router.post('/', authMiddleware, async (req, res) => {
     if (error) throw error;
 
     res.json({ success: true, view: data });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error tracking profile view:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
 
@@ -109,9 +114,9 @@ router.get('/who-viewed-me', authMiddleware, async (req, res) => {
     if (error) throw error;
 
     res.json({ success: true, views: data || [] });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching profile viewers:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
 
@@ -167,9 +172,9 @@ router.get('/i-viewed', authMiddleware, async (req, res) => {
     if (error) throw error;
 
     res.json({ success: true, views: data || [] });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching viewed profiles:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
 
@@ -186,9 +191,9 @@ router.get('/count', authMiddleware, async (req, res) => {
     if (error) throw error;
 
     res.json({ success: true, count: count || 0 });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching view count:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
 

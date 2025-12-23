@@ -8,13 +8,27 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// Profile type for matching
+interface MatchProfile {
+  id: string;
+  age?: number;
+  height?: number;
+  city?: string;
+  state?: string;
+  country?: string;
+  education_level?: number;
+  gotra?: string;
+  rashi?: string;
+  gender?: string;
+}
+
 // Calculate compatibility score
-function calculateCompatibility(profile1: any, profile2: any): number {
+function calculateCompatibility(profile1: MatchProfile, profile2: MatchProfile): number {
   let score = 0;
   let factors = 0;
 
   // Age compatibility (25 points)
-  const ageDiff = Math.abs(profile1.age - profile2.age);
+  const ageDiff = Math.abs((profile1.age || 0) - (profile2.age || 0));
   if (ageDiff <= 2) score += 25;
   else if (ageDiff <= 5) score += 20;
   else if (ageDiff <= 10) score += 15;
@@ -22,7 +36,7 @@ function calculateCompatibility(profile1: any, profile2: any): number {
   factors++;
 
   // Height compatibility (15 points)
-  const heightDiff = Math.abs(profile1.height - profile2.height);
+  const heightDiff = Math.abs((profile1.height || 0) - (profile2.height || 0));
   if (heightDiff <= 5) score += 15;
   else if (heightDiff <= 10) score += 10;
   else score += 5;
@@ -36,7 +50,7 @@ function calculateCompatibility(profile1: any, profile2: any): number {
 
   // Education compatibility (15 points)
   if (profile1.education_level === profile2.education_level) score += 15;
-  else if (Math.abs(profile1.education_level - profile2.education_level) <= 1) score += 10;
+  else if (Math.abs((profile1.education_level || 0) - (profile2.education_level || 0)) <= 1) score += 10;
   factors++;
 
   // Gotra compatibility (10 points) - different gotra preferred
@@ -98,7 +112,7 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
 
     // Apply preference filters
     if (userProfile.preferences) {
-      const prefs = userProfile.preferences as any;
+      const prefs = userProfile.preferences as { ageMin?: number; ageMax?: number; heightMin?: number; heightMax?: number };
       if (prefs.ageMin) query = query.gte('age', prefs.ageMin);
       if (prefs.ageMax) query = query.lte('age', prefs.ageMax);
       if (prefs.heightMin) query = query.gte('height', prefs.heightMin);
@@ -111,7 +125,7 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
     // Calculate compatibility scores
     const matchesWithScores = profiles.map(profile => ({
       ...profile,
-      compatibility_score: calculateCompatibility(userProfile, profile)
+      compatibility_score: calculateCompatibility(userProfile as MatchProfile, profile as MatchProfile)
     }));
 
     // Sort by compatibility and limit
@@ -120,8 +134,9 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
       .slice(0, limit);
 
     res.json({ success: true, matches: topMatches });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ success: false, error: message });
   }
 });
 
@@ -168,8 +183,9 @@ router.post('/interest/send', authMiddleware, async (req, res) => {
     });
 
     res.json({ success: true, interest: data });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ success: false, error: message });
   }
 });
 
@@ -189,8 +205,9 @@ router.get('/interests/sent', authMiddleware, async (req, res) => {
 
     if (error) throw error;
     res.json({ success: true, interests: data });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ success: false, error: message });
   }
 });
 
@@ -211,8 +228,9 @@ router.get('/interests/received', authMiddleware, async (req, res) => {
 
     if (error) throw error;
     res.json({ success: true, interests: data });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ success: false, error: message });
   }
 });
 
@@ -262,8 +280,9 @@ router.post('/interest/:id/respond', authMiddleware, async (req, res) => {
     }
 
     res.json({ success: true });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ success: false, error: message });
   }
 });
 

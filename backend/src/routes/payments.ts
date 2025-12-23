@@ -26,6 +26,10 @@ router.post('/create-order', authMiddleware, asyncHandler(async (req, res) => {
   const { plan_id, currency } = req.body;
   const userId = req.user?.id;
 
+  if (!userId) {
+    return res.status(401).json({ success: false, error: 'User not authenticated' });
+  }
+
   if (!PLANS[plan_id]) {
     return res.status(400).json({ success: false, error: 'Invalid plan' });
   }
@@ -39,7 +43,7 @@ router.post('/create-order', authMiddleware, asyncHandler(async (req, res) => {
     notes: {
       userId,
       plan: plan_id,
-      duration: planDetails.duration
+      duration: planDetails.duration.toString()
     }
   });
 

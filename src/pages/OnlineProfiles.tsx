@@ -153,7 +153,7 @@ const OnlineProfiles = () => {
                           id="online" 
                           checked={filterOnline} 
                           onCheckedChange={(checked) => setFilterOnline(!!checked)}
-                          className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                          className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 [&_svg]:text-white"
                         />
                       </div>
                       

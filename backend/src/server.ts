@@ -33,6 +33,9 @@ import profileViewsRoutes from './routes/profile-views';
 import { errorHandler } from './middleware/errorHandler';
 import { authMiddleware } from './middleware/auth';
 
+// Import services
+import { cronService } from './services/cron.service';
+
 import type { Request, Response } from 'express';
 
 const app = express();
@@ -147,22 +150,28 @@ app.use('*', (_req: Request, res: Response) => {
 // Error handling middleware
 app.use(errorHandler);
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  process.exit(0);
-});
-
-process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully');
-  process.exit(0);
-});
-
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  
+  // Start cron jobs
+  cronService.start();
 });
+
+// Graceful shutdown - stop cron jobs
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  cronService.stop();
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully');
+  cronService.stop();
+  process.exit(0);
+});
+
 
 export default app;

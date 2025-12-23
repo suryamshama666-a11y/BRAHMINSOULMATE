@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import { authMiddleware } from '../middleware/auth';
 
@@ -9,7 +9,7 @@ const supabase = createClient(
 );
 
 // Admin middleware
-const adminMiddleware = async (req: any, res: any, next: any) => {
+const adminMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user?.id;
     const { data } = await supabase
@@ -28,7 +28,7 @@ const adminMiddleware = async (req: any, res: any, next: any) => {
 };
 
 // Get dashboard stats
-router.get('/stats', authMiddleware, adminMiddleware, async (req, res) => {
+router.get('/stats', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   try {
     const { count: totalUsers } = await supabase
       .from('profiles')
@@ -48,13 +48,14 @@ router.get('/stats', authMiddleware, adminMiddleware, async (req, res) => {
       success: true,
       stats: { totalUsers, activeSubscriptions, pendingVerifications }
     });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ success: false, error: message });
   }
 });
 
 // Verify profile
-router.post('/verify/:userId', authMiddleware, adminMiddleware, async (req, res) => {
+router.post('/verify/:userId', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     const { status } = req.body;
@@ -66,8 +67,9 @@ router.post('/verify/:userId', authMiddleware, adminMiddleware, async (req, res)
 
     if (error) throw error;
     res.json({ success: true });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ success: false, error: message });
   }
 });
 

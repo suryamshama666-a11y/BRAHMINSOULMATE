@@ -2,12 +2,18 @@ import express from 'express';
 import { createClient } from '@supabase/supabase-js';
 import { RtcTokenBuilder, RtcRole } from 'agora-access-token';
 import { authMiddleware } from '../middleware/auth';
+import { cronService } from '../services/cron.service';
 
 const router = express.Router();
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+// Helper function to get error message
+const getErrorMessage = (error: unknown): string => {
+  return error instanceof Error ? error.message : 'Unknown error';
+};
 
 // Schedule V-Date
 router.post('/schedule', authMiddleware, async (req, res) => {
@@ -40,8 +46,8 @@ router.post('/schedule', authMiddleware, async (req, res) => {
     });
 
     res.json({ success: true, vdate: data });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch (error) {
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
 
@@ -49,7 +55,6 @@ router.post('/schedule', authMiddleware, async (req, res) => {
 router.get('/:id/token', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user?.id;
 
     const appId = process.env.VITE_AGORA_APP_ID!;
     const appCertificate = process.env.AGORA_APP_CERTIFICATE!;
@@ -70,8 +75,152 @@ router.get('/:id/token', authMiddleware, async (req, res) => {
     );
 
     res.json({ success: true, token, channelName });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+  } catch (error) {
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
+  }
+});
+
+// Process reminders manually (admin/testing endpoint)
+router.post('/process-reminders', authMiddleware, async (req, res) => {
+  try {
+    await cronService.processVDateReminders();
+    res.json({ success: true, message: 'Reminders processed' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
+  }
+});
+
+// Get user's V-Dates
+router.get('/my-vdates', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const { status } = req.query;
+
+    let query = supabase
+      .from('vdates')
+      .select(`
+        *,
+        user1:profiles!vdates_user_id_1_fkey(user_id, full_name, profile_photo_url),
+        user2:profiles!vdates_user_id_2_fkey(user_id, full_name, profile_photo_url)
+      `)
+      .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`)
+      .order('scheduled_time', { ascending: true });
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    res.json({ success: true, vdates: data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
+  }
+});
+
+// Reschedule a V-Date
+router.put('/:id/reschedule', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const { id } = req.params;
+    const { scheduledTime } = req.body;
+
+    // Get existing V-Date
+    const { data: existingVDate, error: fetchError } = await supabase
+      .from('vdates')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !existingVDate) {
+      return res.status(404).json({ success: false, error: 'V-Date not found' });
+    }
+
+    // Check authorization
+    if (existingVDate.user_id_1 !== userId && existingVDate.user_id_2 !== userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+
+    // Can only reschedule scheduled V-Dates
+    if (existingVDate.status !== 'scheduled') {
+      return res.status(400).json({ success: false, error: 'Can only reschedule scheduled V-Dates' });
+    }
+
+    // Update the V-Date
+    const { data, error } = await supabase
+      .from('vdates')
+      .update({ scheduled_time: scheduledTime })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Notify the other user
+    const otherUserId = existingVDate.user_id_1 === userId ? existingVDate.user_id_2 : existingVDate.user_id_1;
+    await supabase.from('notifications').insert({
+      user_id: otherUserId,
+      type: 'vdate',
+      title: 'V-Date Rescheduled',
+      content: `Your V-Date has been rescheduled to ${new Date(scheduledTime).toLocaleString()}`,
+      related_user_id: userId,
+      related_entity_id: id
+    });
+
+    res.json({ success: true, vdate: data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
+  }
+});
+
+// Cancel a V-Date
+router.put('/:id/cancel', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    // Get existing V-Date
+    const { data: existingVDate, error: fetchError } = await supabase
+      .from('vdates')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !existingVDate) {
+      return res.status(404).json({ success: false, error: 'V-Date not found' });
+    }
+
+    // Check authorization
+    if (existingVDate.user_id_1 !== userId && existingVDate.user_id_2 !== userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+
+    // Update status
+    const { data, error } = await supabase
+      .from('vdates')
+      .update({ status: 'cancelled' })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Notify the other user
+    const otherUserId = existingVDate.user_id_1 === userId ? existingVDate.user_id_2 : existingVDate.user_id_1;
+    await supabase.from('notifications').insert({
+      user_id: otherUserId,
+      type: 'vdate',
+      title: 'V-Date Cancelled',
+      content: `Your V-Date has been cancelled.${reason ? ` Reason: ${reason}` : ''}`,
+      related_user_id: userId,
+      related_entity_id: id
+    });
+
+    res.json({ success: true, vdate: data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
 

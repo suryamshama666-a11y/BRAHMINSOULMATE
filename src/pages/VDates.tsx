@@ -1,33 +1,47 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Video, Clock, Users, AlertCircle } from 'lucide-react';
+import { Calendar, Video, Clock, Users, AlertCircle, Star, X } from 'lucide-react';
 import Footer from '@/components/Footer';
 import { vdatesService, VDate } from '@/services/api/vdates.service';
-import { matchingService } from '@/services/api/matching.service';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
+import VideoCall from '@/components/vdates/VideoCall';
 
-
-interface Match {
+interface ConnectedUser {
   user_id: string;
   full_name: string;
-  profile_picture?: string;
+  profile_photo_url?: string;
 }
 
 export default function VDates() {
   const [activeSection, setActiveSection] = useState<'overview' | 'schedule' | 'upcoming' | 'history'>('overview');
   const [upcomingVDates, setUpcomingVDates] = useState<VDate[]>([]);
   const [pastVDates, setPastVDates] = useState<VDate[]>([]);
-  const [matches, setMatches] = useState<Match[]>([]);
+  const [connectedUsers, setConnectedUsers] = useState<ConnectedUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
 
   // Form state
-  const [selectedMatch, setSelectedMatch] = useState('');
+  const [selectedUser, setSelectedUser] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
   const [duration, setDuration] = useState(30);
+
+  // Video call state
+  const [activeCall, setActiveCall] = useState<{
+    vdate: VDate;
+    roomUrl: string;
+    roomName: string;
+  } | null>(null);
+
+  // Feedback modal state
+  const [feedbackModal, setFeedbackModal] = useState<{
+    vdate: VDate;
+    rating: number;
+    feedback: string;
+  } | null>(null);
 
   useEffect(() => {
     loadData();
@@ -39,16 +53,19 @@ export default function VDates() {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+      
+      // Get user profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      setCurrentUser({ ...user, profile });
 
-      // Load matches for scheduling
-      const matchesData = await matchingService.getMatches(user.id);
-      setMatches(matchesData
-        .filter(m => m.profile) // Only include matches with profile data
-        .map(m => ({
-          user_id: m.profile.user_id,
-          full_name: m.profile.full_name,
-          profile_picture: m.profile.profile_picture
-        })));
+      // Load connected users for scheduling
+      const connected = await vdatesService.getConnectedUsers();
+      setConnectedUsers(connected);
 
       // Load upcoming V-Dates
       const upcoming = await vdatesService.getUpcomingVDates();
@@ -57,8 +74,7 @@ export default function VDates() {
       // Load all V-Dates and filter past ones
       const allVDates = await vdatesService.getMyVDates();
       const past = allVDates.filter(v => 
-        v.status === 'completed' || v.status === 'missed' || 
-        (v.status === 'cancelled' && new Date(v.scheduled_time) < new Date())
+        v.status === 'completed' || v.status === 'missed' || v.status === 'cancelled'
       );
       setPastVDates(past);
     } catch (error: any) {
@@ -73,10 +89,10 @@ export default function VDates() {
   };
 
   const handleScheduleVDate = async () => {
-    if (!selectedMatch || !scheduledTime) {
+    if (!selectedUser || !scheduledTime) {
       toast({
         title: 'Missing Information',
-        description: 'Please select a match and date/time',
+        description: 'Please select a connection and date/time',
         variant: 'destructive'
       });
       return;
@@ -84,20 +100,20 @@ export default function VDates() {
 
     setSubmitting(true);
     try {
-      await vdatesService.scheduleVDate(selectedMatch, scheduledTime, duration);
+      await vdatesService.scheduleVDate(selectedUser, scheduledTime, duration);
       toast({
         title: 'Success',
-        description: 'V-Date scheduled successfully!'
+        description: 'V-Date scheduled successfully! Both of you will receive notifications.'
       });
       
       // Reset form
-      setSelectedMatch('');
+      setSelectedUser('');
       setScheduledTime('');
       setDuration(30);
       
-      // Reload data and go back to overview
+      // Reload data and go to upcoming
       await loadData();
-      setActiveSection('overview');
+      setActiveSection('upcoming');
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -111,18 +127,69 @@ export default function VDates() {
 
   const handleJoinVDate = async (vdate: VDate) => {
     try {
-      await vdatesService.startVDate(vdate.id);
-      const meetingUrl = vdatesService.generateMeetingUrl(vdate);
-      window.open(meetingUrl, '_blank');
+      const { roomUrl, roomName } = await vdatesService.joinVDate(vdate.id);
+      setActiveCall({ vdate, roomUrl, roomName });
       
       toast({
         title: 'Joining V-Date',
-        description: 'Opening video call in new window...'
+        description: 'Connecting to video call...'
       });
     } catch (error: any) {
       toast({
         title: 'Error',
         description: error.message || 'Failed to join V-Date',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleEndCall = async () => {
+    if (activeCall) {
+      try {
+        // Mark as completed
+        await vdatesService.completeVDate(activeCall.vdate.id);
+        
+        // Show feedback modal
+        setFeedbackModal({
+          vdate: activeCall.vdate,
+          rating: 0,
+          feedback: ''
+        });
+      } catch (error) {
+        console.error('Error completing V-Date:', error);
+      }
+    }
+    setActiveCall(null);
+    await loadData();
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!feedbackModal || feedbackModal.rating === 0) {
+      toast({
+        title: 'Please rate your experience',
+        description: 'Select a star rating before submitting',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      await vdatesService.submitFeedback(feedbackModal.vdate.id, {
+        rating: feedbackModal.rating,
+        feedback: feedbackModal.feedback
+      });
+      
+      toast({
+        title: 'Thank you!',
+        description: 'Your feedback has been submitted.'
+      });
+      
+      setFeedbackModal(null);
+      await loadData();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to submit feedback',
         variant: 'destructive'
       });
     }
@@ -148,13 +215,113 @@ export default function VDates() {
   };
 
   const getOtherUser = (vdate: VDate) => {
-    // Return the first available user profile
-    return vdate.user1 || vdate.user2;
+    if (!currentUser) return vdate.user1 || vdate.user2;
+    
+    if (vdate.user_id_1 === currentUser.id) {
+      return vdate.user2;
+    }
+    return vdate.user1;
   };
 
-  const handleButtonClick = (section: 'schedule' | 'upcoming' | 'history') => {
-    setActiveSection(section);
-  };
+  // If in active call, show video call component
+  if (activeCall) {
+    const otherUser = getOtherUser(activeCall.vdate);
+    return (
+      <div className="min-h-screen bg-gray-900 p-4">
+        <VideoCall
+          roomName={activeCall.roomName}
+          userName={currentUser?.profile?.full_name || 'User'}
+          otherUserName={otherUser?.full_name}
+          onEnd={handleEndCall}
+        />
+      </div>
+    );
+  }
+
+  // Feedback Modal
+  if (feedbackModal) {
+    const otherUser = getOtherUser(feedbackModal.vdate);
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Rate Your V-Date</span>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => setFeedbackModal(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-center">
+              <img 
+                src={otherUser?.profile_photo_url || '/placeholder.svg'} 
+                alt={otherUser?.full_name || 'User'} 
+                className="w-20 h-20 rounded-full mx-auto mb-2 object-cover"
+              />
+              <p className="font-medium">{otherUser?.full_name || 'Your Match'}</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2 text-center">
+                How was your experience?
+              </label>
+              <div className="flex justify-center gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    onClick={() => setFeedbackModal({ ...feedbackModal, rating: star })}
+                    className="p-1 transition-transform hover:scale-110"
+                  >
+                    <Star 
+                      className={`h-8 w-8 ${
+                        star <= feedbackModal.rating 
+                          ? 'fill-yellow-400 text-yellow-400' 
+                          : 'text-gray-300'
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Share your thoughts (optional)
+              </label>
+              <textarea
+                className="w-full p-3 border rounded-lg resize-none"
+                rows={3}
+                placeholder="How did the conversation go?"
+                value={feedbackModal.feedback}
+                onChange={(e) => setFeedbackModal({ ...feedbackModal, feedback: e.target.value })}
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Button 
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                onClick={handleSubmitFeedback}
+              >
+                Submit Feedback
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => setFeedbackModal(null)}
+              >
+                Skip
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
 
   const renderContent = () => {
     switch (activeSection) {
@@ -166,27 +333,29 @@ export default function VDates() {
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="text-center py-8">Loading matches...</div>
-              ) : matches.length === 0 ? (
+                <div className="text-center py-8">Loading connections...</div>
+              ) : connectedUsers.length === 0 ? (
                 <div className="text-center py-8">
                   <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-gray-600">No matches available to schedule V-Dates with.</p>
-                  <p className="text-sm text-gray-500 mt-2">Connect with users first to schedule V-Dates.</p>
+                  <p className="text-gray-600">No connections available to schedule V-Dates with.</p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Accept interests from other users to create connections first.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Select Match</label>
+                    <label className="block text-sm font-medium mb-2">Select Connection</label>
                     <select 
                       className="w-full p-2 border rounded-lg"
-                      value={selectedMatch}
-                      onChange={(e) => setSelectedMatch(e.target.value)}
+                      value={selectedUser}
+                      onChange={(e) => setSelectedUser(e.target.value)}
                       disabled={submitting}
                     >
                       <option value="">Select a connected user...</option>
-                      {matches.map((match) => (
-                        <option key={match.user_id} value={match.user_id}>
-                          {match.full_name}
+                      {connectedUsers.map((user) => (
+                        <option key={user.user_id} value={user.user_id}>
+                          {user.full_name}
                         </option>
                       ))}
                     </select>
@@ -198,9 +367,12 @@ export default function VDates() {
                       className="w-full p-2 border rounded-lg"
                       value={scheduledTime}
                       onChange={(e) => setScheduledTime(e.target.value)}
-                      min={new Date().toISOString().slice(0, 16)}
+                      min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)}
                       disabled={submitting}
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Must be at least 1 hour from now
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Duration</label>
@@ -219,7 +391,7 @@ export default function VDates() {
                     <Button 
                       className="flex-1 bg-red-600 hover:bg-red-700 text-white"
                       onClick={handleScheduleVDate}
-                      disabled={submitting || !selectedMatch || !scheduledTime}
+                      disabled={submitting || !selectedUser || !scheduledTime}
                     >
                       {submitting ? 'Scheduling...' : 'Schedule V-Date'}
                     </Button>
@@ -265,12 +437,13 @@ export default function VDates() {
                     const otherUser = getOtherUser(vdate);
                     const scheduledDate = new Date(vdate.scheduled_time);
                     const now = new Date();
-                    const canJoin = (scheduledDate.getTime() - now.getTime()) / (1000 * 60) <= 15;
+                    const minutesUntil = (scheduledDate.getTime() - now.getTime()) / (1000 * 60);
+                    const canJoin = minutesUntil <= 5 && minutesUntil > -vdate.duration;
 
                     return (
                       <div key={vdate.id} className="flex items-center gap-4 p-4 border rounded-lg hover:shadow-md transition-shadow">
                         <img 
-                          src={otherUser?.profile_picture || '/placeholder.svg'} 
+                          src={otherUser?.profile_photo_url || '/placeholder.svg'} 
                           alt={otherUser?.full_name || 'User'} 
                           className="w-12 h-12 rounded-full object-cover"
                         />
@@ -279,21 +452,25 @@ export default function VDates() {
                           <p className="text-sm text-gray-600">
                             {scheduledDate.toLocaleDateString()} at {scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {vdate.duration} min
                           </p>
-                          {!canJoin && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              Available to join 15 minutes before scheduled time
+                          {canJoin ? (
+                            <p className="text-xs text-green-600 mt-1 font-medium">
+                              Ready to join now!
                             </p>
-                          )}
+                          ) : minutesUntil > 0 ? (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Available to join 5 minutes before scheduled time
+                            </p>
+                          ) : null}
                         </div>
                         <div className="flex gap-2">
                           <Button 
                             size="sm" 
-                            className="bg-green-600 hover:bg-green-700 text-white"
+                            className={`text-white ${canJoin ? 'bg-green-600 hover:bg-green-700 animate-pulse' : 'bg-gray-400'}`}
                             onClick={() => handleJoinVDate(vdate)}
                             disabled={!canJoin}
                           >
                             <Video className="h-4 w-4 mr-2" />
-                            Join
+                            {canJoin ? 'Join Now' : 'Join'}
                           </Button>
                           <Button 
                             size="sm" 
@@ -337,13 +514,13 @@ export default function VDates() {
                     const scheduledDate = new Date(vdate.scheduled_time);
                     const rating = vdate.rating_1 || vdate.rating_2;
                     
-                    const statusColors = {
-                      completed: 'text-green-600',
-                      missed: 'text-red-600',
-                      cancelled: 'text-gray-600'
+                    const statusColors: Record<string, string> = {
+                      completed: 'text-green-600 bg-green-50',
+                      missed: 'text-red-600 bg-red-50',
+                      cancelled: 'text-gray-600 bg-gray-50'
                     };
 
-                    const statusLabels = {
+                    const statusLabels: Record<string, string> = {
                       completed: 'Completed',
                       missed: 'Missed',
                       cancelled: 'Cancelled'
@@ -352,7 +529,7 @@ export default function VDates() {
                     return (
                       <div key={vdate.id} className="flex items-center gap-4 p-4 border rounded-lg">
                         <img 
-                          src={otherUser?.profile_picture || '/placeholder.svg'} 
+                          src={otherUser?.profile_photo_url || '/placeholder.svg'} 
                           alt={otherUser?.full_name || 'User'} 
                           className="w-12 h-12 rounded-full object-cover"
                         />
@@ -364,13 +541,16 @@ export default function VDates() {
                           {rating && (
                             <div className="flex items-center gap-1 mt-1">
                               {[...Array(5)].map((_, i) => (
-                                <span key={i} className={i < rating ? "text-yellow-500" : "text-gray-300"}>★</span>
+                                <Star 
+                                  key={i} 
+                                  className={`h-4 w-4 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                                />
                               ))}
                             </div>
                           )}
                         </div>
-                        <span className={`text-sm font-medium ${statusColors[vdate.status as keyof typeof statusColors]}`}>
-                          {statusLabels[vdate.status as keyof typeof statusLabels] || vdate.status}
+                        <span className={`text-sm font-medium px-3 py-1 rounded-full ${statusColors[vdate.status] || ''}`}>
+                          {statusLabels[vdate.status] || vdate.status}
                         </span>
                       </div>
                     );
@@ -389,6 +569,7 @@ export default function VDates() {
     }
   };
 
+
   return (
     <>
       <div className="min-h-screen bg-gray-50 py-8 relative">
@@ -401,26 +582,24 @@ export default function VDates() {
               V-Dates
             </h1>
             <p className="text-gray-600">
-              Schedule virtual dates with your matches in a safe and comfortable environment.
+              Schedule virtual dates with your connections in a safe and comfortable environment.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card className="flex flex-col h-full">
               <CardHeader>
-                <CardTitle 
-                  className="flex items-center gap-2 text-black"
-                >
+                <CardTitle className="flex items-center gap-2 text-black">
                   <Calendar className="h-5 w-5" style={{ color: '#E30613' }} />
                   Schedule V-Date
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col h-full">
                 <p className="text-gray-600 mb-4 flex-grow">
-                  Schedule a virtual date with someone you're interested in.
+                  Schedule a virtual date with someone you're connected with.
                 </p>
                 <Button
-                  onClick={() => handleButtonClick('schedule')}
+                  onClick={() => setActiveSection('schedule')}
                   className="w-full transition-all duration-300 transform hover:scale-105 font-medium border-2"
                   style={{
                     backgroundColor: activeSection === 'schedule' ? '#E30613' : 'white',
@@ -435,19 +614,22 @@ export default function VDates() {
 
             <Card className="flex flex-col h-full">
               <CardHeader>
-                <CardTitle 
-                  className="flex items-center gap-2 text-black"
-                >
+                <CardTitle className="flex items-center gap-2 text-black">
                   <Clock className="h-5 w-5" style={{ color: '#E30613' }} />
                   Upcoming V-Dates
+                  {upcomingVDates.length > 0 && (
+                    <span className="ml-auto bg-red-100 text-red-600 text-xs px-2 py-1 rounded-full">
+                      {upcomingVDates.length}
+                    </span>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col h-full">
                 <p className="text-gray-600 mb-4 flex-grow">
-                  View and manage your scheduled virtual dates.
+                  View and join your scheduled virtual dates.
                 </p>
                 <Button
-                  onClick={() => handleButtonClick('upcoming')}
+                  onClick={() => setActiveSection('upcoming')}
                   className="w-full transition-all duration-300 transform hover:scale-105 font-medium border-2"
                   style={{
                     backgroundColor: activeSection === 'upcoming' ? '#E30613' : 'white',
@@ -462,9 +644,7 @@ export default function VDates() {
 
             <Card className="flex flex-col h-full">
               <CardHeader>
-                <CardTitle 
-                  className="flex items-center gap-2 text-black"
-                >
+                <CardTitle className="flex items-center gap-2 text-black">
                   <Video className="h-5 w-5" style={{ color: '#E30613' }} />
                   V-Date History
                 </CardTitle>
@@ -474,7 +654,7 @@ export default function VDates() {
                   Review your past virtual dating experiences.
                 </p>
                 <Button
-                  onClick={() => handleButtonClick('history')}
+                  onClick={() => setActiveSection('history')}
                   className="w-full transition-all duration-300 transform hover:scale-105 font-medium border-2"
                   style={{
                     backgroundColor: activeSection === 'history' ? '#E30613' : 'white',
@@ -501,33 +681,45 @@ export default function VDates() {
                     style={{ color: '#E30613' }}
                   >
                     <Users className="h-5 w-5" style={{ color: '#E30613' }} />
-                    V-Date Features
+                    How V-Dates Work
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="font-semibold mb-2" style={{ color: '#E30613' }}>Safe Environment</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="text-center">
+                      <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
+                        <span className="text-red-600 font-bold">1</span>
+                      </div>
+                      <h3 className="font-semibold mb-2">Schedule</h3>
                       <p className="text-gray-600 text-sm">
-                        All V-Dates are monitored and recorded for safety and security.
+                        Pick a connection and choose a convenient time for both of you.
                       </p>
                     </div>
-                    <div>
-                      <h3 className="font-semibold mb-2" style={{ color: '#E30613' }}>Flexible Scheduling</h3>
+                    <div className="text-center">
+                      <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
+                        <span className="text-red-600 font-bold">2</span>
+                      </div>
+                      <h3 className="font-semibold mb-2">Get Reminded</h3>
                       <p className="text-gray-600 text-sm">
-                        Schedule dates at your convenience with easy rescheduling options.
+                        Receive notifications 24 hours, 1 hour, and 15 minutes before.
                       </p>
                     </div>
-                    <div>
-                      <h3 className="font-semibold mb-2" style={{ color: '#E30613' }}>Quality Matching</h3>
+                    <div className="text-center">
+                      <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
+                        <span className="text-red-600 font-bold">3</span>
+                      </div>
+                      <h3 className="font-semibold mb-2">Join Call</h3>
                       <p className="text-gray-600 text-sm">
-                        Only connect with verified and compatible matches.
+                        Click "Join" when it's time - video call opens right in your browser.
                       </p>
                     </div>
-                    <div>
-                      <h3 className="font-semibold mb-2" style={{ color: '#E30613' }}>Privacy Protected</h3>
+                    <div className="text-center">
+                      <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
+                        <span className="text-red-600 font-bold">4</span>
+                      </div>
+                      <h3 className="font-semibold mb-2">Rate & Connect</h3>
                       <p className="text-gray-600 text-sm">
-                        Your personal information remains secure during all interactions.
+                        After the call, rate your experience and continue the conversation.
                       </p>
                     </div>
                   </div>

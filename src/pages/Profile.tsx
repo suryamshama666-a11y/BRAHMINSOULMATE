@@ -105,11 +105,11 @@ const ProfilePage = () => {
               <Button
                 variant="outline"
                 size="sm"
-                className="group hover:border-red-600"
+                className="group hover:border-red-600 hover:bg-red-600"
                 onClick={() => navigate(-1)}
               >
-                <ChevronLeft className="h-4 w-4 mr-1 group-hover:text-red-600" />
-                <span className="group-hover:text-red-600">Back</span>
+                <ChevronLeft className="h-4 w-4 mr-1 group-hover:text-white" />
+                <span className="group-hover:text-white">Back</span>
               </Button>
 
               <div className="flex items-center gap-2">

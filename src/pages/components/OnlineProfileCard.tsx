@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { 
   Heart, MessageCircle, Video, Phone, MapPin, Briefcase,
-  GraduationCap, Clock
+  GraduationCap
 } from 'lucide-react';
 import { Profile } from '@/data/profiles';
 
@@ -43,13 +43,6 @@ export const OnlineProfileCard = ({
             <div className="w-2 h-2 bg-white rounded-full mr-1 animate-pulse"></div>
             Online
           </Badge>
-        </div>
-
-        <div className="absolute top-4 right-4">
-          <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 flex items-center text-xs text-gray-600">
-            <Clock className="h-3 w-3 mr-1" />
-            Active now
-          </div>
         </div>
       </div>
 
