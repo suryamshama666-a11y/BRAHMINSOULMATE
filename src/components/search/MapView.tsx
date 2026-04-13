@@ -37,11 +37,11 @@ export const MapView: React.FC<MapViewProps> = ({
   };
 
   const getProfilesWithCoordinates = () => {
-    return profiles.filter(profile => 
-      profile.location && 
-      profile.location.coordinates &&
-      profile.location.coordinates.latitude &&
-      profile.location.coordinates.longitude
+    return profiles.filter(profile =>
+      profile.location &&
+      (profile.location as any).coordinates &&
+      (profile.location as any).coordinates.latitude &&
+      (profile.location as any).coordinates.longitude
     );
   };
 

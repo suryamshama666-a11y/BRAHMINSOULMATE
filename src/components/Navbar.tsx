@@ -42,8 +42,8 @@ export default function Navbar() {
     setMobileMenuOpen(false);
   };
 
-  const userDisplayName = isAuthenticated && (profile?.name || user?.email?.split('@')[0] || 'Member');
-  const userImageUrl = isAuthenticated && (profile?.profile_picture || '/placeholder.svg');
+  const userDisplayName = isAuthenticated ? (profile?.name || user?.email?.split('@')[0] || 'Member') : undefined;
+  const userImageUrl = isAuthenticated ? (profile?.profile_picture || '/placeholder.svg') : undefined;
   const userInitial = userDisplayName ? userDisplayName.charAt(0).toUpperCase() : 'U';
 
   const isPremium = profile?.subscription_type === 'premium';

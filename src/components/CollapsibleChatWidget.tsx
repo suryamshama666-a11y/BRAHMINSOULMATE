@@ -10,9 +10,11 @@ import { usePresence } from '@/hooks/usePresence';
 
 interface Conversation {
   id: string;
-  partner_id: string;
-  partner_name: string;
-  partner_avatar?: string;
+  partner_id?: string;
+  partner_profile?: {
+    name: string;
+    profile_image?: string;
+  };
   unread_count: number;
 }
 
@@ -64,7 +66,7 @@ export function CollapsibleChatWidget() {
             {selectedConversation ? (
               <ChatView
                 conversation={selectedConversation}
-                isOnline={isUserOnline(selectedConversation.partner_id)}
+                isOnline={isUserOnline(selectedConversation.partner_id || '')}
                 isMuted={isMuted}
                 onToggleMute={() => setIsMuted(!isMuted)}
                 onBack={() => setSelectedConversation(null)}
@@ -136,17 +138,17 @@ export function CollapsibleChatWidget() {
                                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-orange-50 transition-colors group"
                               >
                                 <div className="relative shrink-0">
-                                  <Avatar className="w-12 h-12 ring-2 ring-transparent group-hover:ring-orange-200 transition-all">
-                                    <AvatarImage src={conv.partner_avatar} />
-                                    <AvatarFallback><User /></AvatarFallback>
-                                  </Avatar>
-                                  {isUserOnline(conv.partner_id) && (
+                                   <Avatar className="w-12 h-12 ring-2 ring-transparent group-hover:ring-orange-200 transition-all">
+                                     <AvatarImage src={conv.partner_profile?.profile_image} />
+                                     <AvatarFallback><User /></AvatarFallback>
+                                   </Avatar>
+                                   {isUserOnline(conv.partner_id || '') && (
                                     <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full shadow-sm" />
                                   )}
                                 </div>
                                 <div className="flex-1 min-w-0 text-left">
                                   <div className="flex items-center justify-between mb-0.5">
-                                    <span className="font-semibold text-gray-900 truncate">{conv.partner_name}</span>
+                                     <span className="font-semibold text-gray-900 truncate">{conv.partner_profile?.name}</span>
                                     {conv.unread_count > 0 && (
                                       <span className="bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
                                         {conv.unread_count}
@@ -278,7 +280,7 @@ function ChatView({
         .from('messages')
         .insert({
           sender_id: user.id,
-          receiver_id: conversation.partner_id,
+          receiver_id: conversation.partner_id || '',
           content: msg,
           read: false
         });
@@ -308,13 +310,13 @@ function ChatView({
           </button>
           <div className="relative">
             <Avatar className="w-8 h-8 border border-white/20">
-              <AvatarImage src={conversation.partner_avatar} />
+              <AvatarImage src={conversation.partner_profile?.profile_image} />
               <AvatarFallback><User size={14} /></AvatarFallback>
             </Avatar>
             {isOnline && <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />}
           </div>
           <div className="flex flex-col">
-            <span className="font-semibold text-sm leading-tight">{conversation.partner_name}</span>
+            <span className="font-semibold text-sm leading-tight">{conversation.partner_profile?.name}</span>
             <span className="text-[10px] opacity-80">{isOnline ? 'Online' : 'Offline'}</span>
           </div>
         </div>

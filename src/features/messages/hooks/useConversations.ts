@@ -193,7 +193,7 @@ export function useConversations() {
 
       try {
         // Fetch accepted interest exchanges where user is sender or receiver
-        const { data: exchanges, error: exchangeError } = await supabase
+        const { data: exchanges, error: exchangeError } = await (supabase as any)
           .from('interest_exchanges')
           .select('*')
           .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
@@ -208,15 +208,15 @@ export function useConversations() {
 
         const { data: profiles, error: profileError } = await supabase
           .from('profiles')
-          .select('user_id, first_name, last_name, profile_picture_url')
+          .select('user_id, name, profile_picture')
           .in('user_id', contactIds);
 
         if (profileError) throw profileError;
 
         return (profiles || []).map(p => ({
           id: p.user_id,
-          name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown User',
-          profile_image: p.profile_picture_url || '',
+          name: p.name || 'Unknown User',
+          profile_image: p.profile_picture || '',
           status: 'offline' as const, // This will be enriched by presence hook
         }));
       } catch (err) {
@@ -256,7 +256,7 @@ export function useConversations() {
             .from('shortlists')
             .insert({
               user_id: user.id,
-              target_profile_id: partnerId
+              shortlist_user_id: partnerId
             });
           if (insertError) throw insertError;
           toast.success('Added to shortlist');

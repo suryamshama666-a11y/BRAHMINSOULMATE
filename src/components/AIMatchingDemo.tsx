@@ -23,7 +23,7 @@ interface AIMatchingDemoProps {
   onClose?: () => void;
 }
 
-const AIMatchingDemo: React.FC<AIMatchingDemoProps> = ({ _userId, onClose }) => {
+const AIMatchingDemo: React.FC<AIMatchingDemoProps> = ({ userId, onClose }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisComplete, setAnalysisComplete] = useState(false);

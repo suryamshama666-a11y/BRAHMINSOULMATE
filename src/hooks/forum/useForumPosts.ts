@@ -152,7 +152,7 @@ export const useForumPosts = () => {
       if (!user) throw new Error('User not authenticated');
 
       // Check if already liked
-      const { data: existingLike } = await supabase
+      const { data: existingLike } = await (supabase as any)
         .from('forum_likes')
         .select('id')
         .eq('post_id', postId)
@@ -161,7 +161,7 @@ export const useForumPosts = () => {
 
       if (existingLike) {
         // Unlike
-        await supabase
+        await (supabase as any)
           .from('forum_likes')
           .delete()
           .eq('post_id', postId)
@@ -177,7 +177,7 @@ export const useForumPosts = () => {
         }
       } else {
         // Like
-        await supabase
+        await (supabase as any)
           .from('forum_likes')
           .insert({ post_id: postId, user_id: user.id });
 

@@ -45,7 +45,7 @@ export const useForumPostActions = () => {
     }
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('forum_likes')
         .insert({ user_id: user.id, post_id: postId });
 
@@ -63,7 +63,7 @@ export const useForumPostActions = () => {
       if (error.code === '23505') {
         // Already liked, remove like
         try {
-          const { error: deleteError } = await supabase
+          const { error: deleteError } = await (supabase as any)
             .from('forum_likes')
             .delete()
             .eq('user_id', user.id)

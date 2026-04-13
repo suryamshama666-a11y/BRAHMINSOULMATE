@@ -70,7 +70,7 @@ export const MessageReactions: React.FC<MessageReactionsProps> = ({
           variant={reaction.hasUserReacted ? "secondary" : "outline"}
           size="sm"
           className="h-6 px-2 text-xs"
-          onClick={() => handleReactionClick(reaction.emoji, reaction.hasUserReacted)}
+          onClick={() => handleReactionClick(reaction.emoji, reaction.hasUserReacted || false)}
         >
           {reaction.emoji} {reaction.count}
         </Button>

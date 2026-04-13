@@ -102,7 +102,7 @@ export const EventCard: React.FC<EventCardProps> = ({
                     <Button
                       size="sm"
                       onClick={() => onJoin?.(event.id)}
-                      disabled={event.max_participants && event.current_participants >= event.max_participants}
+                      disabled={!!(event.max_participants && event.current_participants >= event.max_participants)}
                     >
                       {event.max_participants && event.current_participants >= event.max_participants
                         ? 'Full'

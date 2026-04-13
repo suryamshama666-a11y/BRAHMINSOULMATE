@@ -57,15 +57,15 @@ export const BillingPlans = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-medium">Current Plan: {profile.subscriptionStatus?.charAt(0).toUpperCase()}{profile.subscriptionStatus?.slice(1)}</h4>
+                <h4 className="font-medium">Current Plan: {profile.subscriptionStatus ? (profile.subscriptionStatus as string).charAt(0).toUpperCase() + (profile.subscriptionStatus as string).slice(1) : 'Free'}</h4>
                 {profile.subscriptionExpiryDate && (
                   <p className="text-sm text-gray-600">
                     Expires on: {new Date(profile.subscriptionExpiryDate).toLocaleDateString()}
                   </p>
                 )}
               </div>
-              <Badge variant={profile.subscriptionStatus === 'free' ? 'secondary' : 'default'}>
-                {profile.subscriptionStatus}
+              <Badge variant={(profile.subscriptionStatus as string) === 'free' ? 'secondary' : 'default'}>
+                {(profile.subscriptionStatus as string) || 'Free'}
               </Badge>
             </div>
           </CardContent>

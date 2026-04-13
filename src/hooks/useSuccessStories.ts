@@ -8,7 +8,10 @@ import { Database } from '@/types/supabase';
 type SuccessStoryRow = Database['public']['Tables']['success_stories']['Row'];
 type InsertSuccessStory = Database['public']['Tables']['success_stories']['Insert'];
 
-export interface SuccessStory extends SuccessStoryRow {}
+export interface SuccessStory extends SuccessStoryRow {
+  title?: string;
+  wedding_date?: string;
+}
 
 const fetchPublishedStories = async (): Promise<SuccessStory[]> => {
   const { data, error } = await supabase

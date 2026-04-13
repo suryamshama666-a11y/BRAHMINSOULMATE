@@ -77,7 +77,7 @@ export const ProfileCreationWizard = () => {
             onBack={handleBack}
             canGoBack={currentStep > 0}
             isLastStep={currentStep === steps.length - 1}
-            loading={loading}
+            loading={isLoading}
           />
         </CardContent>
       </Card>

@@ -55,11 +55,11 @@ const ProfileCardWrapper = ({ profile, ...props }: any) => {
 
 const ProfileGrid = ({
   profiles,
-  _onSendInterest,
-  _onShortlist,
-  _onMessage,
-  _onCompareToggle,
-  _selectedForComparison = []
+  onSendInterest,
+  onShortlist,
+  onMessage,
+  onCompareToggle,
+  selectedForComparison = []
 }: ProfileGridProps) => {
   const _navigate = useNavigate();
   const [_likedProfiles, _setLikedProfiles] = useState<string[]>([]);
@@ -94,19 +94,19 @@ const ProfileGrid = ({
             isVerified: profile.isVerified
           }}
           variant="default"
-          onAction={(action: string, profileId: string) => {
-            switch (action) {
-              case 'expressInterest':
-                handleConnect(profile.name, profileId);
-                break;
-              case 'message':
-                handleMessageClick(profileId, profile.name);
-                break;
-              case 'favorite':
-                handleFavorite(profileId, profile.name);
-                break;
-            }
-          }}
+            onAction={(action: string, profileId: string) => {
+              switch (action) {
+                case 'expressInterest':
+                  onSendInterest(profile.name, profileId);
+                  break;
+                case 'message':
+                  onMessage(profileId);
+                  break;
+                case 'favorite':
+                  onShortlist(profileId, profile.name);
+                  break;
+              }
+            }}
         />
       ))}
     </div>

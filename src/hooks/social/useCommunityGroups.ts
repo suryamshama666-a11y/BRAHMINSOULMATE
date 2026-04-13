@@ -63,7 +63,7 @@ export const useCommunityGroups = () => {
       if (error) throw error;
 
       // Auto-join creator to group
-      await supabase
+      await (supabase as any)
         .from('group_members')
         .insert({
           group_id: data.id,
@@ -88,7 +88,7 @@ export const useCommunityGroups = () => {
     }
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('group_members')
         .insert({
           group_id: groupId,
@@ -133,7 +133,7 @@ export const useCommunityGroups = () => {
     }
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('group_members')
         .delete()
         .eq('group_id', groupId)

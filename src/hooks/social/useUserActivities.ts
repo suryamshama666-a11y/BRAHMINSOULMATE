@@ -20,7 +20,7 @@ export const useUserActivities = () => {
   const fetchActivities = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('user_activities')
         .select('*')
         .order('created_at', { ascending: false })
@@ -55,7 +55,7 @@ export const useUserActivities = () => {
     if (!user) return { success: false };
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('user_activities')
         .insert({
           user_id: user.id,

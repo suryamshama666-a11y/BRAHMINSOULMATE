@@ -203,7 +203,7 @@ export default function OriginalNavbar() {
                     onClick={() => navigate('/profile')}
                   >
                     <Avatar className="h-8 w-8 border-2 border-[#FF4500]/20">
-                      <AvatarImage src={userImageUrl} alt={userDisplayName} />
+                      <AvatarImage src={userImageUrl as string} alt={userDisplayName as string} />
                       <AvatarFallback className="bg-[#FFF1E6] text-[#FF4500]">
                         {userInitial}
                       </AvatarFallback>

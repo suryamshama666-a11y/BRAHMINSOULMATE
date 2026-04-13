@@ -27,16 +27,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (profileError) {
         if (profileError.code === 'PGRST116') {
           const { data: { user: authUser } } = await supabase.auth.getUser();
-          const { data: newProfile, error: createError } = await supabase
+          const { data: newProfile, error: createError } = await (supabase as any)
             .from('profiles')
             .insert({
               user_id: userId,
               email: authUser?.email || '',
-              first_name: authUser?.user_metadata?.first_name || authUser?.email?.split('@')[0] || 'User',
-              last_name: authUser?.user_metadata?.last_name || '',
+              name: `${authUser?.user_metadata?.first_name || authUser?.email?.split('@')[0] || 'User'} ${authUser?.user_metadata?.last_name || ''}`.trim(),
               created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              profile_completion: 10
+              updated_at: new Date().toISOString()
             })
             .select()
             .single();
@@ -46,7 +44,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
         }
       } else if (profileData) {
-        setProfile(profileData as unknown as UserProfile);
+        setProfile(profileData as any);
       }
 
       const { data: subscriptionData, error: subError } = await supabase
@@ -133,14 +131,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (error) throw error;
 
     if (data.user) {
-      const { error: profileError } = await supabase.from('profiles').insert({
+      const { error: profileError } = await (supabase as any).from('profiles').insert({
         user_id: data.user.id,
         email: email,
-        first_name: options?.firstName || email.split('@')[0],
-        last_name: options?.lastName || '',
+        name: `${options?.firstName || email.split('@')[0]} ${options?.lastName || ''}`.trim(),
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        profile_completion: 10
+        updated_at: new Date().toISOString()
       });
 
       if (profileError) {
@@ -167,9 +163,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const updateProfile = async (profileData: Partial<UserProfile>) => {
     if (!user) return;
-    const { error } = await supabase
+    const updateData = { ...profileData, updated_at: new Date().toISOString() };
+    if (profileData.first_name || profileData.last_name) {
+      updateData.name = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim();
+      delete updateData.first_name;
+      delete updateData.last_name;
+    }
+    const { error } = await (supabase as any)
       .from('profiles')
-      .update({ ...profileData, updated_at: new Date().toISOString() })
+      .update(updateData)
       .eq('user_id', user.id);
 
     if (error) throw error;

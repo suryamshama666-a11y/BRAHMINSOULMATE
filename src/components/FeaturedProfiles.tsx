@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight } from 'lucide-react';
 import { api } from '@/lib/api';
+import { UserProfile } from '@/types';
 
 const FeaturedProfiles: React.FC = () => {
-  const [featuredProfiles, setFeaturedProfiles] = useState([]);
+  const [featuredProfiles, setFeaturedProfiles] = useState<UserProfile[]>([]);
   const [_loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,7 +47,7 @@ const FeaturedProfiles: React.FC = () => {
                 alt={profile.name}
                 className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
               />
-              {profile.isVerified && (
+              {(profile as any).isVerified && (
                 <Badge className="absolute top-3 right-3 bg-green-500 text-white border-0">
                   Verified
                 </Badge>
@@ -62,11 +63,11 @@ const FeaturedProfiles: React.FC = () => {
                         {profile.employment?.profession || 'Professional'}
                       </Badge>
                       <Badge variant="outline" className="text-xs bg-gray-100">
-                        {profile.location?.city || "Mumbai"}
+                        {(profile.location as any)?.city || "Mumbai"}
                       </Badge>
                   </div>
               <p className="text-sm text-gray-500 line-clamp-2 mb-3">
-                {profile.about}
+                {(profile as any).about}
               </p>
               <Link to={`/profile/${profile.id}`} className="w-full block">
                 <Button variant="maroon-outline" className="w-full text-brahmin-primary border-brahmin-primary/30 hover:bg-brahmin-primary/5">
