@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { getSupabase } from '@/lib/getSupabase';
+import { supabase } from '@/integrations/supabase/client';
 import { ForumPost } from './types';
 
 export const useForumPostFetch = (categoryId?: string, searchTerm?: string) => {
@@ -10,7 +10,7 @@ export const useForumPostFetch = (categoryId?: string, searchTerm?: string) => {
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      let query = getSupabase()
+      let query = supabase
         .from('forum_posts')
         .select('*')
         .order('created_at', { ascending: false });
@@ -42,6 +42,7 @@ export const useForumPostFetch = (categoryId?: string, searchTerm?: string) => {
 
   useEffect(() => {
     fetchPosts();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryId, searchTerm]);
 
   return {

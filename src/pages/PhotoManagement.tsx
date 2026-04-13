@@ -38,7 +38,7 @@ export default function PhotoManagement() {
     }
   ];
 
-  // Handle keyboard navigation
+  // effect:audited — Keyboard event listener for photo navigation
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       switch (event.key) {
@@ -56,6 +56,7 @@ export default function PhotoManagement() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   const goToPrevious = () => {
@@ -67,17 +68,17 @@ export default function PhotoManagement() {
   };
 
   const handleDelete = (photoId: string) => {
-    console.log('Deleting photo:', photoId);
+    logger.log('Deleting photo:', photoId);
     toast.success('Photo deleted successfully');
   };
 
   const handleUpload = (files: FileList) => {
-    console.log('Uploading photos:', files);
+    logger.log('Uploading photos:', files);
     toast.success('Photos uploaded successfully');
   };
 
   const handleSetProfilePicture = (photoId: string) => {
-    console.log('Setting profile picture:', photoId);
+    logger.log('Setting profile picture:', photoId);
     toast.success('Profile picture updated');
   };
 

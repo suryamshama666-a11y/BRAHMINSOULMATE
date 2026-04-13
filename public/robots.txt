@@ -1,14 +1,27 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
+# www.robotstxt.org/
+# Brahmin Soulmate Connect Robots File
 
 User-agent: *
 Allow: /
+Allow: /about
+Allow: /how-it-works
+Allow: /success-stories
+Allow: /register
+Allow: /login
+
+# Prevent indexing of private/user areas
+Disallow: /dashboard
+Disallow: /profile/*
+Disallow: /messages
+Disallow: /admin
+Disallow: /settings
+Disallow: /my-*
+Disallow: /v-dates
+Disallow: /interests-*
+Disallow: /connections/*
+
+# Host
+Host: https://brahminsoulmate.com
+
+# Sitemap
+Sitemap: https://brahminsoulmate.com/sitemap.xml

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getSupabase } from '@/lib/getSupabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
@@ -44,7 +44,7 @@ export const useProfile = (userId?: string) => {
       const targetId = userId || user?.id;
       if (!targetId) return null;
 
-      const { data, error } = await getSupabase()
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', targetId)
@@ -62,7 +62,7 @@ export const useProfile = (userId?: string) => {
       mutationFn: async (updates: Partial<Profile>) => {
         if (!user?.id) throw new Error('User not authenticated');
 
-        const { error } = await getSupabase()
+        const { error } = await supabase
           .from('profiles')
           .update(updates)
           .eq('user_id', user.id);
@@ -79,11 +79,11 @@ export const useProfile = (userId?: string) => {
       },
     });
 
-    const { mutateAsync: createProfile } = useMutation({
+    const { mutateAsync: _createProfile } = useMutation({
       mutationFn: async (newProfile: Omit<Profile, 'id' | 'user_id' | 'created_at' | 'last_active'>) => {
         if (!user?.id) throw new Error('User not authenticated');
 
-        const { error } = await getSupabase()
+        const { error } = await supabase
           .from('profiles')
           .insert({
             ...newProfile,
@@ -109,17 +109,17 @@ export const useProfile = (userId?: string) => {
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
 
-      const { error: uploadError } = await getSupabase().storage
+      const { error: uploadError } = await supabase.storage
         .from('profile-images')
         .upload(fileName, file);
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = getSupabase().storage
+      const { data: { publicUrl } } = supabase.storage
         .from('profile-images')
         .getPublicUrl(fileName);
 
-      const { error: updateError } = await getSupabase()
+      const { error: updateError } = await supabase
         .from('profiles')
         .update({
           images: [...(profile?.images || []), publicUrl],
@@ -144,7 +144,7 @@ export const useProfile = (userId?: string) => {
     mutationFn: async (imageUrl: string) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const { error } = await getSupabase()
+      const { error } = await supabase
         .from('profiles')
         .update({
           images: profile?.images.filter(url => url !== imageUrl),
@@ -167,7 +167,7 @@ export const useProfile = (userId?: string) => {
     mutationFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const { error } = await getSupabase()
+      const { error } = await supabase
         .from('profiles')
         .update({
           last_active: new Date().toISOString(),

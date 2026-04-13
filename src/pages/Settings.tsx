@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 const Settings = () => {
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
 
   const handleDeleteAccount = () => {
     toast.error('This feature is not yet implemented');

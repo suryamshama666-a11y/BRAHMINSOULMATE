@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Eye, Clock, Filter, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ProfileCard from '@/components/ProfileCard';
@@ -12,11 +12,32 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { ListFilters } from '@/components/ListFilters';
 import { Pagination } from '@/components/ui/pagination';
+import { ProfileCardSkeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
+
+interface ViewedProfile {
+  id: string;
+  name: string;
+  age: number;
+  gender: string;
+  height: number;
+  religion: string;
+  caste: string;
+  gotra: string;
+  location: string;
+  education: string;
+  profession: string;
+  subscription_type: string;
+  lastActive: string;
+  viewedAt: string;
+  avatarUrl?: string;
+  profile_picture?: string;
+}
 
 const YouViewed = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [viewedProfiles, setViewedProfiles] = useState([]);
+  const [viewedProfiles, setViewedProfiles] = useState<ViewedProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -171,7 +192,7 @@ const YouViewed = () => {
       
       setViewedProfiles([]);
       toast.success('Viewing history cleared');
-    } catch (error) {
+    } catch {
       toast.error('Failed to clear history');
     }
   };
@@ -201,16 +222,27 @@ const YouViewed = () => {
         toast.success(`${profileName} has been blocked`);
         break;
       default:
-        console.log('Unknown action:', action);
+        logger.log('Unknown action:', action);
     }
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-amber-50 to-red-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-600"></div>
-      </div>
-    );
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-red-50 via-amber-50 to-red-100 p-8">
+          <div className="container mx-auto">
+            <div className="h-40 w-full bg-gradient-to-r from-indigo-200 to-purple-200 rounded-2xl animate-pulse mb-8"></div>
+            <div className="flex gap-4 mb-4">
+              <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <ProfileCardSkeleton key={i} />
+              ))}
+            </div>
+          </div>
+        </div>
+      );
   }
 
   return (
@@ -299,33 +331,20 @@ const YouViewed = () => {
 
           </>
         ) : (
-          <Card className="text-center py-16">
-            <CardContent>
-              <div className="bg-gray-50 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Eye className="h-10 w-10 text-gray-300" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">
-                {searchTerm ? 'No matches found' : 'No Viewing History'}
-              </h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                {searchTerm 
-                  ? `We couldn't find any profile views matching "${searchTerm}". Try a different search term.`
-                  : 'Start browsing profiles to build your history and see them here.'}
-              </p>
-              {searchTerm ? (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setSearchTerm('')}
-                >
-                  Clear Search
-                </Button>
-              ) : (
-                  <Link to="/search">
-                    <Button className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">
-                      Browse Profiles
-                    </Button>
-                  </Link>
-              )}
+          <Card className="py-8 border-dashed border-2 shadow-none bg-white/50">
+            <CardContent className="p-0">
+              <EmptyState 
+                variant={searchTerm ? "no-results" : "no-notifications"}
+                title={searchTerm ? "No Matches Found" : "No Viewing History"}
+                description={
+                  searchTerm 
+                    ? `We couldn't find any profile views matching "${searchTerm}". Try a different search term.` 
+                    : "Start browsing profiles to build your history and see them here."
+                }
+                actionLabel={searchTerm ? "Clear Search" : "Browse Profiles"}
+                onAction={searchTerm ? () => setSearchTerm('') : undefined}
+                actionHref={searchTerm ? undefined : "/search"}
+              />
             </CardContent>
           </Card>
         )}

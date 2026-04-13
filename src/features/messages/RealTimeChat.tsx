@@ -192,7 +192,7 @@ export default function RealTimeChat({
           </div>
         ) : (
           <>
-            {messages.map((message, index) => (
+            {messages.map((message, _index) => (
               <div 
                 key={message.id}
                 className={`mb-4 flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'}`}

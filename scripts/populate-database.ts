@@ -94,7 +94,7 @@ const sampleEvents = [
 ];
 
 // Sample forum posts
-const sampleForumPosts = [
+const _sampleForumPosts = [
   {
     title: 'How to approach family about modern wedding ideas?',
     content: 'I want to incorporate some modern elements in my wedding but my family is very traditional. How do I find a balance that makes everyone happy?',
@@ -162,7 +162,7 @@ async function populateProfiles(users: any[]) {
     const user = users[i];
     
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('profiles')
         .insert({
           user_id: user.id,
@@ -217,7 +217,7 @@ async function populateEvents() {
   
   for (const event of sampleEvents) {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('events')
         .insert({
           ...event,
@@ -253,7 +253,7 @@ async function createMatches() {
     const user2 = profiles[i + 1] || profiles[0];
     
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('matches')
         .insert({
           user_id: user1.id,
@@ -294,7 +294,7 @@ async function createSampleMessages() {
   
   for (let i = 0; i < Math.min(sampleMessages.length, profiles.length - 1); i++) {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('messages')
         .insert({
           sender_id: profiles[i].id,
@@ -320,7 +320,7 @@ async function main() {
   
   try {
     // Test connection
-    const { data, error } = await supabase.from('profiles').select('count').limit(1);
+    const { error } = await supabase.from('profiles').select('count').limit(1);
     if (error) {
       console.error('❌ Failed to connect to Supabase:', error);
       return;

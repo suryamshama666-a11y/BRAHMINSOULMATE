@@ -362,7 +362,7 @@ class HoroscopeService {
 
     // Delete from database
     const { error } = await supabase
-      .from('horoscopes')
+      .from('horoscope_details')
       .delete()
       .eq('user_id', user.id);
 

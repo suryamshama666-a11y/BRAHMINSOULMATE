@@ -4,10 +4,13 @@ export interface Event {
   id: string;
   title: string;
   description: string;
-  event_date: string;
+  date: string;
+  time: string;
   location: string;
-  capacity: number;
-  image_url?: string;
+  max_participants: number | null;
+  current_participants: number;
+  image: string | null;
+  organizer_id: string;
   created_at: string;
   participant_count?: number;
   is_registered?: boolean;
@@ -19,7 +22,13 @@ export interface EventRegistration {
   user_id: string;
   created_at: string;
   event?: Event;
-  user?: any;
+  user?: {
+    user_id: string;
+    name: string;
+    email: string;
+    phone: string | null;
+    images: string[];
+  };
 }
 
 class EventsService {
@@ -30,8 +39,8 @@ class EventsService {
     const { data, error } = await supabase
       .from('events')
       .select('*')
-      .gte('event_date', new Date().toISOString())
-      .order('event_date', { ascending: true });
+      .gte('date', new Date().toISOString())
+      .order('date', { ascending: true });
 
     if (error) throw error;
 
@@ -79,6 +88,8 @@ class EventsService {
     if (error && error.code !== 'PGRST116') throw error;
     if (!data) return null;
 
+    const event = data as unknown as Event;
+
     // Get participant count
     const { count } = await supabase
       .from('event_registrations')
@@ -99,7 +110,7 @@ class EventsService {
     }
 
     return {
-      ...data,
+      ...event,
       participant_count: count || 0,
       is_registered: isRegistered
     };
@@ -120,12 +131,12 @@ class EventsService {
     }
 
     // Check capacity
-    if (event.participant_count! >= event.capacity) {
+    if (event.participant_count! >= (event.max_participants || 100)) {
       throw new Error('Event is full');
     }
 
     // Check if event date has passed
-    if (new Date(event.event_date) < new Date()) {
+    if (new Date(event.date) < new Date()) {
       throw new Error('Cannot register for past events');
     }
 
@@ -190,10 +201,12 @@ class EventsService {
   async createEvent(eventData: {
     title: string;
     description: string;
-    event_date: string;
+    date: string;
+    time: string;
     location: string;
-    capacity: number;
-    image_url?: string;
+    max_participants: number;
+    image: string | null;
+    organizer_id: string;
   }): Promise<Event> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
@@ -256,10 +269,10 @@ class EventsService {
         *,
         user:user_id (
           user_id,
-          full_name,
+          name,
           email,
           phone,
-          profile_picture
+          images
         )
       `)
       .eq('event_id', eventId)
@@ -282,8 +295,8 @@ class EventsService {
     const { data: upcomingEvents } = await supabase
       .from('events')
       .select('*')
-      .gte('event_date', threeDaysFromNow.toISOString())
-      .lte('event_date', threeDaysEnd.toISOString());
+      .gte('date', threeDaysFromNow.toISOString())
+      .lte('date', threeDaysEnd.toISOString());
 
     if (!upcomingEvents) return;
 
@@ -317,7 +330,7 @@ class EventsService {
         user_id: userId,
         type: 'event_registration',
         title: 'Event Registration Confirmed',
-        message: `You're registered for ${event.title} on ${new Date(event.event_date).toLocaleDateString()}`,
+        message: `You're registered for ${event.title} on ${new Date(event.date).toLocaleDateString()}`,
         action_url: `/events/${event.id}`,
         read: false
       });

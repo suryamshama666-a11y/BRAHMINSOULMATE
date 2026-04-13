@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, Search, MessageCircle, Calendar, Heart } from 'lucide-react';
 import Footer from '@/components/Footer';
+import SEO from '@/components/SEO';
 
 export default function HowItWorks() {
   const steps = [
@@ -34,6 +35,11 @@ export default function HowItWorks() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEO 
+        title="How It Works - Simple 5-Step Matchmaking"
+        description="Learn how Brahmin Soulmate Connect simplifies your search for a life partner. A secure, tradition-aware process from profile creation to sacred connection."
+        keywords="matrimony process, how to find Brahmin partner, marriage steps"
+      />
       <main className="flex-grow container mx-auto px-4 py-12">
         <div className="text-center mb-12">
           <h1 

@@ -2,7 +2,6 @@ import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/supabase';
 
 type Message = Database['public']['Tables']['messages']['Row'];
-type MessageInsert = Database['public']['Tables']['messages']['Insert'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
 export class MessagingService {
@@ -60,7 +59,7 @@ export class MessagingService {
   // Get all conversations for a user
   static async getConversations(userId: string): Promise<Array<{
     profile: Profile;
-    lastMessage: Message;
+    lastMessage: Message | null;
     unreadCount: number;
   }>> {
     try {

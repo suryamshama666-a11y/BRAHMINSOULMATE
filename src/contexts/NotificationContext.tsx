@@ -1,7 +1,8 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './AuthContext';
-import { Notification, NotificationContextType } from '@/types';
+import { useAuth } from '@/hooks/useAuth';
+import type { Notification, NotificationContextType } from '@/types/index';
 import { toast } from 'sonner';
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -10,7 +11,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const { user } = useAuth();
   
-  // Load initial notifications on auth change
+  // effect:audited — Real-time Supabase subscription for notifications
   useEffect(() => {
     if (!user) {
       setNotifications([]);
@@ -66,7 +67,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
+      const { data: _data, error } = await supabase
         .from('notifications')
         .insert({
           ...notification,
@@ -150,7 +151,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 };
 
 // Helper to get icon based on notification type
-const getNotificationIcon = (type: string) => {
+const _getNotificationIcon = (type: string) => {
   switch (type) {
     case 'message':
       return <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>;
@@ -166,7 +167,7 @@ const getNotificationIcon = (type: string) => {
 };
 
 // Helper to get color based on notification type
-const getNotificationColor = (type: string) => {
+const _getNotificationColor = (type: string) => {
   switch (type) {
     case 'message':
       return 'bg-blue-500';

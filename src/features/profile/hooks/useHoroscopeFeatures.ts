@@ -1,9 +1,8 @@
 
-import { toast } from "sonner";
 import { Profile } from "@/data/profiles";
 import { useNavigate } from "react-router-dom";
 
-export function useHoroscopeFeatures(profile: Profile) {
+export function useHoroscopeFeatures(_profile: Profile) {
   const navigate = useNavigate();
 
   const navigateToAstrologicalServices = () => {

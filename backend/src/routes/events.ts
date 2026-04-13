@@ -1,12 +1,8 @@
 import express from 'express';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../config/supabase';
 import { authMiddleware } from '../middleware/auth';
 
 const router = express.Router();
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 // Helper function to get error message
 const getErrorMessage = (error: unknown): string => {
@@ -34,6 +30,18 @@ router.post('/:id/register', authMiddleware, async (req, res) => {
   try {
     const userId = req.user?.id;
     const { id } = req.params;
+
+    // Check if user is already registered
+    const { data: existing, error: fetchError } = await supabase
+      .from('event_registrations')
+      .select('id')
+      .eq('event_id', id)
+      .eq('user_id', userId)
+      .single();
+
+    if (existing) {
+      return res.status(400).json({ success: false, error: 'You are already registered for this event' });
+    }
 
     // Check capacity
     const { data: event, error: eventError } = await supabase

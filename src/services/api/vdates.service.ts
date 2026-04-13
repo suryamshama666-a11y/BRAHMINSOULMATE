@@ -13,8 +13,8 @@ export interface VDate {
   rating_1?: number;
   rating_2?: number;
   created_at: string;
-  user1?: any;
-  user2?: any;
+  user1?: { user_id: string; name: string; images: string[] };
+  user2?: { user_id: string; name: string; images: string[] };
 }
 
 export interface VDateFeedback {
@@ -30,12 +30,13 @@ class VDatesService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
 
-    const { data: profile } = await supabase
+    const { data: profileData } = await supabase
       .from('profiles')
       .select('subscription_type, subscription_end_date')
       .eq('user_id', user.id)
       .single();
 
+    const profile = profileData as { subscription_type?: string; subscription_end_date?: string } | null;
     if (!profile) return false;
     
     if (profile.subscription_type !== 'premium') return false;
@@ -53,7 +54,7 @@ class VDatesService {
     const { data } = await supabase
       .from('connections')
       .select('id')
-      .or(`and(user1_id.eq.${userId1},user2_id.eq.${userId2}),and(user1_id.eq.${userId2},user2_id.eq.${userId1})`)
+      .or(`and(user_id_1.eq.${userId1},user_id_2.eq.${userId2}),and(user_id_1.eq.${userId2},user_id_2.eq.${userId1})`)
       .eq('status', 'active')
       .single();
 
@@ -102,7 +103,9 @@ class VDatesService {
     }
 
     // Generate unique room name
-    const roomName = `brahmin_vdate_${user.id.slice(0, 8)}_${Date.now()}`;
+    // PRODUCTION SECURITY: Generate a non-predictable room name
+    const randomSuffix = Math.random().toString(36).substring(2, 10);
+    const roomName = `brahmin_vdate_${randomSuffix}_${Date.now()}`;
 
     // Create V-Date
     const { data, error } = await supabase
@@ -121,12 +124,12 @@ class VDatesService {
     if (error) throw error;
 
     // Send notifications to both users
-    await this.sendVDateNotifications(data, 'scheduled');
+    await this.sendVDateNotifications(this.toVDate(data), 'scheduled');
 
     // Schedule reminder notifications
-    await this.scheduleReminders(data);
+    await this.scheduleReminders(this.toVDate(data));
 
-    return data;
+    return this.toVDate(data);
   }
 
 
@@ -197,12 +200,12 @@ class VDatesService {
     if (error) throw error;
 
     // Send notifications about reschedule
-    await this.sendVDateNotifications(data, 'rescheduled');
+    await this.sendVDateNotifications(this.toVDate(data), 'rescheduled');
 
     // Re-schedule reminder notifications
-    await this.scheduleReminders(data);
+    await this.scheduleReminders(this.toVDate(data));
 
-    return data;
+    return this.toVDate(data);
   }
 
   // Get user's V-Dates
@@ -214,8 +217,8 @@ class VDatesService {
       .from('vdates')
       .select(`
         *,
-        user1:profiles!vdates_user_id_1_fkey(user_id, full_name, profile_photo_url),
-        user2:profiles!vdates_user_id_2_fkey(user_id, full_name, profile_photo_url)
+        user1:profiles!vdates_user_id_1_fkey(user_id, name, images),
+        user2:profiles!vdates_user_id_2_fkey(user_id, name, images)
       `)
       .or(`user_id_1.eq.${user.id},user_id_2.eq.${user.id}`)
       .order('scheduled_time', { ascending: true });
@@ -227,7 +230,7 @@ class VDatesService {
     const { data, error } = await query;
     if (error) throw error;
 
-    return data || [];
+    return (data || []).map(d => this.toVDate(d));
   }
 
   // Get upcoming V-Dates
@@ -239,8 +242,8 @@ class VDatesService {
       .from('vdates')
       .select(`
         *,
-        user1:profiles!vdates_user_id_1_fkey(user_id, full_name, profile_photo_url),
-        user2:profiles!vdates_user_id_2_fkey(user_id, full_name, profile_photo_url)
+        user1:profiles!vdates_user_id_1_fkey(user_id, name, images),
+        user2:profiles!vdates_user_id_2_fkey(user_id, name, images)
       `)
       .or(`user_id_1.eq.${user.id},user_id_2.eq.${user.id}`)
       .eq('status', 'scheduled')
@@ -248,7 +251,7 @@ class VDatesService {
       .order('scheduled_time', { ascending: true });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(d => this.toVDate(d));
   }
 
 
@@ -289,9 +292,9 @@ class VDatesService {
     if (error) throw error;
 
     // Send cancellation notifications
-    await this.sendVDateNotifications(data, 'cancelled', reason);
+    await this.sendVDateNotifications(this.toVDate(data), 'cancelled', reason);
 
-    return data;
+    return this.toVDate(data);
   }
 
   // Join a V-Date (get room URL)
@@ -338,7 +341,7 @@ class VDatesService {
     }
 
     const roomUrl = `https://${this.JITSI_DOMAIN}/${vdate.room_name}`;
-    return { roomUrl, roomName: vdate.room_name };
+    return { roomUrl, roomName: vdate.room_name || '' };
   }
 
   // Complete a V-Date
@@ -355,7 +358,7 @@ class VDatesService {
       .single();
 
     if (error) throw error;
-    return data;
+    return this.toVDate(data);
   }
 
 
@@ -403,7 +406,7 @@ class VDatesService {
       .single();
 
     if (error) throw error;
-    return data;
+    return this.toVDate(data);
   }
 
   // Send V-Date notifications
@@ -454,7 +457,7 @@ class VDatesService {
         user_id: user.id,
         type: 'vdate',
         title,
-        content,
+        message: content,
         related_user_id: otherUserId,
         related_entity_id: vdate.id
       },
@@ -462,7 +465,7 @@ class VDatesService {
         user_id: otherUserId,
         type: 'vdate',
         title,
-        content,
+        message: content,
         related_user_id: user.id,
         related_entity_id: vdate.id
       }
@@ -487,36 +490,24 @@ class VDatesService {
     const reminders: any[] = [];
 
     if (oneDayBefore > now) {
-      reminders.push({
-        vdate_id: vdate.id,
-        user_id_1: vdate.user_id_1,
-        user_id_2: vdate.user_id_2,
-        reminder_time: oneDayBefore.toISOString(),
-        reminder_type: '24_hours',
-        sent: false
-      });
+      reminders.push(
+        { vdate_id: vdate.id, user_id: vdate.user_id_1, reminder_time: oneDayBefore.toISOString(), reminder_type: '24_hours', sent: false },
+        { vdate_id: vdate.id, user_id: vdate.user_id_2, reminder_time: oneDayBefore.toISOString(), reminder_type: '24_hours', sent: false }
+      );
     }
 
     if (oneHourBefore > now) {
-      reminders.push({
-        vdate_id: vdate.id,
-        user_id_1: vdate.user_id_1,
-        user_id_2: vdate.user_id_2,
-        reminder_time: oneHourBefore.toISOString(),
-        reminder_type: '1_hour',
-        sent: false
-      });
+      reminders.push(
+        { vdate_id: vdate.id, user_id: vdate.user_id_1, reminder_time: oneHourBefore.toISOString(), reminder_type: '1_hour', sent: false },
+        { vdate_id: vdate.id, user_id: vdate.user_id_2, reminder_time: oneHourBefore.toISOString(), reminder_type: '1_hour', sent: false }
+      );
     }
 
     if (fifteenMinBefore > now) {
-      reminders.push({
-        vdate_id: vdate.id,
-        user_id_1: vdate.user_id_1,
-        user_id_2: vdate.user_id_2,
-        reminder_time: fifteenMinBefore.toISOString(),
-        reminder_type: '15_minutes',
-        sent: false
-      });
+      reminders.push(
+        { vdate_id: vdate.id, user_id: vdate.user_id_1, reminder_time: fifteenMinBefore.toISOString(), reminder_type: '15_minutes', sent: false },
+        { vdate_id: vdate.id, user_id: vdate.user_id_2, reminder_time: fifteenMinBefore.toISOString(), reminder_type: '15_minutes', sent: false }
+      );
     }
 
     // Insert reminders if the table exists
@@ -525,7 +516,7 @@ class VDatesService {
         await supabase.from('vdate_reminders').insert(reminders);
       } catch {
         // Table might not exist, reminders will be handled differently
-        console.log('VDate reminders table not available, skipping reminder scheduling');
+        console.warn('VDate reminders table not available, skipping reminder scheduling');
       }
     }
   }
@@ -568,7 +559,7 @@ class VDatesService {
           }
 
           // Send reminder notifications
-          await this.sendReminderNotification(vdate, reminderText);
+          await this.sendReminderNotification(this.toVDate(vdate), reminderText);
         }
 
         // Mark reminder as sent
@@ -578,7 +569,7 @@ class VDatesService {
           .eq('id', reminder.id);
       }
     } catch {
-      console.log('Error processing reminders');
+      console.warn('Error processing reminders');
     }
   }
 
@@ -598,7 +589,7 @@ class VDatesService {
         user_id: vdate.user_id_1,
         type: 'vdate',
         title: 'V-Date Reminder',
-        content: `Your V-Date is ${reminderText}! Scheduled for ${formattedDate}.`,
+        message: `Your V-Date is ${reminderText}! Scheduled for ${formattedDate}.`,
         related_user_id: vdate.user_id_2,
         related_entity_id: vdate.id
       },
@@ -606,7 +597,7 @@ class VDatesService {
         user_id: vdate.user_id_2,
         type: 'vdate',
         title: 'V-Date Reminder',
-        content: `Your V-Date is ${reminderText}! Scheduled for ${formattedDate}.`,
+        message: `Your V-Date is ${reminderText}! Scheduled for ${formattedDate}.`,
         related_user_id: vdate.user_id_1,
         related_entity_id: vdate.id
       }
@@ -624,18 +615,26 @@ class VDatesService {
       .from('connections')
       .select(`
         *,
-        user1:profiles!connections_user1_id_fkey(user_id, full_name, profile_photo_url),
-        user2:profiles!connections_user2_id_fkey(user_id, full_name, profile_photo_url)
+        user1:profiles!connections_user_id_1_fkey(user_id, name, images),
+        user2:profiles!connections_user_id_2_fkey(user_id, name, images)
       `)
-      .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+      .or(`user_id_1.eq.${user.id},user_id_2.eq.${user.id}`)
       .eq('status', 'active');
 
     if (error) throw error;
 
     // Return the other user in each connection
     return (data || []).map(conn => {
-      return conn.user1_id === user.id ? conn.user2 : conn.user1;
+      return conn.user_id_1 === user.id ? conn.user2 : conn.user1;
     });
+  }
+
+  private toVDate(d: any): VDate {
+    const allowed: VDate['status'][] = ['scheduled', 'completed', 'cancelled', 'missed'];
+    const status = allowed.includes(d?.status as VDate['status'])
+      ? (d.status as VDate['status'])
+      : 'scheduled';
+    return { ...d, status };
   }
 }
 

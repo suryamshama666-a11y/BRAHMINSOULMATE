@@ -3,12 +3,19 @@ import { profiles as profileData } from './profileData';
 
 // Export proper types from types/profile
 export type { 
+  Profile,
   ProfileGender, 
   ProfileMaritalStatus, 
   BrahminSubcaste, 
   Gotra, 
   IshtaDevata,
-  Rashi 
+  Rashi,
+  ProfileLocation,
+  ProfileFamily,
+  ProfileEmployment,
+  ProfileHoroscope,
+  ProfileEducation,
+  ProfilePreference
 } from '@/types/profile';
 
 // Direct export of profiles data

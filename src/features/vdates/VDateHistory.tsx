@@ -40,7 +40,7 @@ export const VDateHistory = ({ pastVDates, profiles, currentUserId, onSubmitFeed
     setWouldMeetAgain(false);
   };
 
-  const hasUserFeedback = (vdate: VDate) => {
+  const _hasUserFeedback = (vdate: VDate) => {
     return vdate.feedback?.some(f => f.userId === currentUserId);
   };
 

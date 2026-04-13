@@ -14,7 +14,7 @@ export const AccountSettings = () => {
   const [activeSection, setActiveSection] = useState<'overview' | 'personal' | 'security' | 'notifications' | 'billing'>('overview');
   const [showPersonalDetailsForm, setShowPersonalDetailsForm] = useState(false);
 
-  const handleNameVisibilityChange = async (visible: boolean) => {
+  const _handleNameVisibilityChange = async (visible: boolean) => {
     try {
       await setNameVisibility(visible);
     } catch (error) {
@@ -22,7 +22,7 @@ export const AccountSettings = () => {
     }
   };
 
-  const currentNameVisibility = profile?.profileNameVisibility || false;
+  const _currentNameVisibility = profile?.profileNameVisibility || false;
 
   const handleLogout = async () => {
     try {

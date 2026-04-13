@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import SEO from '@/components/SEO';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -18,6 +19,8 @@ import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { interestsService } from '@/services/api';
 import { Pagination } from '@/components/ui/pagination';
+import { ProfileCardSkeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
 
 // Type definitions
 interface SearchProfile {
@@ -161,11 +164,11 @@ export default function Search() {
     [showFilters]
   );
 
-  useEffect(() => {
-    if (!itemsPerPageOptions.includes(itemsPerPage)) {
-      setItemsPerPage(itemsPerPageOptions[0]);
-    }
-  }, [itemsPerPage, itemsPerPageOptions]);
+  // Items per page validation is handled inline when options change
+  // Reset to first option if current value is not in available options
+  const validatedItemsPerPage = itemsPerPageOptions.includes(itemsPerPage) 
+    ? itemsPerPage 
+    : itemsPerPageOptions[0];
   
   const [basicOpen, setBasicOpen] = useState(true);
   const [locationOpen, setLocationOpen] = useState(false);
@@ -232,7 +235,7 @@ export default function Search() {
         toast.success(`${profileName} has been blocked`);
         break;
       default:
-        console.log('Unknown action:', action);
+        logger.log('Unknown action:', action);
     }
   };
 
@@ -357,6 +360,11 @@ export default function Search() {
 
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
+        <SEO 
+          title="Search Brahmin Profiles"
+          description="Browse and search thousands of verified Brahmin matrimony profiles. Filter by Gotra, location, education, and profession to find your perfect match."
+          keywords="Brahmin search, Brahmin profiles, find Brahmin bride, find Brahmin groom"
+        />
         <main className="flex-grow container mx-auto px-4 py-8">
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -662,17 +670,26 @@ export default function Search() {
 
             <div className={showFilters ? 'md:col-span-3' : 'md:col-span-4'}>
               {loading ? (
-                <div className="text-center py-12">
-                  <Loader2 className="h-12 w-12 animate-spin mx-auto text-[#FF4500]" />
-                  <p className="mt-4 text-gray-600">Loading profiles...</p>
+                <div className={cn(
+                  "grid gap-4",
+                  showFilters 
+                    ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-2" 
+                    : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3"
+                )}>
+                  {[...Array(6)].map((_, i) => (
+                    <ProfileCardSkeleton key={i} />
+                  ))}
                 </div>
               ) : filteredProfiles.length === 0 ? (
-                  <Card>
-                    <CardContent className="p-12 text-center">
-                      <SearchIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold text-gray-700 mb-2">No profiles found</h3>
-                      <p className="text-gray-500 mb-4">Try adjusting your filters or search term</p>
-                      <Button variant="outline" onClick={() => { resetFilters(); setSearchTerm(''); }} className="text-[#FF4500]">Reset All</Button>
+                  <Card className="shadow-sm">
+                    <CardContent className="p-0">
+                      <EmptyState 
+                        variant="no-results" 
+                        title="No Profiles Found" 
+                        description="Try adjusting your filters or search term to see more results." 
+                        actionLabel="Reset Filters"
+                        onAction={() => { resetFilters(); setSearchTerm(''); }}
+                      />
                     </CardContent>
                   </Card>
                 ) : (

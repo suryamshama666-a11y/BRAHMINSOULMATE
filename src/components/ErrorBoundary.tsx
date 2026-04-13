@@ -1,7 +1,10 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { Component, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { logger } from '@/utils/logger';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -16,7 +19,7 @@ interface ErrorBoundaryState {
   hasError: boolean;
   error?: Error;
   errorInfo?: React.ErrorInfo;
-  eventId?: string;
+  eventId?: string | null;
 }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -34,13 +37,19 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     console.error('Error caught by ErrorBoundary:', error, errorInfo);
 
+    // Log to production database logger
+    logger.error('Critical Error caught by Page Boundary', error, { 
+      stack: errorInfo.componentStack ?? undefined 
+    });
+
     // Call custom error handler if provided
     this.props.onError?.(error, errorInfo);
 
     // Log to Sentry if available
-    if (window.Sentry) {
-      const eventId = window.Sentry.captureException(error, {
-        contexts: { react: { componentStack: errorInfo.componentStack } }
+    const sentry = (window as any).Sentry;
+    if (sentry) {
+      const eventId = sentry.captureException(error, {
+        contexts: { react: { componentStack: errorInfo.componentStack ?? undefined } }
       });
       this.setState({ errorInfo, eventId });
     } else {
@@ -97,40 +106,42 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       switch (level) {
         case 'critical':
           return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-              <Card className="w-full max-w-md">
-                <CardHeader className="text-center">
-                  <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                    <AlertTriangle className="w-6 h-6 text-red-600" />
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-orange-50 p-4">
+              <Card className="w-full max-w-md shadow-xl border-red-100">
+                <CardHeader className="text-center pb-2">
+                  <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4 animate-pulse-gentle">
+                    <AlertTriangle className="w-8 h-8 text-red-600" />
                   </div>
-                  <CardTitle className="text-red-600">Critical Error</CardTitle>
-                  <CardDescription>
-                    The application encountered a critical error and needs to be restarted.
+                  <CardTitle className="text-2xl text-gray-800 font-serif">System Error</CardTitle>
+                  <CardDescription className="text-gray-600">
+                    We've encountered a critical issue. Our team has been notified.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
+                  <div className="flex flex-col gap-3">
+                    <Button onClick={this.handleReload} className="w-full bg-red-600 hover:bg-red-700 shadow-md">
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Reload Application
+                    </Button>
+                    <Button variant="outline" onClick={this.handleGoHome} className="w-full border-red-200 text-red-700 hover:bg-red-50">
+                      <Home className="w-4 h-4 mr-2" />
+                      Return to Homepage
+                    </Button>
+                  </div>
+                  
                   {process.env.NODE_ENV === 'development' && (
-                    <details className="text-sm bg-gray-100 p-3 rounded">
-                      <summary className="cursor-pointer font-medium">Error Details</summary>
-                      <pre className="mt-2 text-xs overflow-auto">
+                    <details className="text-xs bg-gray-50 p-3 rounded border border-gray-200">
+                      <summary className="cursor-pointer font-medium text-gray-500 hover:text-gray-900 transition-colors">Developer Details</summary>
+                      <pre className="mt-2 text-red-600 overflow-auto whitespace-pre-wrap max-h-40">
                         {error?.message}
                         {errorInfo?.componentStack}
                       </pre>
                     </details>
                   )}
-                  <div className="flex gap-2">
-                    <Button onClick={this.handleReload} className="flex-1">
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      Reload App
-                    </Button>
-                    <Button variant="outline" onClick={this.handleGoHome} className="flex-1">
-                      <Home className="w-4 h-4 mr-2" />
-                      Go Home
-                    </Button>
-                  </div>
+                  
                   {eventId && (
-                    <p className="text-xs text-gray-500 text-center">
-                      Error ID: {eventId}
+                    <p className="text-xs text-gray-400 text-center">
+                      Reference ID: {eventId}
                     </p>
                   )}
                 </CardContent>
@@ -140,64 +151,30 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
         case 'page':
           return (
-            <div className="min-h-[400px] flex items-center justify-center p-8">
-              <Card className="w-full max-w-lg">
-                <CardHeader className="text-center">
-                  <div className="mx-auto w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center mb-3">
-                    <AlertTriangle className="w-5 h-5 text-orange-600" />
-                  </div>
-                  <CardTitle className="text-orange-600">Page Error</CardTitle>
-                  <CardDescription>
-                    This page encountered an error. Please try refreshing or go back.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {process.env.NODE_ENV === 'development' && (
-                    <details className="text-sm bg-gray-100 p-3 rounded">
-                      <summary className="cursor-pointer font-medium">Error Details</summary>
-                      <pre className="mt-2 text-xs overflow-auto">
-                        {error?.message}
-                      </pre>
-                    </details>
-                  )}
-                  <div className="flex gap-2">
-                    <Button onClick={this.handleRetry} variant="outline" className="flex-1">
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      Try Again
-                    </Button>
-                    <Button onClick={() => window.history.back()} className="flex-1">
-                      Go Back
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="min-h-[60vh] flex items-center justify-center p-4">
+              <EmptyState
+                variant="error"
+                title="Unable to Load Page"
+                description="We ran into a slight problem loading this content."
+                actionLabel="Try Again"
+                onAction={this.handleRetry}
+              />
             </div>
           );
 
         case 'component':
         default:
           return (
-            <div className="p-4 border border-red-200 bg-red-50 rounded-lg">
-              <div className="flex items-center gap-2 text-red-700 mb-2">
-                <AlertTriangle className="w-4 h-4" />
-                <span className="font-medium text-sm">Component Error</span>
-              </div>
-              <p className="text-sm text-red-600 mb-3">
-                This component failed to load properly.
+            <div className="p-4 border border-red-100 bg-red-50/50 rounded-xl flex flex-col items-center text-center space-y-2">
+              <AlertTriangle className="w-5 h-5 text-red-400" />
+              <p className="text-sm text-red-600 font-medium">
+                Content unavailable
               </p>
-              {process.env.NODE_ENV === 'development' && (
-                <details className="text-xs bg-white p-2 rounded border mb-3">
-                  <summary className="cursor-pointer font-medium">Error Details</summary>
-                  <pre className="mt-1 overflow-auto">
-                    {error?.message}
-                  </pre>
-                </details>
-              )}
               <Button
                 onClick={this.handleRetry}
                 size="sm"
-                variant="outline"
-                className="text-red-700 border-red-300 hover:bg-red-100"
+                variant="ghost"
+                className="text-xs text-red-500 hover:text-red-700 hover:bg-red-100 h-7"
               >
                 <RefreshCw className="w-3 h-3 mr-1" />
                 Retry
@@ -224,19 +201,6 @@ export const withErrorBoundary = <P extends object>(
 
   WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
   return WrappedComponent;
-};
-
-// Hook for manual error reporting
-export const useErrorHandler = () => {
-  return React.useCallback((error: Error, errorInfo?: React.ErrorInfo) => {
-    console.error('Manual error report:', error, errorInfo);
-
-    if (window.Sentry) {
-      window.Sentry.captureException(error, {
-        contexts: errorInfo ? { react: { componentStack: errorInfo.componentStack } } : undefined
-      });
-    }
-  }, []);
 };
 
 export default ErrorBoundary;

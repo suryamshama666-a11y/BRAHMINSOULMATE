@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from './useSupabaseAuth';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export interface AdminRole {
   role: string;
@@ -33,53 +34,55 @@ export const useAdmin = () => {
 
     setLoading(true);
     try {
-      // For now, we'll use a simple check based on user email or profile
-      // In a real app, you'd have an admin_roles table
-      const { data: profile, error } = await supabase
-        .from('profiles')
+      // PRODUCTION SECURITY: Check the actual admin_roles table
+      const { data, error } = await supabase
+        .from('admin_roles' as any)
         .select('*')
         .eq('user_id', user.id)
         .single();
 
-      if (error) {
-        console.error('Error checking admin status:', error);
+      if (error || !data) {
         setIsAdmin(false);
         setAdminRole(null);
         return;
       }
 
-      // Simple admin check - you can customize this logic
-      const adminEmails = ['admin@example.com', 'moderator@example.com'];
-      const isUserAdmin = adminEmails.includes(user.email || '');
-      
-      setIsAdmin(isUserAdmin);
-      
-      if (isUserAdmin) {
-        setAdminRole({
-          role: 'admin',
-          permissions: ['moderate_users', 'moderate_content', 'view_analytics']
-        });
-      } else {
-        setAdminRole(null);
-      }
+      setIsAdmin(true);
+      const adminData = data as any;
+      setAdminRole({
+        role: adminData.role,
+        permissions: adminData.permissions || []
+      });
     } catch (error) {
       console.error('Error checking admin status:', error);
       setIsAdmin(false);
-      setAdminRole(null);
     } finally {
       setLoading(false);
     }
   };
 
+  const logAdminAction = async (action: string, targetType: string, targetId: string, details: any = {}) => {
+    if (!user || !isAdmin) return;
+    try {
+      await (supabase.from('admin_logs' as any) as any).insert({
+        admin_id: user.id,
+        action,
+        target_type: targetType,
+        target_id: targetId,
+        details
+      });
+    } catch (err) {
+      console.error('Failed to log admin action:', err);
+    }
+  };
+
   const getAllUsers = async () => {
     if (!isAdmin) return [];
-
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
-
       if (error) throw error;
       return data || [];
     } catch (error) {
@@ -88,18 +91,24 @@ export const useAdmin = () => {
     }
   };
 
-  const moderateUser = async (userId: string, action: 'suspend' | 'activate') => {
+  const moderateUser = async (userId: string, status: 'active' | 'suspended') => {
     if (!isAdmin) {
       toast.error('Admin access required');
       return false;
     }
 
     try {
-      // Mock implementation since we don't have user moderation in the current schema
-      console.log(`${action} user ${userId}`);
-      toast.success(`User ${action}d successfully`);
+      const { error } = await supabase
+        .from('profiles')
+        .update({ status } as any)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      await logAdminAction(`${status}_user`, 'user', userId);
+      toast.success(`User ${status} successfully`);
       return true;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error moderating user:', error);
       toast.error('Failed to moderate user');
       return false;
@@ -108,29 +117,14 @@ export const useAdmin = () => {
 
   const getAdminLogs = async (): Promise<AdminLog[]> => {
     if (!isAdmin) return [];
-
     try {
-      // Mock implementation since we don't have admin logs table
-      const mockLogs: AdminLog[] = [
-        {
-          id: 'log-1',
-          action: 'user_suspended',
-          target_type: 'user',
-          target_id: 'user-123',
-          admin_id: user?.id || '',
-          created_at: new Date().toISOString()
-        },
-        {
-          id: 'log-2',
-          action: 'content_approved',
-          target_type: 'post',
-          target_id: 'post-456',
-          admin_id: user?.id || '',
-          created_at: new Date(Date.now() - 86400000).toISOString()
-        }
-      ];
-      
-      return mockLogs;
+      const { data, error } = await (supabase
+        .from('admin_logs' as any) as any)
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data as any[];
     } catch (error) {
       console.error('Error fetching admin logs:', error);
       return [];
@@ -144,21 +138,15 @@ export const useAdmin = () => {
     }
 
     try {
-      let updateData = {};
-      
-      if (action === 'approve') {
-        updateData = { admin_approved: true, is_published: true };
-      } else {
-        updateData = { admin_approved: false, is_published: false };
-      }
-
+      const isApproval = action === 'approve';
       const { error } = await supabase
         .from(contentType as any)
-        .update(updateData)
+        .update({ approved: isApproval } as any)
         .eq('id', contentId);
 
       if (error) throw error;
 
+      await logAdminAction(`${action}_content`, contentType, contentId);
       toast.success(`Content ${action}ed successfully`);
       return { success: true };
     } catch (error: any) {

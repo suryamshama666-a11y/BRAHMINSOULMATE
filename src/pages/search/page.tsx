@@ -3,6 +3,7 @@ import { PageHeader } from './components/PageHeader';
 import { SearchHeader } from './components/SearchHeader';
 import LocationSearch from '@/components/search/LocationSearch';
 import ProfileGrid from '@/components/search/ProfileGrid';
+import { backendCall } from '@/services/api/base';
 
   const SearchPage = () => {
     const [searchTerm, setSearchTerm] = React.useState('');
@@ -13,10 +14,11 @@ import ProfileGrid from '@/components/search/ProfileGrid';
     const fetchProfiles = async (limit: string) => {
       setIsLoading(true);
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/profile/search/all?limit=${limit}`);
-        const data = await response.json();
-        if (data.success) {
-          setProfiles(data.profiles);
+        const response = await backendCall<any[]>(`profile/search/all?limit=${limit}`);
+        if (response.data) {
+          setProfiles(response.data);
+        } else if (response.error) {
+          console.error('Error fetching profiles:', response.error.message);
         }
       } catch (error) {
         console.error('Error fetching profiles:', error);
@@ -37,7 +39,7 @@ import ProfileGrid from '@/components/search/ProfileGrid';
       // Implement advanced search logic
     };
 
-    const handleLocationSearch = (params: { location: string; distance: number; useCurrentLocation: boolean }) => {
+    const handleLocationSearch = (_params: { location: string; distance: number; useCurrentLocation: boolean }) => {
       // Implement location search logic
     };
 
@@ -63,9 +65,9 @@ import ProfileGrid from '@/components/search/ProfileGrid';
           ) : (
             <ProfileGrid
               profiles={profiles}
-              onSendInterest={(name, id) => console.log('Send interest', name, id)}
-              onShortlist={(id, name) => console.log('Shortlist', id, name)}
-              onMessage={(id) => console.log('Message', id)}
+              onSendInterest={(name, id) => logger.log('Send interest', name, id)}
+              onShortlist={(id, name) => logger.log('Shortlist', id, name)}
+              onMessage={(id) => logger.log('Message', id)}
             />
           )}
         </div>

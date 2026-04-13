@@ -7,7 +7,6 @@ import {
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -96,7 +95,7 @@ export function SearchSidebar({ onSearch }: SearchSidebarProps) {
   const allSubcastes = getAllSubcastes();
   const allMaritalStatuses = getAllMaritalStatuses();
   const allRashis = getAllRashis();
-  const allIshtaDevatas = getAllIshtaDevatas();
+  const _allIshtaDevatas = getAllIshtaDevatas();
   const currentIncomeRanges = INCOME_RANGES[incomeCurrency as keyof typeof INCOME_RANGES] || INCOME_RANGES.INR;
 
   const BasicFilters = () => (

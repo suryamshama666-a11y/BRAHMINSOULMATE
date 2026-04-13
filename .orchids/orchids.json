@@ -1,0 +1,8 @@
+{
+  "projectId": "06ce5e43-28e9-41ad-a066-b0d21602fbf7",
+  "createdAt": 1770525710086,
+  "startupCommands": [
+    "npx vite",
+    "cd backend; npx nodemon src/server.ts"
+  ]
+}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useConversations } from '@/features/messages/hooks/useConversations';
 import { ConversationList } from '@/features/messages/components/ConversationList';

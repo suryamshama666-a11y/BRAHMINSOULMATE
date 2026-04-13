@@ -4,9 +4,9 @@ import { Link } from 'react-router-dom';
 import { Profile } from '@/data/profiles';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Video, Lock, MapPin, Shield, Phone, Star, Sparkles } from 'lucide-react';
+import { Heart, MessageCircle, Lock, MapPin, Shield, Phone, Star, Sparkles } from 'lucide-react';
 import { useProfileInteractions } from '@/features/profile/hooks/useProfileInteractions';
-import { formatHeight, formatLocation } from '@/features/profile/utils/formatters';
+import { formatLocation } from '@/features/profile/utils/formatters';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -18,7 +18,7 @@ type ProfileCardProps = {
 
 export default function ProfileCardEnhanced({ profile, showActions = true }: ProfileCardProps) {
   const [liked, setLiked] = useState(false);
-  const { handleMessage, handleVideoCall, handlePhone } = useProfileInteractions(profile);
+  const { handleMessage, handleVideoCall: _handleVideoCall, handlePhone } = useProfileInteractions(profile);
   const { isPremium } = useAuth();
   
   const handleLike = () => {
@@ -113,7 +113,7 @@ export default function ProfileCardEnhanced({ profile, showActions = true }: Pro
           </div>
             <div>
               <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">Community:</span>
-              <p className="font-bold text-brahmin-dark mt-0.5">{profile.family?.community || 'Brahmin'}</p>
+              <p className="font-bold text-brahmin-dark mt-0.5">{(profile.family as any)?.community || 'Brahmin'}</p>
             </div>
         </div>
         

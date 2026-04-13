@@ -1,14 +1,10 @@
 import express from 'express';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../config/supabase';
 import { RtcTokenBuilder, RtcRole } from 'agora-access-token';
 import { authMiddleware } from '../middleware/auth';
 import { cronService } from '../services/cron.service';
 
 const router = express.Router();
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 // Helper function to get error message
 const getErrorMessage = (error: unknown): string => {
@@ -55,6 +51,23 @@ router.post('/schedule', authMiddleware, async (req, res) => {
 router.get('/:id/token', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user?.id;
+
+    // Fetch the V-Date record to check participants
+    const { data: vdate, error: fetchError } = await supabase
+      .from('vdates')
+      .select('user_id_1, user_id_2')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !vdate) {
+      return res.status(404).json({ success: false, error: 'V-Date not found' });
+    }
+
+    // Authorization check - only participants can generate tokens
+    if (vdate.user_id_1 !== userId && vdate.user_id_2 !== userId) {
+      return res.status(403).json({ success: false, error: 'You are not a participant in this V-Date' });
+    }
 
     const appId = process.env.VITE_AGORA_APP_ID!;
     const appCertificate = process.env.AGORA_APP_CERTIFICATE!;
@@ -100,8 +113,8 @@ router.get('/my-vdates', authMiddleware, async (req, res) => {
       .from('vdates')
       .select(`
         *,
-        user1:profiles!vdates_user_id_1_fkey(user_id, full_name, profile_photo_url),
-        user2:profiles!vdates_user_id_2_fkey(user_id, full_name, profile_photo_url)
+        user1:profiles!vdates_user_id_1_fkey(user_id, first_name, last_name, display_name, profile_picture_url, city, state, verified),
+        user2:profiles!vdates_user_id_2_fkey(user_id, first_name, last_name, display_name, profile_picture_url, city, state, verified)
       `)
       .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`)
       .order('scheduled_time', { ascending: true });

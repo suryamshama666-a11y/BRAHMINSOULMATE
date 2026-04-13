@@ -1,6 +1,6 @@
 
 import { useForumCategories } from './forum/useForumCategories';
-import { useForumPosts, ForumPost } from './forum/useForumPosts';
+import { useForumPosts } from './forum/useForumPosts';
 import { useForumReplies } from './forum/useForumReplies';
 
 export type { ForumCategory } from './forum/useForumCategories';

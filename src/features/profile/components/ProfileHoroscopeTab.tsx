@@ -4,13 +4,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Profile } from '@/types/profile';
 import { CompatibilityScore } from '@/components/compatibility/CompatibilityScore';
 import { Star, Calendar, Moon, Sun } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 type ProfileHoroscopeTabProps = {
   profile: Profile;
 };
 
 export default function ProfileHoroscopeTab({ profile }: ProfileHoroscopeTabProps) {
-  console.log('ProfileHoroscopeTab rendering with profile:', profile);
+  logger.log('ProfileHoroscopeTab rendering with profile:', profile);
   
   return (
     <div className="space-y-6">

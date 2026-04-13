@@ -77,7 +77,7 @@ export const useInterests = () => {
     }
   };
 
-  // Real-time subscription for interest exchanges
+  // effect:audited — Real-time Supabase subscription for interest exchanges
   useEffect(() => {
     if (!user) return;
 
@@ -110,6 +110,7 @@ export const useInterests = () => {
     return () => {
       supabase.removeChannel(channel);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const addInterest = async (interestData: { interest_name: string; category: string }) => {

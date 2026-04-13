@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Locate, User, Heart, MessageCircle, Star, Loader2 } from 'lucide-react';
+import { MapPin, Locate, User, MessageCircle, Star, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -93,7 +93,7 @@ const LocationSearch = ({ onSearch }: LocationSearchProps) => {
             toast.success('Current location detected');
             setLocation(`${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`);
           },
-          (error) => {
+          (_error) => {
             toast.error('Unable to get current location');
             setUseCurrentLocation(false);
           }

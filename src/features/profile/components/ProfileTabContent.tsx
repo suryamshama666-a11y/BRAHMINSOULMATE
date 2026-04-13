@@ -7,13 +7,14 @@ import ProfileProfessionalTab from './ProfileProfessionalTab';
 import ProfileFamilyTab from './ProfileFamilyTab';
 import ProfilePreferencesTab from './ProfilePreferencesTab';
 import ProfileHoroscopeTab from './ProfileHoroscopeTab';
+import { logger } from '@/utils/logger';
 
 type ProfileTabContentProps = {
   profile: Profile;
 };
 
 export default function ProfileTabContent({ profile }: ProfileTabContentProps) {
-  console.log('ProfileTabContent rendering with profile:', profile);
+  logger.log('ProfileTabContent rendering with profile:', profile);
   
   if (!profile) {
     console.error('ProfileTabContent: No profile provided');

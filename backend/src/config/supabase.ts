@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -10,7 +10,12 @@ if (!supabaseUrl || !supabaseServiceKey) {
   console.warn('Supabase environment variables are missing in backend');
 }
 
-export const supabase = createClient(
-  supabaseUrl || '',
-  supabaseServiceKey || ''
-);
+// Create a mock client for testing when credentials are not available
+const createMockClient = (): SupabaseClient => {
+  // Return a minimal mock that won't throw on instantiation
+  return createClient('https://mock.supabase.co', 'mock-key-mock-key-mock-key-mock-key');
+};
+
+export const supabase = (supabaseUrl && supabaseServiceKey)
+  ? createClient(supabaseUrl, supabaseServiceKey)
+  : createMockClient();

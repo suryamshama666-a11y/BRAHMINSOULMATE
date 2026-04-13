@@ -16,7 +16,7 @@ interface VoiceCallHeaderProps {
 export const VoiceCallHeader = ({
   connectionQuality,
   callDuration,
-  showChat,
+  _showChat,
   onToggleChat,
   onEndCall,
   recordingEnabled

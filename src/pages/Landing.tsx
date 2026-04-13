@@ -1,9 +1,8 @@
-'use client';
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Heart, Users, Video, Star, Shield, Sparkles, ArrowRight, CheckCircle2, Quote, ChevronRight } from 'lucide-react';
+import SEO from '@/components/SEO';
 
 const FloatingHeart = ({ delay, size, left }: { delay: number; size: number; left: string }) => (
   <div
@@ -20,8 +19,9 @@ const FloatingHeart = ({ delay, size, left }: { delay: number; size: number; lef
 );
 
 const Landing = () => {
-  const [scrollY, setScrollY] = useState(0);
+  const [_scrollY, setScrollY] = useState(0);
 
+  // effect:audited — Scroll event listener for parallax effect
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll);
@@ -50,6 +50,11 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen overflow-hidden">
+      <SEO 
+        title="Find Your Sacred Soulmate"
+        description="Join the exclusive community of verified Brahmin profiles. Premium matchmaking with tradition, security, and sacred connections."
+        keywords="Brahmin matrimony, Brahmin soulmate, Gotra matching, Brahmin community, matrimonial services"
+      />
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-4">
         {/* Animated Background */}

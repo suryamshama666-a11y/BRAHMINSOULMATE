@@ -5,7 +5,6 @@ import { matchingService } from '@/services/api/matching.service';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useVDateScheduling } from './hooks/useVDateScheduling';
-import { vdateTemplates } from '@/data/vdatesData';
 
 interface Profile {
   user_id: string;
@@ -37,7 +36,7 @@ const transformServiceVDate = (v: ServiceVDate): LocalVDate => ({
 
 export const useVDates = () => {
   const [vdates, setVDates] = useState<LocalVDate[]>([]);
-  const [invitations, setInvitations] = useState<VDateInvitation[]>([]);
+  const [invitations, _setInvitations] = useState<VDateInvitation[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -100,7 +99,7 @@ export const useVDates = () => {
     inv.status === 'sent' && inv.fromUserId === currentUserId
   );
 
-  const scheduleVDate = async (profileId: string, template: VDateTemplate, message?: string) => {
+  const scheduleVDate = async (profileId: string, template: VDateTemplate, _message?: string) => {
     if (!scheduling.selectedDate || !scheduling.selectedTime) {
       toast.error('Please select date and time');
       return;
@@ -117,11 +116,11 @@ export const useVDates = () => {
     }
   };
 
-  const acceptInvitation = async (invitationId: string) => {
+  const acceptInvitation = async (_invitationId: string) => {
     toast.info('Invitation accepted');
   };
 
-  const declineInvitation = async (invitationId: string) => {
+  const declineInvitation = async (_invitationId: string) => {
     toast.info('Invitation declined');
   };
 
@@ -155,7 +154,7 @@ export const useVDates = () => {
     }
   };
 
-  const submitFeedback = async (vdateId: string, rating: number, comment: string, wouldMeetAgain: boolean) => {
+  const submitFeedback = async (vdateId: string, rating: number, comment: string, _wouldMeetAgain: boolean) => {
     try {
       await vdatesService.submitFeedback(vdateId, rating, comment);
       toast.success('Thank you for your feedback!');

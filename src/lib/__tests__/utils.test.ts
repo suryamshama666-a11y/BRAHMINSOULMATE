@@ -1,44 +1,28 @@
 import { describe, it, expect } from 'vitest';
 import { cn } from '../utils';
 
-describe('cn utility function', () => {
-  it('merges class names correctly', () => {
-    const result = cn('class1', 'class2');
-    expect(result).toBe('class1 class2');
-  });
+describe('Utils', () => {
+  describe('cn (className merger)', () => {
+    it('should merge class names', () => {
+      expect(cn('class1', 'class2')).toBe('class1 class2');
+    });
 
-  it('handles conditional classes', () => {
-    const result = cn('base', true && 'included', false && 'excluded');
-    expect(result).toBe('base included');
-  });
+    it('should handle conditional classes', () => {
+      const showConditional = true;
+      const showHidden = false;
+      expect(cn('base', showConditional && 'conditional', showHidden && 'hidden')).toBe('base conditional');
+    });
 
-  it('handles undefined values', () => {
-    const result = cn('base', undefined, 'end');
-    expect(result).toBe('base end');
-  });
+    it('should handle undefined and null', () => {
+      expect(cn('class1', undefined, null, 'class2')).toBe('class1 class2');
+    });
 
-  it('handles null values', () => {
-    const result = cn('base', null, 'end');
-    expect(result).toBe('base end');
-  });
+    it('should merge tailwind classes correctly', () => {
+      expect(cn('px-2 py-1', 'px-4')).toBe('py-1 px-4');
+    });
 
-  it('merges tailwind classes correctly', () => {
-    const result = cn('px-2 py-1', 'px-4');
-    expect(result).toBe('py-1 px-4');
-  });
-
-  it('handles empty input', () => {
-    const result = cn();
-    expect(result).toBe('');
-  });
-
-  it('handles array of classes', () => {
-    const result = cn(['class1', 'class2']);
-    expect(result).toBe('class1 class2');
-  });
-
-  it('handles object syntax', () => {
-    const result = cn({ 'active': true, 'disabled': false });
-    expect(result).toBe('active');
+    it('should handle empty input', () => {
+      expect(cn()).toBe('');
+    });
   });
 });

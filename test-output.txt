@@ -1,0 +1,53 @@
+
+[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mD:/brahminsoul/brahminsoul/New folder/brahmin-soulmate-connect-main[39m
+
+ [32m✓[39m src/components/__tests__/componentLogic.test.ts [2m([22m[2m28 tests[22m[2m)[22m[32m 105[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/utils.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m src/services/__tests__/paymentService.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/lib/__tests__/matching-algorithm.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m src/services/__tests__/authValidation.test.ts [2m([22m[2m28 tests[22m[2m)[22m[32m 52[2mms[22m[39m
+ [31m❯[39m src/services/__tests__/matchingService.test.ts [2m([22m[2m10 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 182[2mms[22m[39m
+[31m   [31m×[31m MatchingService - Compatibility Algorithm[2m > [22mcalculateCompatibilityScore[2m > [22mshould calculate perfect score for identical profiles[39m[32m 169[2mms[22m[39m
+[31m     → expected 19 to be greater than 80[39m
+   [32m✓[39m MatchingService - Compatibility Algorithm[2m > [22mcalculateCompatibilityScore[2m > [22mshould give high score for age difference <= 2 years[32m 2[2mms[22m[39m
+   [32m✓[39m MatchingService - Compatibility Algorithm[2m > [22mcalculateCompatibilityScore[2m > [22mshould give moderate score for age difference 5-10 years[32m 1[2mms[22m[39m
+   [32m✓[39m MatchingService - Compatibility Algorithm[2m > [22mcalculateCompatibilityScore[2m > [22mshould boost score for same caste[32m 1[2mms[22m[39m
+   [32m✓[39m MatchingService - Compatibility Algorithm[2m > [22mcalculateCompatibilityScore[2m > [22mshould boost score for same city location[32m 1[2mms[22m[39m
+   [32m✓[39m MatchingService - Compatibility Algorithm[2m > [22mcalculateCompatibilityScore[2m > [22mshould give moderate score for same state but different city[32m 1[2mms[22m[39m
+   [32m✓[39m MatchingService - Compatibility Algorithm[2m > [22mcalculateCompatibilityScore[2m > [22mshould boost score for same education level[32m 1[2mms[22m[39m
+   [32m✓[39m MatchingService - Compatibility Algorithm[2m > [22mcalculateCompatibilityScore[2m > [22mshould boost score for common interests[32m 1[2mms[22m[39m
+   [32m✓[39m MatchingService - Compatibility Algorithm[2m > [22mcalculateCompatibilityScore[2m > [22mshould handle profiles with minimal data[32m 1[2mms[22m[39m
+   [32m✓[39m MatchingService - Compatibility Algorithm[2m > [22mcalculateCompatibilityScore[2m > [22mshould return score between 0 and 100[32m 1[2mms[22m[39m
+ [32m✓[39m src/components/ui/__tests__/Card.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 618[2mms[22m[39m
+   [33m[2m✓[22m[39m Card components[2m > [22mCard[2m > [22mrenders card with children [33m 521[2mms[22m[39m
+ [32m✓[39m src/components/ui/__tests__/Button.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[32m 295[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useAuth.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/ProfileCard.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 2527[2mms[22m[39m
+   [33m[2m✓[22m[39m ProfileCard[2m > [22mProfileCard module can be imported [33m 2523[2mms[22m[39m
+ [32m✓[39m src/components/__tests__/ErrorBoundary.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 4348[2mms[22m[39m
+   [33m[2m✓[22m[39m ErrorBoundary[2m > [22mErrorBoundary module can be imported [33m 4342[2mms[22m[39m
+ [31m❯[39m src/components/__tests__/Navbar.test.tsx [2m([22m[2m1 test[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 10780[2mms[22m[39m
+[31m   [31m×[31m OriginalNavbar[2m > [22mOriginalNavbar module can be imported[39m[33m 10776[2mms[22m[39m
+[31m     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".[39m
+ [31m❯[39m src/pages/__tests__/Community.test.tsx [2m([22m[2m1 test[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 10492[2mms[22m[39m
+[31m   [31m×[31m Community Page[2m > [22mCommunity module can be imported[39m[33m 10488[2mms[22m[39m
+[31m     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".[39m
+ [32m✓[39m src/services/api/__tests__/horoscope.service.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [31m❯[39m src/services/__tests__/blog.service.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 10826[2mms[22m[39m
+[31m   [31m×[31m blogService[2m > [22mblogService module can be imported[39m[33m 10797[2mms[22m[39m
+[31m     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".[39m
+   [32m✓[39m blogService[2m > [22mblogService has getArticles method[32m 20[2mms[22m[39m
+   [32m✓[39m blogService[2m > [22mblogService has getFeaturedArticles method[32m 2[2mms[22m[39m
+   [32m✓[39m blogService[2m > [22mblogService has getAnnouncements method[32m 2[2mms[22m[39m
+   [32m✓[39m blogService[2m > [22mblogService has getArticleBySlug method[32m 2[2mms[22m[39m
+ [31m❯[39m src/components/__tests__/ProtectedRoute.test.tsx [2m([22m[2m1 test[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 10930[2mms[22m[39m
+[31m   [31m×[31m ProtectedRoute[2m > [22mProtectedRoute module can be imported[39m[33m 10927[2mms[22m[39m
+[31m     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".[39m
+[90mstdout[2m | backend/dist/__tests__/matching.test.js
+[22m[39mDotenv load result: Success
+RAZORPAY_KEY_ID: Missing
+

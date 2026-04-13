@@ -8,6 +8,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 import { isDevBypassMode } from '@/config/dev';
+import { logger } from '@/utils/logger';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -24,7 +25,7 @@ export default function ProtectedRoute({
   const location = useLocation();
   const devMode = isDevBypassMode();
 
-  // Update last active timestamp when user navigates (skip in dev mode)
+  // effect:audited — Update last active timestamp when user navigates (auth state side effect)
   useEffect(() => {
     if (user && !devMode) {
       updateLastActive();
@@ -33,7 +34,7 @@ export default function ProtectedRoute({
 
   // DEV MODE: Bypass authentication if enabled
   if (devMode) {
-    console.log('🔓 DEV MODE: Authentication bypassed');
+    logger.log('🔓 DEV MODE: Authentication bypassed');
     return <>{children}</>;
   }
 
@@ -60,7 +61,7 @@ export default function ProtectedRoute({
   }
 
   // Check verification requirement
-  if (requireVerified && (profile as any)?.verification_status !== 'verified') {
+  if (requireVerified && profile?.verification_status !== 'verified') {
     return <Navigate to="/profile" state={{ message: 'Please verify your profile to access this feature' }} replace />;
   }
 

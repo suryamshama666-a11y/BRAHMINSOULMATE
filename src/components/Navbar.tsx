@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  Menu, X, Bell, MessageCircle, Heart, Search, User, 
-  Crown, Sparkles, LogOut, Settings, LayoutDashboard
+import {
+  Menu, X, Bell, MessageCircle, Heart, User,
+  Crown, LogOut, Settings, LayoutDashboard
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -27,9 +27,9 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
   const isMobile = useIsMobile();
 
+  // effect:audited — Scroll event listener for navbar background
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
@@ -101,7 +101,7 @@ export default function Navbar() {
                     onClick={() => navigate('/messages')}
                   >
                     <MessageCircle className="h-5 w-5" />
-                    {(profile as any)?.unreadMessages > 0 && (
+                    {profile?.unreadMessages && profile.unreadMessages > 0 && (
                       <span className="absolute top-2 right-2 h-2 w-2 bg-[#FF4500] rounded-full border-2 border-white"></span>
                     )}
                   </Button>

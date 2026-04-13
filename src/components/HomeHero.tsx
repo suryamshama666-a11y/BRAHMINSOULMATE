@@ -1,12 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, UserPlus, Search, ChevronRight } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { Search, ChevronRight } from 'lucide-react';
 
 const HomeHero: React.FC = () => {
-  const isMobile = useIsMobile();
-
   return (
     <section className="relative py-16 md:py-24 bg-primary overflow-hidden">
       {/* Background pattern */}

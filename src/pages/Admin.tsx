@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,9 +10,10 @@ import { AdminHeader } from './admin/components/AdminHeader';
 import { UserManagementTab } from './admin/components/UserManagementTab';
 import { AnalyticsTab } from './admin/components/AnalyticsTab';
 import { EventsManagementTab } from './admin/components/EventsManagementTab';
+import { ContentModerationTab } from './admin/components/ContentModerationTab';
 import {
   Shield, Users, FileText, Activity,
-  AlertTriangle, Calendar
+  Calendar
 } from 'lucide-react';
 
 const Admin = () => {
@@ -34,6 +35,7 @@ const Admin = () => {
     if (isAdmin) {
       loadData();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin]);
 
   const loadData = async () => {
@@ -110,21 +112,7 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="content" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Content Moderation
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
-                  <p>Content moderation features coming soon</p>
-                  <p className="text-sm">Forum posts, profiles, and images will be managed here</p>
-                </div>
-              </CardContent>
-            </Card>
+            <ContentModerationTab />
           </TabsContent>
 
           <TabsContent value="logs" className="space-y-6">

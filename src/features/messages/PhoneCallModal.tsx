@@ -18,6 +18,7 @@ export const PhoneCallModal = ({ isOpen, onClose, profile }: PhoneCallModalProps
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [callDuration, setCallDuration] = useState(0);
 
+  // effect:audited — Connection simulation timer
   useEffect(() => {
     if (isOpen) {
       // Simulate connection
@@ -29,6 +30,7 @@ export const PhoneCallModal = ({ isOpen, onClose, profile }: PhoneCallModalProps
     }
   }, [isOpen, profile.name]);
 
+  // effect:audited — Call duration interval timer
   useEffect(() => {
     let durationTimer: number | undefined;
     

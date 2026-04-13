@@ -76,7 +76,7 @@ export const EnhancedChatPanel: React.FC<EnhancedChatPanelProps> = ({
     }
   };
 
-  const handleFileUpload = async (file: File, type: 'image' | 'video' | 'file', url: string) => {
+  const _handleFileUpload = async (file: File, type: 'image' | 'video' | 'file', url: string) => {
     if (!conversationPartner) return;
 
     setIsUploading(true);
@@ -92,21 +92,21 @@ export const EnhancedChatPanel: React.FC<EnhancedChatPanelProps> = ({
         file_name: file.name,
         file_size: file.size
       });
-    } catch (error) {
+    } catch {
       toast.error('Failed to send file');
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleVoiceMessage = async (audioBlob: Blob, duration: number) => {
+  const _handleVoiceMessage = async (audioBlob: Blob, duration: number) => {
     if (!conversationPartner) return;
 
     setIsUploading(true);
     try {
       // Upload audio blob to storage
-      const formData = new FormData();
-      formData.append('file', audioBlob, 'voice-message.webm');
+      const _formData = new FormData();
+      _formData.append('file', audioBlob, 'voice-message.webm');
       
       // For now, create a URL for the blob
       const audioUrl = URL.createObjectURL(audioBlob);
@@ -117,14 +117,14 @@ export const EnhancedChatPanel: React.FC<EnhancedChatPanelProps> = ({
         message_type: 'audio',
         media_url: audioUrl
       });
-    } catch (error) {
+    } catch {
       toast.error('Failed to send voice message');
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const _handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewMessage(e.target.value);
     
     // Handle typing indicator
@@ -145,7 +145,7 @@ export const EnhancedChatPanel: React.FC<EnhancedChatPanelProps> = ({
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const _handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -162,7 +162,7 @@ export const EnhancedChatPanel: React.FC<EnhancedChatPanelProps> = ({
     };
   }, [conversationId, setTyping]);
 
-  const handleBlockUser = async () => {
+  const _handleBlockUser = async () => {
     if (!conversationPartner) return;
     
     const result = await blockUser(conversationPartner.user_id, 'Blocked from chat');
@@ -171,13 +171,13 @@ export const EnhancedChatPanel: React.FC<EnhancedChatPanelProps> = ({
     }
   };
 
-  const handleReportUser = async () => {
+  const _handleReportUser = async () => {
     if (!conversationPartner) return;
     
     await reportUser(conversationPartner.user_id, 'Inappropriate behavior', 'Reported from chat');
   };
 
-  const handleToggleShortlist = async () => {
+  const _handleToggleShortlist = async () => {
     if (!conversationPartner) return;
     
     if (isInShortlist(conversationPartner.user_id)) {
@@ -283,7 +283,7 @@ export const EnhancedChatPanel: React.FC<EnhancedChatPanelProps> = ({
               file_name: file.name,
               file_size: file.size
             });
-          } catch (error) {
+          } catch {
             toast.error('Failed to send file');
           } finally {
             setIsUploading(false);
@@ -300,7 +300,7 @@ export const EnhancedChatPanel: React.FC<EnhancedChatPanelProps> = ({
               message_type: 'audio',
               media_url: audioUrl
             });
-          } catch (error) {
+          } catch {
             toast.error('Failed to send voice message');
           } finally {
             setIsUploading(false);

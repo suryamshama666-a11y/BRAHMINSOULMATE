@@ -3,9 +3,10 @@ import Footer from '@/components/Footer';
 import { SubscriptionCard } from '@/components/premium/SubscriptionCard';
 import { PremiumFeatures } from '@/components/premium/PremiumFeatures';
 import { useSubscription } from '@/hooks/useSubscription';
+import SEO from '@/components/SEO';
 
 const Plans = () => {
-  const { subscriptionPlans, currentSubscription, subscribeToPlan, loading } = useSubscription();
+  const { subscriptionPlans, currentSubscription, subscribeToPlan } = useSubscription();
 
   const handleSelectPlan = async (planId: string) => {
     if (planId === 'free') {
@@ -17,6 +18,11 @@ const Plans = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-orange-50/30">
+      <SEO 
+        title="Matrimony Plans & Pricing"
+        description="Explore our affordable Brahmin matrimony plans. From free basic access to premium features like video calls and advanced matching. Choose the best path for your soulmate search."
+        keywords="matrimony plans, Brahmin marriage pricing, premium matrimonial services"
+      />
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="text-center mb-8">
           <h1 

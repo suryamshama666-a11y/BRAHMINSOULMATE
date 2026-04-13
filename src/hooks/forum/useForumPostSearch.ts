@@ -1,8 +1,8 @@
 
 import { useState } from 'react';
-import { getSupabase } from '@/lib/getSupabase';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ForumPost, ForumSearchFilters } from './types';
+import { ForumSearchFilters } from './types';
 
 export const useForumPostSearch = () => {
   const [loading, setLoading] = useState(false);
@@ -10,7 +10,7 @@ export const useForumPostSearch = () => {
   const searchPosts = async (query: string, filters?: ForumSearchFilters) => {
     try {
       setLoading(true);
-      let supabaseQuery = getSupabase()
+      let supabaseQuery = supabase
         .from('forum_posts')
         .select('*');
 

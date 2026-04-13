@@ -1,5 +1,4 @@
 import { Profile } from '@/types/profile';
-import { ProfileGender, ProfileMaritalStatus, Gotra, BrahminSubcaste, IshtaDevata } from '@/types/profile';
 
 export type RashiValue = 
   | "Mesha" | "Vrishabha" | "Mithuna" | "Karka" 

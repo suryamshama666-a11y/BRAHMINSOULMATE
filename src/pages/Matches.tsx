@@ -14,6 +14,8 @@ import { toast } from 'sonner';
 import { matchingService, interestsService, paymentsService } from '@/services/api';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Pagination } from '@/components/ui/pagination';
+import { ProfileCardSkeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const COUNTRIES = [
   { value: 'India', label: 'India' },
@@ -156,7 +158,7 @@ export default function Matches() {
       });
       
       await paymentsService.recordActivity(user.id, 'interests_sent');
-    } catch (error) {
+    } catch {
       toast.error('Error checking limits');
     }
   };
@@ -201,8 +203,34 @@ export default function Matches() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-amber-50 to-red-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-600"></div>
+      <div className="min-h-screen bg-gray-50">
+        <main className="container mx-auto px-4 py-8">
+          {/* Header Skeleton */}
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="h-9 w-48 bg-gray-200 rounded animate-pulse mb-2"></div>
+              <div className="h-5 w-64 bg-gray-100 rounded animate-pulse"></div>
+            </div>
+            <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse"></div>
+          </div>
+          
+          {/* Grid Layout Skeleton */}
+          <div className="grid md:grid-cols-4 gap-6">
+            {/* Sidebar Skeleton */}
+            <div className="md:col-span-1 space-y-4">
+              <div className="h-10 w-full bg-gray-200 rounded-lg animate-pulse"></div>
+              <div className="h-40 w-full bg-gray-100 rounded-lg animate-pulse"></div>
+              <div className="h-32 w-full bg-gray-100 rounded-lg animate-pulse"></div>
+            </div>
+            
+            {/* Profile Cards Skeleton */}
+            <div className="md:col-span-3 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <ProfileCardSkeleton key={i} />
+              ))}
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
@@ -345,10 +373,15 @@ export default function Matches() {
           {/* Matches Grid */}
           <div className={showFilters ? 'md:col-span-3' : 'md:col-span-4'}>
             {filteredMatches.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <p className="text-gray-600 mb-2">No matches found based on your filters.</p>
-                  <p className="text-sm text-gray-500">Try adjusting your filter criteria to see more profiles.</p>
+              <Card className="bg-white rounded-2xl shadow-sm">
+                <CardContent className="p-0">
+                  <EmptyState 
+                    variant="no-matches"
+                    title="No Matches Found"
+                    description="Try adjusting your filters to see more profiles that match your preferences."
+                    actionLabel="Reset Filters"
+                    onAction={resetFilters}
+                  />
                 </CardContent>
               </Card>
             ) : (

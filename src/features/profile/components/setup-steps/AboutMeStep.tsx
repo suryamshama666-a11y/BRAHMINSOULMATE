@@ -34,7 +34,7 @@ const PERSONALITY_TRAITS = [
 export default function AboutMeStep({ data, onUpdate, onComplete }: AboutMeStepProps) {
   const [introduction, setIntroduction] = useState(data.introduction || '');
   const [hobbies, setHobbies] = useState<string[]>(data.hobbies || []);
-  const [interests, setInterests] = useState<string[]>(data.interests || []);
+  const [interests, _setInterests] = useState<string[]>(data.interests || []);
   const [lifeGoals, setLifeGoals] = useState(data.lifeGoals || '');
   const [personalityTraits, setPersonalityTraits] = useState<string[]>(data.personalityTraits || []);
   const [customHobby, setCustomHobby] = useState('');

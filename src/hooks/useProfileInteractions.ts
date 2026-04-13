@@ -8,7 +8,7 @@ type AnyProfileType = Profile | UserProfile | any;
 
 export const useProfileInteractions = (profile: AnyProfileType) => {
   const [liked, setLiked] = useState(false);
-  const [isMessaging, setIsMessaging] = useState(false);
+  const [isMessaging, ] = useState(false);
 
   // Handle like/interest
   const handleLike = () => {

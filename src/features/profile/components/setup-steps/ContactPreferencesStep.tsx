@@ -3,9 +3,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Shield, Bell, Eye, Phone, Mail, MessageCircle } from 'lucide-react';
+import { Shield, Bell, Eye, MessageCircle } from 'lucide-react';
 
 type ContactPreferencesStepProps = {
   data: {

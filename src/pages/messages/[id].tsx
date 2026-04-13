@@ -11,7 +11,7 @@ interface MessagesPageProps {
 
 const MessagesPage: React.FC<MessagesPageProps> = ({ receiverId = '' }) => {
   const { user, loading } = useAuth();
-  const { conversations, isLoading: conversationsLoading } = useConversations();
+  const { isLoading: _conversationsLoading } = useConversations();
 
   // Mock router functionality
   const navigateBack = () => {

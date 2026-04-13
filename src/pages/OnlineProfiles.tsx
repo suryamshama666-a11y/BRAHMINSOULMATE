@@ -1,22 +1,41 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Link, useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Eye, Clock, MapPin, Filter, Users, UserPlus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Filter } from 'lucide-react';
 import ProfileCard from '@/components/ProfileCard';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { ProfileCardSkeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
+
+interface OnlineProfile {
+  id: string;
+  name: string;
+  age: number;
+  gender: string;
+  height: number;
+  religion: string;
+  caste: string;
+  location: string;
+  education: string;
+  profession: string;
+  subscription_type: string;
+  onlineStatus: string;
+  lastSeen: string;
+  profile_picture_url?: string;
+  gotra?: string;
+}
 
 const OnlineProfiles = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [onlineProfiles, setOnlineProfiles] = useState([]);
+  const [onlineProfiles, setOnlineProfiles] = useState<OnlineProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(true);
   
@@ -38,21 +57,23 @@ const OnlineProfiles = () => {
 
         if (error) throw error;
 
-        const transformed = (data || []).map(p => ({
+        const transformed = (data || []).map((p: any) => ({
           id: p.id,
-          name: p.first_name + (p.last_name ? ' ' + p.last_name : ''),
+          name: p.name || (p.first_name ? `${p.first_name} ${p.last_name || ''}` : 'User'),
           age: p.age || 25,
-          gender: p.gender,
+          gender: p.gender || 'Not specified',
           height: p.height || 160,
           religion: p.religion || 'Hindu',
           caste: p.caste || 'Brahmin',
-          location: `${p.city || 'Mumbai'}, ${p.state || 'Maharashtra'}`,
-          education: p.education_level || 'Graduate',
+          location: typeof p.location === 'string' ? p.location : 
+                   (p.city ? `${p.city}, ${p.state || ''}` : 
+                   (p.location?.city ? `${p.location.city}, ${p.location.state || ''}` : 'India')),
+          education: p.education_level || p.education || 'Graduate',
           profession: p.occupation || 'Professional',
           subscription_type: p.subscription_type || 'free',
           onlineStatus: 'Online now',
           lastSeen: 'Active now',
-          profile_picture_url: p.profile_picture_url
+          profile_picture_url: p.profile_picture_url || p.avatar_url
         }));
         
         setOnlineProfiles(transformed);
@@ -92,7 +113,7 @@ const OnlineProfiles = () => {
         toast.success(`${profileName} has been unblocked`);
         break;
       default:
-        console.log('Unknown action:', action);
+        logger.log('Unknown action:', action);
     }
   };
 
@@ -104,13 +125,9 @@ const OnlineProfiles = () => {
     setSortBy('lastActive');
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-amber-50 to-red-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-600"></div>
-      </div>
-    );
-  }
+  // Render loading state within the main layout to maintain header/filters visibility or use a full page skeleton
+  // Here we will use the full page structure but with skeletons
+  const isLoading = loading;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50/30 via-white to-amber-50/40">
@@ -201,39 +218,42 @@ const OnlineProfiles = () => {
                   </CardContent>
                 </Card>
               )}
-                <div className={cn(showFilters ? 'lg:col-span-2' : 'lg:col-span-3')}>
-                {onlineProfiles.length > 0 ? (
+             <div className={cn(showFilters ? 'lg:col-span-2' : 'lg:col-span-3')}>
+                {isLoading ? (
                   <div className={cn("grid grid-cols-1 gap-4", showFilters ? "md:grid-cols-2" : "md:grid-cols-3")}>
-                {onlineProfiles.map((profile) => (
-                  <ProfileCard 
-                    key={profile.id}
-                    profile={{
-                      ...profile, 
-                      lastSeen: profile.lastSeen,
-                      gotra: profile.gotra || 'Gotra not specified'
-                    }}
-                    variant="online"
-                    onAction={handleProfileAction}
-                  />
-                ))}
-              </div>
-            ) : (
-              <Card className="text-center py-16">
-                <CardContent>
-                  <div className="h-16 w-16 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <Clock className="h-8 w-8 text-gray-400" />
+                    {[...Array(6)].map((_, i) => (
+                      <ProfileCardSkeleton key={i} />
+                    ))}
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">No One Online Right Now</h3>
-                  <p className="text-gray-600 mb-6">Check back later or browse all profiles</p>
-                    <Link to="/search">
-                      <Button className="bg-green-600 hover:bg-green-700 text-white shadow-md">
-                        Browse All Profiles
-                      </Button>
-                    </Link>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                ) : onlineProfiles.length > 0 ? (
+                  <div className={cn("grid grid-cols-1 gap-4", showFilters ? "md:grid-cols-2" : "md:grid-cols-3")}>
+                    {onlineProfiles.map((profile) => (
+                      <ProfileCard 
+                        key={profile.id}
+                        profile={{
+                          ...profile, 
+                          lastSeen: profile.lastSeen,
+                          gotra: profile.gotra || 'Gotra not specified'
+                        }}
+                        variant="online"
+                        onAction={handleProfileAction}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <Card className="py-8 border-dashed border-2 shadow-none bg-white/50">
+                    <CardContent className="p-0">
+                      <EmptyState 
+                        variant="no-results" 
+                        title="No One Online Right Now" 
+                        description="Check back later or browse all profiles to find someone special." 
+                        actionLabel="Browse All Profiles"
+                        actionHref="/search"
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
         </div>
       </div>
     </div>

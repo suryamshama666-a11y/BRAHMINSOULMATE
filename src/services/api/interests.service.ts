@@ -1,15 +1,17 @@
 import { supabase } from '@/lib/supabase';
+import { Database } from '@/types/supabase';
 
-export interface Interest {
-  id: string;
-  sender_id: string;
-  receiver_id: string;
-  status: 'pending' | 'accepted' | 'declined';
-  message: string;
-  created_at: string;
-  responded_at?: string;
-  sender?: any;
-  receiver?: any;
+type InterestRow = Database['public']['Tables']['interests']['Row'];
+type ConnectionRow = Database['public']['Tables']['connections']['Row'];
+
+export interface Interest extends InterestRow {
+  sender?: unknown;
+  receiver?: unknown;
+}
+
+export interface Connection extends ConnectionRow {
+  user1?: unknown;
+  user2?: unknown;
 }
 
 class InterestsService {
@@ -35,19 +37,15 @@ class InterestsService {
       .insert({
         sender_id: user.id,
         receiver_id: receiverId,
-        message,
+        message: message || null,
         status: 'pending'
-      })
+      } as unknown as Database['public']['Tables']['interests']['Insert'])
       .select()
       .single();
 
     if (error) throw error;
 
-    // Update analytics
-    await this.updateAnalytics(user.id, 'interests_sent');
-    await this.updateAnalytics(receiverId, 'interests_received');
-
-    return data;
+    return data as unknown as Interest;
   }
 
   // Get interests sent by current user
@@ -57,25 +55,12 @@ class InterestsService {
 
     const { data, error } = await supabase
       .from('interests')
-      .select(`
-        *,
-        receiver:receiver_id (
-          user_id,
-          full_name,
-          age,
-          height,
-          city,
-          state,
-          education,
-          occupation,
-          profile_picture
-        )
-      `)
+      .select('*')
       .eq('sender_id', user.id)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as unknown as Interest[];
   }
 
   // Get interests received by current user
@@ -85,27 +70,12 @@ class InterestsService {
 
     const { data, error } = await supabase
       .from('interests')
-      .select(`
-        *,
-        sender:sender_id (
-          user_id,
-          full_name,
-          age,
-          height,
-          city,
-          state,
-          education,
-          occupation,
-          profile_picture,
-          gotra,
-          subcaste
-        )
-      `)
+      .select('*')
       .eq('receiver_id', user.id)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as unknown as Interest[];
   }
 
   // Accept an interest
@@ -113,35 +83,15 @@ class InterestsService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    // Get the interest
-    const { data: interest, error: fetchError } = await supabase
-      .from('interests')
-      .select('*')
-      .eq('id', interestId)
-      .eq('receiver_id', user.id)
-      .single();
-
-    if (fetchError) throw fetchError;
-    if (!interest) throw new Error('Interest not found');
-
-    // Update interest status
     const { error: updateError } = await supabase
       .from('interests')
       .update({
-        status: 'accepted',
-        responded_at: new Date().toISOString()
+        status: 'accepted'
       })
-      .eq('id', interestId);
+      .eq('id', interestId)
+      .eq('receiver_id', user.id);
 
     if (updateError) throw updateError;
-
-    // Create connection (mutual match)
-    await this.createConnection(interest.sender_id, user.id);
-
-    // Send notification to sender
-    await this.sendNotification(interest.sender_id, 'interest_accepted', {
-      acceptedBy: user.id
-    });
   }
 
   // Decline an interest
@@ -152,28 +102,12 @@ class InterestsService {
     const { error } = await supabase
       .from('interests')
       .update({
-        status: 'declined',
-        responded_at: new Date().toISOString()
+        status: 'declined'
       })
       .eq('id', interestId)
       .eq('receiver_id', user.id);
 
     if (error) throw error;
-  }
-
-  // Create a connection between two users
-  private async createConnection(user1Id: string, user2Id: string): Promise<void> {
-    const { error } = await supabase
-      .from('connections')
-      .insert({
-        user1_id: user1Id,
-        user2_id: user2Id,
-        status: 'connected'
-      });
-
-    if (error && !error.message.includes('duplicate')) {
-      throw error;
-    }
   }
 
   // Check if users are connected
@@ -189,62 +123,19 @@ class InterestsService {
   }
 
   // Get all connections for current user
-  async getConnections(): Promise<any[]> {
+  async getConnections(): Promise<unknown[]> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
     const { data, error } = await supabase
       .from('connections')
-      .select(`
-        *,
-        user1:user1_id (
-          user_id,
-          full_name,
-          age,
-          city,
-          profile_picture
-        ),
-        user2:user2_id (
-          user_id,
-          full_name,
-          age,
-          city,
-          profile_picture
-        )
-      `)
+      .select('*')
       .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
       .eq('status', 'connected');
 
     if (error) throw error;
 
-    // Return the other user's profile
-    return (data || []).map(conn => {
-      return conn.user1_id === user.id ? conn.user2 : conn.user1;
-    });
-  }
-
-  // Update user analytics
-  private async updateAnalytics(userId: string, field: string): Promise<void> {
-    const { error } = await supabase.rpc('increment_analytics', {
-      p_user_id: userId,
-      p_field: field
-    });
-
-    if (error) console.error('Analytics update failed:', error);
-  }
-
-  // Send notification
-  private async sendNotification(userId: string, type: string, data: any): Promise<void> {
-    const { error } = await supabase
-      .from('notifications')
-      .insert({
-        user_id: userId,
-        type,
-        data,
-        read: false
-      });
-
-    if (error) console.error('Notification failed:', error);
+    return (data || []) as unknown[];
   }
 }
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Circle, ArrowRight, ArrowLeft } from 'lucide-react';
+import { CheckCircle, ArrowRight, ArrowLeft } from 'lucide-react';
 import BasicInfoStep from './setup-steps/BasicInfoStep';
 import PhotoUploadStep from './setup-steps/PhotoUploadStep';
 import AboutMeStep from './setup-steps/AboutMeStep';
@@ -44,10 +44,10 @@ export default function ProfileSetupWizard({ onComplete }: ProfileSetupWizardPro
       experience: '', annualIncome: '', workingWith: '', aboutCareer: ''
     },
     preferences: {
-      ageRange: [25, 35], heightRange: [150, 180], maritalStatus: [], education: [], profession: [],
-      location: { countries: [], states: [], cities: [], willingToRelocate: false },
-      lifestyle: { diet: [], smoking: '', drinking: '' },
-      family: { familyType: [], familyValues: '' },
+      ageRange: [25, 35] as [number, number], heightRange: [150, 180] as [number, number], maritalStatus: [] as string[], education: [] as string[], profession: [] as string[],
+      location: { countries: [] as string[], states: [] as string[], cities: [] as string[], willingToRelocate: false },
+      lifestyle: { diet: [] as string[], smoking: '', drinking: '' },
+      family: { familyType: [] as string[], familyValues: '' },
       religion: { caste: [], subcaste: [], gotra: [], manglik: '' },
       dealBreakers: '', additionalPreferences: ''
     },

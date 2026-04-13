@@ -71,7 +71,7 @@ const premiumFeatures = [
 ];
 
 export const PremiumFeatures = () => {
-  const getTierColor = (tier: string) => {
+  const _getTierColor = (tier: string) => {
     switch (tier) {
       case 'premium':
         return 'from-purple-500 to-indigo-500';

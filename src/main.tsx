@@ -2,6 +2,12 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import { logger as _logger } from '@/utils/logger';
+
+// Initialize global logger
+(window as unknown as { logger: typeof _logger }).logger = _logger;
+globalThis.logger = _logger;
+
 const dsn = import.meta.env.VITE_SENTRY_DSN;
 const environment = import.meta.env.VITE_SENTRY_ENVIRONMENT || 'development';
 const release = import.meta.env.VITE_SENTRY_RELEASE || '0.0.0';

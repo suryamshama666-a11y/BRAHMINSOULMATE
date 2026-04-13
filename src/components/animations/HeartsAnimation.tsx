@@ -52,6 +52,7 @@ export const HeartsAnimation: React.FC<HeartsAnimationProps> = ({
     };
   };
 
+  // effect:audited — Animation timing for floating hearts
   useEffect(() => {
     if (!isActive) return;
 
@@ -73,6 +74,7 @@ export const HeartsAnimation: React.FC<HeartsAnimationProps> = ({
     }, settings.interval);
 
     return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive, intensity]);
 
   if (!isActive) return null;
@@ -116,6 +118,7 @@ export const InteractiveHearts: React.FC<InteractiveHeartsProps> = ({
 }) => {
   const [hearts, setHearts] = useState<FloatingHeart[]>([]);
 
+  // effect:audited — Animation timing for interactive hearts burst
   useEffect(() => {
     if (triggerCount === 0) return;
 

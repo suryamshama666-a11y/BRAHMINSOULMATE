@@ -63,9 +63,10 @@ A comprehensive, feature-rich matrimonial platform specifically designed for the
 ### Prerequisites
 - Node.js 18+
 - Supabase account
+- Docker & Docker Compose (for production)
 - Git
 
-### Installation
+### Development Setup
 
 ```bash
 # Clone repository
@@ -74,19 +75,62 @@ cd brahmin-matrimonial
 
 # Install dependencies
 npm install
+npm run server:build  # Build backend
 
 # Set up environment variables
 cp .env.example .env.local
 # Edit .env.local with your credentials
 
 # Run database migrations
-supabase db push
+npm run migrate:up
 
-# Start development server
-npm run dev
+# Start development servers
+npm run dev              # Frontend (port 8080)
+npm run server:dev       # Backend (port 3001)
 ```
 
-Visit `http://localhost:5173` to see the application.
+Visit `http://localhost:8080` to see the application.
+
+### Production Deployment
+
+#### Option 1: Docker Compose (Recommended)
+
+```bash
+# Pre-deployment check
+bash scripts/pre-deploy-check.sh
+
+# Start all services
+npm run docker:compose:up
+
+# Run migrations
+npm run migrate:up
+
+# Monitor health
+npm run monitor
+```
+
+#### Option 2: Manual Deployment
+
+```bash
+# Build and start backend with PM2
+npm run server:build
+npm run server:start:pm2
+
+# Deploy frontend to Vercel/Railway
+npm run build
+# Deploy dist/ folder to your hosting provider
+```
+
+#### Option 3: Railway CLI
+
+```bash
+# Install Railway CLI
+npm install -g @railway/cli
+railway login
+
+# Deploy
+railway up
+```
 
 For detailed setup instructions, see [QUICK_START.md](./docs/QUICK_START.md)
 
@@ -139,12 +183,16 @@ brahmin-matrimonial/
 ## 🔐 Security Features
 
 - ✅ Row Level Security (RLS) on all tables
-- ✅ JWT authentication with refresh tokens
-- ✅ Role-based access control
+- ✅ JWT authentication with token validation
+- ✅ Role-based access control (admin, user)
 - ✅ Input validation and sanitization
 - ✅ Secure file storage
 - ✅ Payment signature verification
-- ✅ Rate limiting (planned)
+- ✅ Rate limiting on sensitive endpoints
+- ✅ PII scrubbing for logs/Sentry
+- ✅ Content Security Policy (CSP) headers
+- ✅ HTTP Strict Transport Security (HSTS)
+- ✅ XSS protection headers
 
 ## 📱 Features by User Type
 
@@ -187,12 +235,52 @@ npm run test:coverage
 ## 🚢 Deployment
 
 ### Quick Deploy to Vercel
+
 ```bash
 npm install -g vercel
 vercel --prod
 ```
 
 For detailed deployment instructions, see [DEPLOYMENT_GUIDE.md](./docs/DEPLOYMENT_GUIDE.md)
+
+### Production Scripts
+
+```bash
+# Pre-deployment validation
+npm run pre-deploy-check
+
+# Database management
+npm run migrate:up          # Run migrations
+npm run migrate:down        # Rollback last migration
+npm run migrate:status      # Check migration status
+
+# Process management (PM2)
+npm run server:start:pm2    # Start with PM2
+npm run server:stop:pm2     # Stop PM2 processes
+npm run server:restart:pm2  # Restart PM2 processes
+
+# Docker operations
+npm run docker:build        # Build Docker image
+npm run docker:run          # Run Docker container
+npm run docker:compose:up   # Start all services
+npm run docker:compose:down # Stop all services
+
+# Monitoring
+npm run monitor             # Run health checks
+```
+
+### Environment Variables
+
+**Critical for Production:**
+- `VITE_SUPABASE_URL` - Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` - Supabase anonymous key
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key (server-side only)
+- `RAZORPAY_KEY_ID` - Razorpay key ID
+- `RAZORPAY_KEY_SECRET` - Razorpay secret (server-side only)
+- `FRONTEND_URL` - Frontend application URL
+- `SENTRY_DSN` - Sentry error tracking (optional)
+
+**Never commit secrets to version control!**
 
 ## 📈 Roadmap
 
@@ -264,3 +352,22 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 **Built with ❤️ for the Brahmin community**
 
 *Connecting hearts, honoring traditions* 🙏
+
+## 🔒 SECURITY NOTES
+
+### Development Mode
+- **NEVER** enable `VITE_DEV_BYPASS_AUTH=true` in production
+- Development bypass should only be used for local testing
+- Always use proper authentication in staging and production
+
+### Environment Variables
+- Never commit secrets to version control
+- Use `.env.local` and add it to `.gitignore`
+- Rotate secrets regularly
+- Use different credentials for each environment (dev/staging/prod)
+
+### Deployment
+- Always deploy to staging first
+- Run security audit before production deployment
+- Keep dependencies updated
+- Monitor for security vulnerabilities

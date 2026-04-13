@@ -66,15 +66,17 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
             alt={displayName}
             className="w-full h-full object-cover"
             onError={(e) => {
-              // Fallback to initials if image fails to load
+              // Fallback to initials if image fails to load - XSS safe
               e.currentTarget.style.display = 'none';
               const parent = e.currentTarget.parentElement;
               if (parent) {
-                parent.innerHTML = `
-                  <div class="w-full h-full bg-primary flex items-center justify-center">
-                    <span class="text-white font-medium ${size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-sm' : 'text-xs'}">${getInitials(displayName)}</span>
-                  </div>
-                `;
+                const fallback = document.createElement('div');
+                fallback.className = 'w-full h-full bg-primary flex items-center justify-center';
+                const span = document.createElement('span');
+                span.className = `text-white font-medium ${size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-sm' : 'text-xs'}`;
+                span.textContent = getInitials(displayName); // Safe - no HTML parsing
+                fallback.appendChild(span);
+                parent.replaceChildren(fallback);
               }
             }}
           />

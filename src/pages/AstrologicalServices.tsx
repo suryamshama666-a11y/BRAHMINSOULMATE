@@ -8,7 +8,7 @@ import { useHoroscopeFeatures } from '@/features/profile/hooks/useHoroscopeFeatu
 import { Star, Calendar, CircleDot, Moon, Users, Video, Phone, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import PaymentPlans from '@/features/payments/components/PaymentPlans';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import PaymentForm from '@/features/payments/components/PaymentForm';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -43,7 +43,7 @@ export default function AstrologicalServices() {
     toast.success('Subscription activated successfully!');
   };
 
-  const handleSubscribeClick = (planName: string, planPrice: number) => {
+  const _handleSubscribeClick = (planName: string, planPrice: number) => {
     if (!user) {
       toast.error('Please log in to subscribe to a plan');
       return;

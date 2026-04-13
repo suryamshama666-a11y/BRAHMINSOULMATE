@@ -1,18 +1,18 @@
 
 import { useState } from 'react';
-import { getSupabase } from '@/lib/getSupabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from '../useSupabaseAuth';
 import { toast } from 'sonner';
 
 export interface ForumReply {
   id: string;
   post_id: string;
-  author_id: string;
+  user_id: string;
   content: string;
-  parent_reply_id?: string;
+  parent_reply_id?: string | null;
   like_count: number;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
 export const useForumReplies = () => {
@@ -21,14 +21,14 @@ export const useForumReplies = () => {
 
   const fetchReplies = async (postId: string) => {
     try {
-      const { data, error } = await getSupabase()
-        .from('forum_replies')
+      const { data, error } = await supabase
+        .from('forum_comments')
         .select('*')
         .eq('post_id', postId)
         .order('created_at');
 
       if (error) throw error;
-      setReplies(data || []);
+      setReplies((data as any) || []);
     } catch (error) {
       console.error('Error fetching replies:', error);
       toast.error('Failed to load replies');
@@ -42,11 +42,11 @@ export const useForumReplies = () => {
     }
 
     try {
-      const { data, error } = await getSupabase()
-        .from('forum_replies')
+      const { data, error } = await supabase
+        .from('forum_comments')
         .insert({
           post_id: postId,
-          author_id: user.id,
+          user_id: user.id,
           content,
           parent_reply_id: parentReplyId
         })
@@ -56,15 +56,15 @@ export const useForumReplies = () => {
       if (error) throw error;
 
       // Manually increment reply count
-      const { data: currentPost } = await getSupabase()
-        .from('forum_posts')
+      const { data: currentPost } = await (supabase
+        .from('forum_posts') as any)
         .select('reply_count')
         .eq('id', postId)
         .single();
 
       if (currentPost) {
-        const { error: updateError } = await getSupabase()
-          .from('forum_posts')
+        const { error: updateError } = await (supabase
+          .from('forum_posts') as any)
           .update({ reply_count: (currentPost.reply_count || 0) + 1 })
           .eq('id', postId);
 
@@ -88,7 +88,7 @@ export const useForumReplies = () => {
     }
 
     try {
-      const { error } = await getSupabase()
+      const { error } = await (supabase as any)
         .from('forum_likes')
         .insert({ user_id: user.id, reply_id: replyId });
 
@@ -106,7 +106,7 @@ export const useForumReplies = () => {
       if (error.code === '23505') {
         // Already liked, remove like
         try {
-          const { error: deleteError } = await getSupabase()
+          const { error: deleteError } = await (supabase as any)
             .from('forum_likes')
             .delete()
             .eq('user_id', user.id)

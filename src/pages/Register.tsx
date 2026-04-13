@@ -23,6 +23,7 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // effect:audited — Auth redirect (navigate away if already authenticated)
   React.useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard');

@@ -3,13 +3,14 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Profile } from '@/types/profile';
 import { Users, Home, Heart, Crown } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 type ProfileFamilyTabProps = {
   profile: Profile;
 };
 
 export default function ProfileFamilyTab({ profile }: ProfileFamilyTabProps) {
-  console.log('ProfileFamilyTab rendering with profile:', profile);
+  logger.log('ProfileFamilyTab rendering with profile:', profile);
   
   return (
     <Card>

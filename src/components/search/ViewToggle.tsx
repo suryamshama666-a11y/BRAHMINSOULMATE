@@ -1,5 +1,4 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { Grid, Map } from 'lucide-react';
 
 export type ViewMode = 'grid' | 'map';

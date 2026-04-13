@@ -176,7 +176,7 @@ export function useConversations() {
 
         return conversationsArray;
       } catch (err) {
-        const errorMessage = err instanceof ConversationError 
+        const _errorMessage = err instanceof ConversationError 
           ? err.message 
           : 'An unexpected error occurred while fetching conversations';
         console.error('Conversation fetch error:', err);
@@ -281,7 +281,7 @@ export function useConversations() {
   });
 
   const { mutateAsync: blockUser } = useMutation({
-    mutationFn: async (partnerId: string) => {
+    mutationFn: async (_partnerId: string) => {
       if (!user) throw new ConversationError('Not authenticated');
       toast.success('User blocked');
       return { success: true };
@@ -298,7 +298,7 @@ export function useConversations() {
   });
 
   const { mutateAsync: unblockUser } = useMutation({
-    mutationFn: async (partnerId: string) => {
+    mutationFn: async (_partnerId: string) => {
       if (!user) throw new ConversationError('Not authenticated');
       toast.success('User unblocked');
       return { success: true };
@@ -315,7 +315,7 @@ export function useConversations() {
   });
 
   const { mutateAsync: reportUser } = useMutation({
-    mutationFn: async ({ partnerId, reason, details }: ReportUserParams) => {
+    mutationFn: async ({ _partnerId, _reason, _details }: ReportUserParams) => {
       if (!user) throw new ConversationError('Not authenticated');
       toast.success('Report submitted');
       return { success: true };
@@ -330,7 +330,7 @@ export function useConversations() {
   });
 
   const { mutateAsync: deleteConversation } = useMutation({
-    mutationFn: async (conversationId: string) => {
+    mutationFn: async (_conversationId: string) => {
       if (!user) throw new ConversationError('Not authenticated');
       toast.success('Conversation deleted');
       return { success: true };

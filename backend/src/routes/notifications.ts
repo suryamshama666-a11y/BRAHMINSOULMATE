@@ -1,13 +1,11 @@
 import express from 'express';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../config/supabase';
 import twilio from 'twilio';
 import { authMiddleware } from '../middleware/auth';
+import { adminMiddleware } from '../middleware/admin';
+import { communicationLimiter } from '../middleware/rateLimiter';
 
 const router = express.Router();
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 // Helper function to get error message
 const getErrorMessage = (error: unknown): string => {
@@ -179,8 +177,8 @@ router.post('/read-all', authMiddleware, async (req, res) => {
   }
 });
 
-// Send email notification
-router.post('/email', authMiddleware, async (req, res) => {
+// Send email notification - RESTRICTED TO INTERNAL/ADMIN USE ONLY
+router.post('/email', authMiddleware, adminMiddleware, communicationLimiter, async (req, res) => {
   try {
     const { to, subject, message, type } = req.body;
 
@@ -225,8 +223,8 @@ router.post('/email', authMiddleware, async (req, res) => {
   }
 });
 
-// Send SMS notification
-router.post('/sms', authMiddleware, async (req, res) => {
+// Send SMS notification - RESTRICTED TO INTERNAL/ADMIN USE ONLY
+router.post('/sms', authMiddleware, adminMiddleware, communicationLimiter, async (req, res) => {
   try {
     const { to, message } = req.body;
 
@@ -265,7 +263,7 @@ router.put('/preferences', authMiddleware, async (req, res) => {
           push: push_notifications
         }
       })
-      .eq('id', userId);
+      .eq('user_id', userId);
 
     if (error) throw error;
     res.json({ success: true });

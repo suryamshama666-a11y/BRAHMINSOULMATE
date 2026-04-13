@@ -3,13 +3,14 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Profile } from '@/types/profile';
 import { Briefcase, GraduationCap, Building, DollarSign } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 type ProfileProfessionalTabProps = {
   profile: Profile;
 };
 
 export default function ProfileProfessionalTab({ profile }: ProfileProfessionalTabProps) {
-  console.log('ProfileProfessionalTab rendering with profile:', profile);
+  logger.log('ProfileProfessionalTab rendering with profile:', profile);
   
   return (
     <Card>

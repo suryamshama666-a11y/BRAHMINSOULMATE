@@ -1,52 +1,105 @@
 
-import { useState, useEffect } from 'react';
-import { getSupabase } from '@/lib/getSupabase';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from './useSupabaseAuth';
 import { toast } from 'sonner';
+import { Database } from '@/types/supabase';
 
-export interface SuccessStory {
-  id: string;
-  user1_id: string;
-  user2_id: string;
-  title: string;
-  story: string;
-  wedding_date?: string;
-  is_published: boolean;
-  admin_approved: boolean;
-  created_at: string;
-  updated_at: string;
-}
+type SuccessStoryRow = Database['public']['Tables']['success_stories']['Row'];
+type InsertSuccessStory = Database['public']['Tables']['success_stories']['Insert'];
+
+export interface SuccessStory extends SuccessStoryRow {}
+
+const fetchPublishedStories = async (): Promise<SuccessStory[]> => {
+  const { data, error } = await supabase
+    .from('success_stories')
+    .select('*')
+    .eq('approved', true)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return (data as unknown as SuccessStory[]) || [];
+};
 
 export const useSuccessStories = () => {
   const { user } = useSupabaseAuth();
-  const [stories, setStories] = useState<SuccessStory[]>([]);
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
 
-  const fetchPublishedStories = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await getSupabase()
+  const { data: stories = [], isLoading: loading, refetch } = useQuery({
+    queryKey: ['success-stories'],
+    queryFn: fetchPublishedStories,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const fetchPublishedStoriesWrapper = () => refetch();
+
+  const createMutation = useMutation({
+    mutationFn: async (storyData: {
+      user2_id: string;
+      title: string;
+      story: string;
+      wedding_date?: string;
+      images?: string[];
+    }) => {
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
         .from('success_stories')
-        .select('*')
-        .eq('is_published', true)
-        .eq('admin_approved', true)
-        .order('created_at', { ascending: false });
+        .insert({
+          user1_id: user.id,
+          user2_id: storyData.user2_id,
+          title: storyData.title,
+          story: storyData.story,
+          images: storyData.images || null,
+          approved: false
+        } as unknown as InsertSuccessStory)
+        .select()
+        .single();
 
       if (error) throw error;
-      setStories(data || []);
-    } catch (error) {
-      console.error('Error fetching success stories:', error);
-      toast.error('Failed to load success stories');
-    } finally {
-      setLoading(false);
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Success story submitted for review!');
+      queryClient.invalidateQueries({ queryKey: ['success-stories'] });
+    },
+    onError: (error: any) => {
+      console.error('Error creating success story:', error);
+      toast.error('Failed to submit success story');
     }
-  };
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ storyId, updates }: {
+      storyId: string;
+      updates: Partial<Pick<SuccessStory, 'story' | 'images'>>;
+    }) => {
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('success_stories')
+        .update(updates)
+        .eq('id', storyId)
+        .eq('user1_id', user.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Success story updated!');
+      queryClient.invalidateQueries({ queryKey: ['success-stories'] });
+    },
+    onError: (error: any) => {
+      console.error('Error updating success story:', error);
+      toast.error('Failed to update success story');
+    }
+  });
 
   const createSuccessStory = async (storyData: {
     user2_id: string;
     title: string;
     story: string;
     wedding_date?: string;
+    images?: string[];
   }) => {
     if (!user) {
       toast.error('Please login to share your success story');
@@ -54,34 +107,16 @@ export const useSuccessStories = () => {
     }
 
     try {
-      const { data, error } = await getSupabase()
-        .from('success_stories')
-        .insert({
-          user1_id: user.id,
-          user2_id: storyData.user2_id,
-          title: storyData.title,
-          story: storyData.story,
-          wedding_date: storyData.wedding_date,
-          is_published: false,
-          admin_approved: false
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast.success('Success story submitted for review!');
+      const data = await createMutation.mutateAsync(storyData);
       return { success: true, story: data };
     } catch (error: any) {
-      console.error('Error creating success story:', error);
-      toast.error('Failed to submit success story');
       return { success: false, error: error.message };
     }
   };
 
   const updateSuccessStory = async (
     storyId: string,
-    updates: Partial<Pick<SuccessStory, 'title' | 'story' | 'wedding_date'>>
+    updates: Partial<Pick<SuccessStory, 'story' | 'images'>>
   ) => {
     if (!user) {
       toast.error('Please login to update stories');
@@ -89,32 +124,17 @@ export const useSuccessStories = () => {
     }
 
     try {
-      const { error } = await getSupabase()
-        .from('success_stories')
-        .update(updates)
-        .eq('id', storyId)
-        .eq('user1_id', user.id); // Only allow user1 to update
-
-      if (error) throw error;
-
-      await fetchPublishedStories();
-      toast.success('Success story updated!');
+      await updateMutation.mutateAsync({ storyId, updates });
       return { success: true };
     } catch (error: any) {
-      console.error('Error updating success story:', error);
-      toast.error('Failed to update success story');
       return { success: false, error: error.message };
     }
   };
 
-  useEffect(() => {
-    fetchPublishedStories();
-  }, []);
-
   return {
     stories,
     loading,
-    fetchPublishedStories,
+    fetchPublishedStories: fetchPublishedStoriesWrapper,
     createSuccessStory,
     updateSuccessStory
   };

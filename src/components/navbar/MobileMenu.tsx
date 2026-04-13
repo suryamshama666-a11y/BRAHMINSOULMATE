@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { 
   Home, Search, Heart, MessageCircle, Calendar,
   Users, Video, Settings, LogOut, User, DollarSign,
-  Info, HelpCircle, Star, BookOpen, Briefcase
+  Info, HelpCircle, Star, BookOpen, 
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 

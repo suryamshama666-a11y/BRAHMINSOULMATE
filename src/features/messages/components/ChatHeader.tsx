@@ -37,7 +37,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   onPhoneCall,
   onVideoCall 
 }) => {
-  const { user } = useAuth();
+  useAuth();
   const { 
     blockUser, 
     unblockUser, 

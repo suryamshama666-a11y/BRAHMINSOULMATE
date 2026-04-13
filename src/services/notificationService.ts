@@ -1,13 +1,8 @@
-import { getSupabase } from '@/lib/getSupabase';
+import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/types/supabase';
 import { toast } from 'sonner';
 
-interface PushSubscription {
-  endpoint: string;
-  keys: {
-    p256dh: string;
-    auth: string;
-  };
-}
+
 
 interface NotificationPayload {
   title: string;
@@ -15,7 +10,7 @@ interface NotificationPayload {
   icon?: string;
   badge?: string;
   image?: string;
-  data?: any;
+  data?: unknown;
   actions?: Array<{
     action: string;
     title: string;
@@ -25,10 +20,21 @@ interface NotificationPayload {
   requireInteraction?: boolean;
 }
 
+export interface NotificationPreferences {
+  email_notifications: boolean;
+  push_notifications: boolean;
+  new_messages: boolean;
+  new_interests: boolean;
+  profile_views: boolean;
+  marketing_emails: boolean;
+  user_id: string;
+  updated_at: string;
+}
+
 class NotificationService {
   private swRegistration: ServiceWorkerRegistration | null = null;
   private vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-  private supabase = getSupabase();
+  private supabaseClient = supabase;
 
   constructor() {
     this.initializeServiceWorker();
@@ -101,14 +107,14 @@ class NotificationService {
   // Save push subscription to database
   private async saveSubscription(subscription: PushSubscription) {
     try {
-      const user = await this.supabase.auth.getUser();
+      const user = await this.supabaseClient.auth.getUser();
       if (!user.data.user) return;
 
-      const { error } = await this.supabase
+      const { error } = await this.supabaseClient
         .from('push_subscriptions')
         .upsert({
           user_id: user.data.user.id,
-          subscription: subscription.toJSON()
+          subscription: subscription.toJSON() as unknown as Json
         });
 
       if (error) throw error;
@@ -140,10 +146,10 @@ class NotificationService {
   // Remove subscription from database
   private async removeSubscription() {
     try {
-      const user = await this.supabase.auth.getUser();
+      const user = await this.supabaseClient.auth.getUser();
       if (!user.data.user) return;
 
-      const { error } = await this.supabase
+      const { error } = await this.supabaseClient
         .from('push_subscriptions')
         .delete()
         .eq('user_id', user.data.user.id);
@@ -167,11 +173,9 @@ class NotificationService {
         body: payload.body,
         icon: payload.icon || '/icon-192x192.png',
         badge: payload.badge || '/badge-72x72.png',
-        image: payload.image,
-        data: payload.data,
         tag: payload.tag,
         requireInteraction: payload.requireInteraction
-      });
+      } as unknown as NotificationOptions);
       return;
     }
 
@@ -180,14 +184,11 @@ class NotificationService {
         body: payload.body,
         icon: payload.icon || '/icon-192x192.png',
         badge: payload.badge || '/badge-72x72.png',
-        image: payload.image,
-        data: payload.data,
-        actions: payload.actions,
         tag: payload.tag,
         requireInteraction: payload.requireInteraction,
         vibrate: [200, 100, 200],
         timestamp: Date.now()
-      });
+      } as unknown as NotificationOptions);
     } catch (error) {
       console.error('Error showing notification:', error);
     }
@@ -288,12 +289,12 @@ class NotificationService {
   }
 
   // Get notification preferences
-  async getNotificationPreferences() {
+  async getNotificationPreferences(): Promise<NotificationPreferences | null> {
     try {
-      const user = await this.supabase.auth.getUser();
+      const user = await this.supabaseClient.auth.getUser();
       if (!user.data.user) return null;
 
-      const { data, error } = await this.supabase
+      const { data, error } = await this.supabaseClient
         .from('notification_preferences')
         .select('*')
         .eq('user_id', user.data.user.id)
@@ -301,13 +302,15 @@ class NotificationService {
 
       if (error && error.code !== 'PGRST116') throw error;
 
-      return data || {
+      return (data as unknown as NotificationPreferences) || {
         email_notifications: true,
         push_notifications: true,
         new_messages: true,
         new_interests: true,
         profile_views: true,
-        marketing_emails: false
+        marketing_emails: false,
+        user_id: user.data.user.id,
+        updated_at: new Date().toISOString()
       };
     } catch (error) {
       console.error('Error getting notification preferences:', error);
@@ -316,18 +319,18 @@ class NotificationService {
   }
 
   // Update notification preferences
-  async updateNotificationPreferences(preferences: any) {
+  async updateNotificationPreferences(preferences: Partial<NotificationPreferences>) {
     try {
-      const user = await this.supabase.auth.getUser();
+      const user = await this.supabaseClient.auth.getUser();
       if (!user.data.user) return false;
 
-      const { error } = await this.supabase
+      const { error } = await this.supabaseClient
         .from('notification_preferences')
         .upsert({
           user_id: user.data.user.id,
           ...preferences,
           updated_at: new Date().toISOString()
-        });
+        } as unknown as any);
 
       if (error) throw error;
 

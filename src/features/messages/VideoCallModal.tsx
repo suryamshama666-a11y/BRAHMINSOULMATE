@@ -19,6 +19,7 @@ export const VideoCallModal = ({ isOpen, onClose, profile }: VideoCallModalProps
   const [videoEnabled, setVideoEnabled] = useState(true);
   const [callDuration, setCallDuration] = useState(0);
 
+  // effect:audited — Connection simulation timer
   useEffect(() => {
     if (isOpen) {
       // Simulate connection
@@ -30,6 +31,7 @@ export const VideoCallModal = ({ isOpen, onClose, profile }: VideoCallModalProps
     }
   }, [isOpen, profile.name]);
 
+  // effect:audited — Call duration interval timer
   useEffect(() => {
     let durationTimer: number | undefined;
     

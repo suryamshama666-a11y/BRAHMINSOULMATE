@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useMessageReactions, ReactionSummary } from '@/hooks/useMessageReactions';
+import { useMessageReactions } from '@/hooks/useMessageReactions';
+import type { ReactionSummary } from '@/types/index';
 import { Smile, Plus } from 'lucide-react';
 
 interface MessageReactionsProps {

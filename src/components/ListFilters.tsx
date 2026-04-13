@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, SortAsc, Filter, X } from 'lucide-react';
+import { Search, SortAsc, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -8,7 +8,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
 
 interface SortOption {
   value: string;

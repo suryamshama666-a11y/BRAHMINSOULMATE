@@ -148,7 +148,7 @@ export default function BasicInfoStep({ data, onUpdate, onComplete }: BasicInfoS
                 <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
-                      selected={formData.dateOfBirth}
+                      selected={formData.dateOfBirth || undefined}
                       onSelect={(date) => updateFormData({ dateOfBirth: date })}
                       disabled={(date) => {
                         const minAge = formData.gender === 'male' ? MIN_AGE.MALE : MIN_AGE.FEMALE;

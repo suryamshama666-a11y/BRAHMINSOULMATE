@@ -152,7 +152,7 @@ export class ProfileService {
       const fileExt = file.name.split('.').pop();
       const fileName = `${profileId}/${Date.now()}.${fileExt}`;
 
-      const { data, error } = await supabase.storage
+      const { data: _data, error } = await supabase.storage
         .from('profile-images')
         .upload(fileName, file);
 

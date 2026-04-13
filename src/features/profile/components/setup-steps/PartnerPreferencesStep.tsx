@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Heart, MapPin, GraduationCap, Briefcase, Home, Users } from 'lucide-react';
+import { Heart, MapPin, GraduationCap, Users } from 'lucide-react';
 
 type PartnerPreferencesStepProps = {
   data: {
@@ -58,7 +58,7 @@ const CASTE_OPTIONS = [
   'Brahmin', 'Kshatriya', 'Vaishya', 'Any Caste', 'Caste No Bar'
 ];
 
-const SUBCASTE_OPTIONS = [
+const _SUBCASTE_OPTIONS = [
   'Gaur', 'Deshastha', 'Iyer', 'Iyengar', 'Namboodiri', 'Kashmiri Pandit',
   'Maithil', 'Kanyakubja', 'Chitpavan', 'Any Subcaste'
 ];

@@ -1,13 +1,20 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'sonner';
+import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster, toast } from 'sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { useAuth } from '@/hooks/useAuth';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import SimpleNavbar from '@/components/SimpleNavbar';
 import { DevModeIndicator } from '@/components/DevModeIndicator';
 import { CollapsibleChatWidget } from '@/components/CollapsibleChatWidget';
+import { CookieConsent } from '@/components/CookieConsent';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { Analytics } from '@/utils/analytics';
+import { TransactionRecovery } from '@/utils/transactionRecovery';
+import { HelmetProvider } from 'react-helmet-async';
+import SEO from '@/components/SEO';
+
 
 // Loading component
 const PageLoader = () => (
@@ -18,15 +25,15 @@ const PageLoader = () => (
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 
-// Lazy loaded pages with named chunks for better caching
-const LazyOriginalNavbar = React.lazy(() => import(/* webpackChunkName: "navbar" */ '@/components/OriginalNavbar'));
+// Lazy loaded pages
+const LazyOriginalNavbar = React.lazy(() => import('@/components/OriginalNavbar'));
 
 // Auth pages loaded together to prevent flash when navigating between them
 const authPagesPromise = Promise.all([
-  import(/* webpackChunkName: "auth" */ '@/pages/Login'),
-  import(/* webpackChunkName: "auth" */ '@/pages/Register'),
-  import(/* webpackChunkName: "auth" */ '@/pages/ForgotPassword'),
-  import(/* webpackChunkName: "auth" */ '@/pages/ResetPassword'),
+  import('@/pages/Login'),
+  import('@/pages/Register'),
+  import('@/pages/ForgotPassword'),
+  import('@/pages/ResetPassword'),
 ]);
 
 const Login = React.lazy(() => authPagesPromise.then(([login]) => login));
@@ -34,45 +41,48 @@ const Register = React.lazy(() => authPagesPromise.then(([, register]) => regist
 const ForgotPassword = React.lazy(() => authPagesPromise.then(([, , forgot]) => forgot));
 const ResetPassword = React.lazy(() => authPagesPromise.then(([, , , reset]) => reset));
 
-const Dashboard = React.lazy(() => import(/* webpackChunkName: "dashboard" */ '@/pages/Dashboard'));
-const Profile = React.lazy(() => import(/* webpackChunkName: "profile" */ '@/pages/Profile'));
-const ProfileManagement = React.lazy(() => import(/* webpackChunkName: "profile" */ '@/pages/ProfileManagement'));
-const ProfileSetupWizard = React.lazy(() => import(/* webpackChunkName: "profile" */ '@/features/profile/components/ProfileSetupWizard'));
-const Messages = React.lazy(() => import(/* webpackChunkName: "messages" */ '@/pages/Messages'));
-const Matches = React.lazy(() => import(/* webpackChunkName: "matches" */ '@/pages/Matches'));
-const Settings = React.lazy(() => import(/* webpackChunkName: "settings" */ '@/pages/Settings'));
-const AuthCallback = React.lazy(() => import(/* webpackChunkName: "auth" */ '@/pages/auth/callback'));
-const Search = React.lazy(() => import(/* webpackChunkName: "search" */ '@/pages/Search'));
-const VDates = React.lazy(() => import(/* webpackChunkName: "vdates" */ '@/pages/VDates'));
-// Direct import for Community to avoid lazy loading issues
-import Community from '@/pages/Community';
+const Dashboard = React.lazy(() => import('@/pages/Dashboard'));
+const Profile = React.lazy(() => import('@/pages/Profile'));
+const ProfileManagement = React.lazy(() => import('@/pages/ProfileManagement'));
+const ProfileSetupWizard = React.lazy(() => import('@/features/profile/components/ProfileSetupWizard'));
+const Messages = React.lazy(() => import('@/pages/Messages'));
+const Matches = React.lazy(() => import('@/pages/Matches'));
+const Settings = React.lazy(() => import('@/pages/Settings'));
+const AuthCallback = React.lazy(() => import('@/pages/auth/callback'));
+const Search = React.lazy(() => import('@/pages/Search'));
+const VDates = React.lazy(() => import('@/pages/VDates'));
+const Community = React.lazy(() => import('@/pages/Community'));
 
-// Import Connections pages
-const MyFavorites = React.lazy(() => import(/* webpackChunkName: "connections" */ '@/pages/MyFavorites'));
-const MyInterests = React.lazy(() => import(/* webpackChunkName: "connections" */ '@/pages/MyInterests'));
-const InterestsReceived = React.lazy(() => import(/* webpackChunkName: "connections" */ '@/pages/InterestsReceived'));
-const WhoViewedYou = React.lazy(() => import(/* webpackChunkName: "connections" */ '@/pages/WhoViewedYou'));
-const YouViewed = React.lazy(() => import(/* webpackChunkName: "connections" */ '@/pages/YouViewed'));
+const MyFavorites = React.lazy(() => import('@/pages/MyFavorites'));
+const MyInterests = React.lazy(() => import('@/pages/MyInterests'));
+const InterestsReceived = React.lazy(() => import('@/pages/InterestsReceived'));
+const WhoViewedYou = React.lazy(() => import('@/pages/WhoViewedYou'));
+const YouViewed = React.lazy(() => import('@/pages/YouViewed'));
 
-// Import Profile browsing pages
-const OnlineProfiles = React.lazy(() => import(/* webpackChunkName: "profiles" */ '@/pages/OnlineProfiles'));
-const NewMembers = React.lazy(() => import(/* webpackChunkName: "profiles" */ '@/pages/NewMembers'));
-const PhotoManagement = React.lazy(() => import(/* webpackChunkName: "profile" */ '@/pages/PhotoManagement'));
+const OnlineProfiles = React.lazy(() => import('@/pages/OnlineProfiles'));
+const NewMembers = React.lazy(() => import('@/pages/NewMembers'));
+const PhotoManagement = React.lazy(() => import('@/pages/PhotoManagement'));
 
-// Import More menu pages
-const About = React.lazy(() => import(/* webpackChunkName: "about" */ '@/pages/About'));
-const HowItWorks = React.lazy(() => import(/* webpackChunkName: "how-it-works" */ '@/pages/HowItWorks'));
-const FreeVsPaid = React.lazy(() => import(/* webpackChunkName: "free-vs-paid" */ '@/pages/FreeVsPaid'));
-const Plans = React.lazy(() => import(/* webpackChunkName: "plans" */ '@/pages/Plans'));
-const Events = React.lazy(() => import(/* webpackChunkName: "events" */ '@/pages/Events'));
-const Help = React.lazy(() => import(/* webpackChunkName: "help" */ '@/pages/Help'));
-const SuccessStories = React.lazy(() => import(/* webpackChunkName: "success-stories" */ '@/pages/SuccessStories'));
-const Account = React.lazy(() => import(/* webpackChunkName: "account" */ '@/pages/Account'));
-const AstrologicalServices = React.lazy(() => import(/* webpackChunkName: "astrological-services" */ '@/pages/AstrologicalServices'));
-const EventDetails = React.lazy(() => import(/* webpackChunkName: "events" */ '@/pages/EventDetails'));
-const Admin = React.lazy(() => import(/* webpackChunkName: "admin" */ '@/pages/Admin'));
+const About = React.lazy(() => import('@/pages/About'));
+const HowItWorks = React.lazy(() => import('@/pages/HowItWorks'));
+const FreeVsPaid = React.lazy(() => import('@/pages/FreeVsPaid'));
+const Plans = React.lazy(() => import('@/pages/Plans'));
+const Events = React.lazy(() => import('@/pages/Events'));
+const Help = React.lazy(() => import('@/pages/Help'));
+const SuccessStories = React.lazy(() => import('@/pages/SuccessStories'));
+const Account = React.lazy(() => import('@/pages/Account'));
+const AstrologicalServices = React.lazy(() => import('@/pages/AstrologicalServices'));
+const EventDetails = React.lazy(() => import('@/pages/EventDetails'));
+const Admin = React.lazy(() => import('@/pages/Admin'));
 
-// Configure the query client with better caching strategy
+// Legal pages
+const Privacy = React.lazy(() => import('@/pages/Privacy'));
+const Terms = React.lazy(() => import('@/pages/Terms'));
+const CookiePolicy = React.lazy(() => import('@/pages/CookiePolicy'));
+const RefundPolicy = React.lazy(() => import('@/pages/RefundPolicy'));
+
+
+// Configure the query client with better caching strategy and global error handlers
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -82,35 +92,24 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
     },
   },
+  queryCache: new QueryCache({
+    onError: (error: any) => {
+      // Don't show toast for 401s as the Auth provider handles redirects
+      if (error?.status === 401) return;
+      toast.error(`Operation Failed: ${error.message || 'Server error'}`);
+    },
+  }),
 });
 
-// Import the landing page
-const Landing = React.lazy(() => import(/* webpackChunkName: "landing" */ '@/pages/Landing'));
+// Landing page
+const Landing = React.lazy(() => import('@/pages/Landing'));
 
-// Home redirect component - shows landing page (no redirect for logged in users)
+// Home redirect component - shows landing page
 const HomeRedirect = () => {
   return (
     <Suspense fallback={<PageLoader />}>
       <Landing />
     </Suspense>
-  );
-};
-
-// Add a simple test component
-const TestPage = () => {
-  return (
-    <div style={{ padding: '20px', backgroundColor: '#f0f0f0', minHeight: '100vh' }}>
-      <h1 style={{ color: 'red', fontSize: '24px' }}>Test Page Working!</h1>
-      <p>If you can see this, React is working.</p>
-      <div style={{ marginTop: '20px' }}>
-        <a href="/login" style={{ marginRight: '10px', padding: '10px', backgroundColor: 'blue', color: 'white', textDecoration: 'none' }}>
-          Go to Login
-        </a>
-        <a href="/dashboard" style={{ padding: '10px', backgroundColor: 'green', color: 'white', textDecoration: 'none' }}>
-          Try Dashboard
-        </a>
-      </div>
-    </div>
   );
 };
 
@@ -124,7 +123,7 @@ const Authenticated: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 // Wrapper component that uses useLocation inside Router
 const AppContent = () => {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const path = location.pathname;
   // Show SimpleNavbar on login, register pages and landing page (always for landing)
   const simpleNavbarPages = ['/login', '/register', '/signup'];
@@ -142,11 +141,8 @@ const AppContent = () => {
       )}
       <Suspense fallback={<PageLoader />}>
               <Routes>
-                {/* Test Route */}
-                <Route path="/test" element={<TestPage />} />
-                
-                {/* Public Routes - Auth pages share same chunk, no nested Suspense needed */}
-                <Route path="/login" element={<Login />} />
+              {/* Public Routes */}
+              <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/signup" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -167,6 +163,12 @@ const AppContent = () => {
                 <Route path="/success-stories" element={<SuccessStories />} />
                 <Route path="/help" element={<Help />} />
                 <Route path="/account" element={<Account />} />
+                
+                {/* Legal Pages */}
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/cookie-policy" element={<CookiePolicy />} />
+                <Route path="/refund-policy" element={<RefundPolicy />} />
 
                 {/* Protected Routes */}
                 <Route path="/dashboard" element={<Authenticated><Dashboard /></Authenticated>} />
@@ -180,7 +182,7 @@ const AppContent = () => {
                 <Route path="/settings" element={<Authenticated><Settings /></Authenticated>} />
                 <Route path="/search" element={<Authenticated><Search /></Authenticated>} />
                 <Route path="/v-dates" element={<Authenticated><VDates /></Authenticated>} />
-                <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
+                <Route path="/community" element={<Authenticated><Community /></Authenticated>} />
                 <Route path="/plans" element={<Authenticated><Plans /></Authenticated>} />
                 <Route path="/events" element={<Authenticated><Events /></Authenticated>} />
                 <Route path="/events/:id" element={<Authenticated><EventDetails /></Authenticated>} />
@@ -209,28 +211,43 @@ const AppContent = () => {
 };
 
 const App = () => {
+  const { user } = useAuth();
+
+  // effect:audited — Application startup resilience for transaction recovery
+  useEffect(() => {
+    if (user) {
+      TransactionRecovery.resumePendingTransactions().catch(err => {
+        console.error('FAILED TO RESUME TRANSACTIONS:', err);
+      });
+    }
+  }, [user]);
+
   return (
     <ErrorBoundary level="critical">
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <Router>
-            <AppContent />
-            <CollapsibleChatWidget />
-            <DevModeIndicator />
-            <Toaster 
-              position="top-right" 
-              richColors 
-              closeButton 
-              toastOptions={{
-                duration: 5000,
-                className: "toast-custom-class",
-              }}
-            />
-          </Router>
-        </AuthProvider>
-      </QueryClientProvider>
+      <HelmetProvider>
+        <SEO />
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <Router>
+              <AppContent />
+              <CollapsibleChatWidget />
+              <DevModeIndicator />
+              <Toaster 
+                position="top-right" 
+                richColors 
+                closeButton 
+                toastOptions={{
+                  duration: 5000,
+                  className: "toast-custom-class",
+                }}
+              />
+            </Router>
+          </AuthProvider>
+        </QueryClientProvider>
+      </HelmetProvider>
     </ErrorBoundary>
   );
 };
+
 
 export default App;

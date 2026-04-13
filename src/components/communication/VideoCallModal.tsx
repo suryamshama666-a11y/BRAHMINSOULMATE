@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { 
   Video, VideoOff, Mic, MicOff, Phone, 
-  Settings, MessageSquare, Users
+  Settings, MessageSquare, 
 } from 'lucide-react';
 
 interface VideoCallModalProps {

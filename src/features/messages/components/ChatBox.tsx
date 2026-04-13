@@ -92,7 +92,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
                 message_type: 'audio',
                 media_url: mediaUrl,
               });
-            } catch (err) {
+            } catch {
               toast.error('Failed to send voice message');
             }
           }
@@ -154,7 +154,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
         message_type: messageType,
         media_url: mediaUrl,
       });
-    } catch (err) {
+    } catch {
       toast.error('Failed to upload file');
     }
 

@@ -110,6 +110,7 @@ export default function VideoCall({ roomName, userName, onEnd, otherUserName }: 
     }
   }, [roomName, userName, onEnd]);
 
+  // effect:audited — External script loading for Jitsi video call
   useEffect(() => {
     // Load Jitsi Meet API script
     const script = document.createElement('script');

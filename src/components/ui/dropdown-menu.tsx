@@ -93,7 +93,7 @@ export const DropdownMenuContent: React.FC<DropdownMenuContentProps> = ({
   const { isOpen, setIsOpen, triggerRef } = context;
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
+  // effect:audited — Click outside listener to close dropdown
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
       if (
@@ -115,7 +115,7 @@ export const DropdownMenuContent: React.FC<DropdownMenuContentProps> = ({
     };
   }, [isOpen, setIsOpen, triggerRef]);
 
-  // Close dropdown when pressing Escape
+  // effect:audited — Keyboard event listener for Escape key
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -177,7 +177,7 @@ export const DropdownMenuItem: React.FC<DropdownMenuItemProps> = ({
 
   const { setIsOpen } = context;
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = (_e: React.MouseEvent) => {
     if (disabled) return;
     if (onClick) onClick();
     setIsOpen(false);

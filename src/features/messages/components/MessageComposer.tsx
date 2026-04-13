@@ -16,7 +16,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   const { user } = useAuth();
   const { sendMessage, isLoading, uploadMedia } = useMessages(conversationId);
   const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
+  const [_recordingTime, setRecordingTime] = useState(0);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
 
@@ -79,7 +79,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   };
 
   // Start voice recording
-  const startRecording = async () => {
+  const _startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
@@ -111,7 +111,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   };
 
   // Stop voice recording and send the audio message
-  const stopRecording = async () => {
+  const _stopRecording = async () => {
     if (!mediaRecorder || !isRecording) return;
     
     mediaRecorder.stop();
@@ -133,7 +133,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   };
 
   // Format recording time as MM:SS
-  const formatRecordingTime = (seconds: number) => {
+  const _formatRecordingTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;

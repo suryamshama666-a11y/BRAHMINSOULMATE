@@ -30,7 +30,7 @@ const handler = async (req: Request): Promise<Response> => {
       { auth: { persistSession: false } }
     );
 
-    const { userId, type, title, message, actionUrl }: NotificationEmailRequest = await req.json();
+    const { userId, type: _type, title, message, actionUrl }: NotificationEmailRequest = await req.json();
 
     // Get user profile and preferences
     const { data: profile } = await supabaseClient

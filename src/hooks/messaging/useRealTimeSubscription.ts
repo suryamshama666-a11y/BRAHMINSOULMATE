@@ -10,6 +10,7 @@ export const useRealTimeSubscription = (
 ) => {
   const { user } = useSupabaseAuth();
 
+  // effect:audited — Real-time Supabase subscription for messages
   useEffect(() => {
     if (!user) return;
 
@@ -24,7 +25,7 @@ export const useRealTimeSubscription = (
           filter: `or(sender_id.eq.${user.id},receiver_id.eq.${user.id})`,
         },
         (payload) => {
-          console.log('New message received:', payload);
+          logger.log('New message received:', payload);
           const data = payload.new as any;
           
           const newMessage: RealTimeMessage = {

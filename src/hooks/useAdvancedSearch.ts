@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getSupabase } from '@/lib/getSupabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from './useSupabaseAuth';
 import { toast } from 'sonner';
 
@@ -72,7 +72,7 @@ export const useAdvancedSearch = () => {
     try {
       setLoading(true);
       
-      let query = getSupabase()
+      let query = supabase
         .from('profiles')
         .select(`
           *,
@@ -80,65 +80,47 @@ export const useAdvancedSearch = () => {
         `)
         .neq('user_id', user.id);
 
-      // Age filter
+      // Filtering logic...
       if (filters.ageRange) {
         const [minAge, maxAge] = filters.ageRange;
         const maxDate = new Date();
         maxDate.setFullYear(maxDate.getFullYear() - minAge);
         const minDate = new Date();
         minDate.setFullYear(minDate.getFullYear() - maxAge);
-        
-        query = query
-          .gte('date_of_birth', minDate.toISOString().split('T')[0])
-          .lte('date_of_birth', maxDate.toISOString().split('T')[0]);
+        query = query.gte('date_of_birth', minDate.toISOString().split('T')[0]).lte('date_of_birth', maxDate.toISOString().split('T')[0]);
       }
 
-      // Height filter
       if (filters.heightRange) {
-        query = query
-          .gte('height', filters.heightRange[0])
-          .lte('height', filters.heightRange[1]);
+        query = query.gte('height', filters.heightRange[0]).lte('height', filters.heightRange[1]);
       }
 
-      // Religion filter
-      if (filters.religion) {
-        query = query.eq('religion', filters.religion);
-      }
-
-      // Caste filter
-      if (filters.caste) {
-        query = query.eq('caste', filters.caste);
-      }
-
-      // Education filter
-      if (filters.education && filters.education.length > 0) {
-        query = query.in('education_level', filters.education);
-      }
-
-      // Occupation filter
-      if (filters.occupation && filters.occupation.length > 0) {
-        query = query.in('occupation', filters.occupation);
-      }
-
-      // Marital status filter
-      if (filters.maritalStatus && filters.maritalStatus.length > 0) {
-        query = query.in('marital_status', filters.maritalStatus);
-      }
+      if (filters.religion) query = query.eq('religion', filters.religion);
+      if (filters.caste) query = query.eq('caste', filters.caste);
+      if (filters.education?.length) query = query.in('education_level', filters.education);
+      if (filters.occupation?.length) query = query.in('occupation', filters.occupation);
+      if (filters.maritalStatus?.length) query = query.in('marital_status', filters.maritalStatus);
 
       const { data, error } = await query.order('created_at', { ascending: false });
-
       if (error) throw error;
 
-      // For now, just set results without compatibility calculation
-      // since we don't have the compatibility calculation function
-      const resultsWithScores = (data || []).map(profile => ({
-        ...profile,
-        compatibility_score: Math.floor(Math.random() * 100) // Mock score for now
-      }));
+      // Production Matchmaking Logic: Fetch real compatibility scores
+      const profileIds = (data || []).map(p => p.user_id);
+      const { data: scoresData } = await supabase
+        .from('compatibility_scores')
+        .select('*')
+        .eq('user1_id', user.id)
+        .in('user2_id', profileIds);
+
+      const resultsWithScores = (data || []).map(profile => {
+        const scoreRecord = scoresData?.find(s => s.user2_id === profile.user_id);
+        return {
+          ...profile,
+          compatibility_score: scoreRecord?.overall_score || 0
+        };
+      });
 
       // Sort by compatibility score
       resultsWithScores.sort((a, b) => (b.compatibility_score || 0) - (a.compatibility_score || 0));
-
       setSearchResults(resultsWithScores);
     } catch (error) {
       console.error('Error performing search:', error);
@@ -155,18 +137,21 @@ export const useAdvancedSearch = () => {
     }
 
     try {
-      // Mock implementation since saved_searches table doesn't exist
-      const newSavedSearch: SavedSearch = {
-        id: `search-${Date.now()}`,
-        name,
-        search_criteria: filters,
-        user_id: user.id,
-        created_at: new Date().toISOString()
-      };
+      const { data, error } = await supabase
+        .from('saved_searches')
+        .insert({
+          user_id: user.id,
+          name,
+          search_criteria: filters as any
+        })
+        .select()
+        .single();
 
-      setSavedSearches(prev => [...prev, newSavedSearch]);
+      if (error) throw error;
+
+      setSavedSearches(prev => [...prev, data as any]);
       toast.success('Search saved successfully');
-      return { success: true, data: newSavedSearch };
+      return { success: true, data };
     } catch (error: any) {
       console.error('Error saving search:', error);
       toast.error('Failed to save search');
@@ -178,22 +163,14 @@ export const useAdvancedSearch = () => {
     if (!user) return;
 
     try {
-      // Mock implementation since saved_searches table doesn't exist
-      const mockSavedSearches: SavedSearch[] = [
-        {
-          id: 'search-1',
-          name: 'Preferred Match',
-          search_criteria: {
-            ageRange: [25, 35],
-            heightRange: [160, 180],
-            religion: 'Hindu'
-          },
-          user_id: user.id,
-          created_at: new Date().toISOString()
-        }
-      ];
+      const { data, error } = await supabase
+        .from('saved_searches')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
-      setSavedSearches(mockSavedSearches);
+      if (error) throw error;
+      setSavedSearches(data as any[]);
     } catch (error) {
       console.error('Error loading saved searches:', error);
     }

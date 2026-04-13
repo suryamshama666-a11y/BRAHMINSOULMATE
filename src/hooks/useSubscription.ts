@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { paymentsService } from '@/services/api/payments.service';
 import { toast } from 'sonner';
@@ -20,10 +20,27 @@ export interface UserSubscription {
   subscription_end?: string;
 }
 
+const fetchCurrentSubscriptionData = async (userId: string | undefined): Promise<UserSubscription | null> => {
+  if (!userId) return null;
+
+  try {
+    const subscription = await paymentsService.getCurrentSubscription();
+    const hasActive = await paymentsService.hasActiveSubscription();
+    
+    return {
+      subscribed: hasActive,
+      subscription_type: subscription?.plan_id || 'free',
+      subscription_end: subscription?.end_date
+    };
+  } catch (error) {
+    console.error('Error fetching subscription:', error);
+    return null;
+  }
+};
+
 export const useSubscription = () => {
   const { user } = useAuth();
-  const [currentSubscription, setCurrentSubscription] = useState<UserSubscription | null>(null);
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
 
   // Get plans from payments service
   const plans = paymentsService.getPlans();
@@ -53,22 +70,36 @@ export const useSubscription = () => {
     }))
   ];
 
-  const fetchCurrentSubscription = useCallback(async () => {
-    if (!user) return;
+  const { data: currentSubscription = null, isLoading: loading, refetch } = useQuery({
+    queryKey: ['subscription', user?.id],
+    queryFn: () => fetchCurrentSubscriptionData(user?.id),
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
-    try {
-      const subscription = await paymentsService.getCurrentSubscription();
-      const hasActive = await paymentsService.hasActiveSubscription();
-      
-      setCurrentSubscription({
-        subscribed: hasActive,
-        subscription_type: subscription?.plan_id || 'free',
-        subscription_end: subscription?.end_date
-      });
-    } catch (error) {
-      console.error('Error fetching subscription:', error);
+  const fetchCurrentSubscription = () => refetch();
+
+  const subscribeMutation = useMutation({
+    mutationFn: async (planId: string) => {
+      if (!user) throw new Error('User not authenticated');
+
+      const plan = subscriptionPlans.find(p => p.id === planId);
+      if (!plan || planId === 'free') {
+        throw new Error('Invalid plan selected');
+      }
+
+      // Initiate Razorpay payment
+      await paymentsService.initiatePayment(planId);
+    },
+    onSuccess: () => {
+      toast.success('Subscription activated successfully!');
+      queryClient.invalidateQueries({ queryKey: ['subscription', user?.id] });
+    },
+    onError: (error: any) => {
+      console.error('Error creating checkout:', error);
+      toast.error(error.message || 'Failed to start subscription process');
     }
-  }, [user]);
+  });
 
   const subscribeToPlan = async (planId: string) => {
     if (!user) {
@@ -76,29 +107,11 @@ export const useSubscription = () => {
       return { success: false };
     }
 
-    const plan = subscriptionPlans.find(p => p.id === planId);
-    if (!plan || planId === 'free') {
-      toast.error('Invalid plan selected');
-      return { success: false };
-    }
-
     try {
-      setLoading(true);
-      
-      // Initiate Razorpay payment
-      await paymentsService.initiatePayment(planId);
-      
-      // Refresh subscription after payment
-      await fetchCurrentSubscription();
-      
-      toast.success('Subscription activated successfully!');
+      await subscribeMutation.mutateAsync(planId);
       return { success: true };
     } catch (error: any) {
-      console.error('Error creating checkout:', error);
-      toast.error(error.message || 'Failed to start subscription process');
       return { success: false, error: error.message };
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -106,15 +119,9 @@ export const useSubscription = () => {
     return currentSubscription?.subscription_type !== 'free' && currentSubscription?.subscribed === true;
   };
 
-  const hasFeature = (feature: string): boolean => {
+  const hasFeature = (_feature: string): boolean => {
     return isPremiumUser();
   };
-
-  useEffect(() => {
-    if (user) {
-      fetchCurrentSubscription();
-    }
-  }, [user, fetchCurrentSubscription]);
 
   return {
     subscriptionPlans,

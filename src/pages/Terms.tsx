@@ -1,10 +1,16 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 
 const Terms = () => {
   return (
     <div className="min-h-screen flex flex-col">
+      <SEO 
+        title="Terms & Conditions - User Agreement"
+        description="Read the terms of service for Brahmin Soulmate Connect. Information on eligibility, user conduct, and our service commitment to the Brahmin community."
+        keywords="terms and conditions, user agreement, matrimony terms, Brahmin Soulmate legal"
+      />
       <div className="flex-grow container mx-auto px-4 py-12 max-w-4xl">
         <h1 className="text-3xl font-bold text-brahmin-primary mb-6">Terms and Conditions</h1>
         

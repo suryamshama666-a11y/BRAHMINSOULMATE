@@ -55,5 +55,18 @@ export default defineConfig(({ mode }) => ({
     setupFiles: './src/test/setup.ts',
     css: true,
     exclude: ['**/node_modules/**', '**/tests/e2e/**'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov', 'html'],
+      reportsDirectory: './coverage',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/test/**',
+        'src/**/*.test.{ts,tsx}',
+        'src/**/__tests__/**',
+        'src/types/**',
+        'src/data/fixtures/**',
+      ],
+    },
   },
 }));

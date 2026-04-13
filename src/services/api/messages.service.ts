@@ -1,21 +1,17 @@
 import { supabase } from '@/lib/supabase';
 import { RealtimeChannel } from '@supabase/supabase-js';
+import { Database } from '@/types/supabase';
 
-export interface Message {
-  id: string;
-  sender_id: string;
-  receiver_id: string;
-  content: string;
-  status: 'sent' | 'delivered' | 'read';
-  created_at: string;
-  read_at?: string;
-  sender?: any;
-  receiver?: any;
+type MessageRow = Database['public']['Tables']['messages']['Row'];
+
+export interface Message extends MessageRow {
+  sender?: unknown;
+  receiver?: unknown;
 }
 
 export interface Conversation {
   user_id: string;
-  full_name: string;
+  full_name?: string;
   profile_picture?: string;
   last_message?: string;
   last_message_at?: string;
@@ -36,18 +32,17 @@ class MessagesService {
         sender_id: user.id,
         receiver_id: receiverId,
         content,
-        status: 'sent'
-      })
+        status: 'sent',
+        message_type: 'text',
+        media_url: null,
+        read_at: null
+      } as unknown as Database['public']['Tables']['messages']['Insert'])
       .select()
       .single();
 
     if (error) throw error;
 
-    // Update analytics
-    await this.updateAnalytics(user.id, 'messages_sent');
-    await this.updateAnalytics(receiverId, 'messages_received');
-
-    return data;
+    return data as unknown as Message;
   }
 
   // Get conversation between two users
@@ -57,25 +52,13 @@ class MessagesService {
 
     const { data, error } = await supabase
       .from('messages')
-      .select(`
-        *,
-        sender:sender_id (
-          user_id,
-          full_name,
-          profile_picture
-        ),
-        receiver:receiver_id (
-          user_id,
-          full_name,
-          profile_picture
-        )
-      `)
+      .select('*')
       .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
       .order('created_at', { ascending: true })
       .limit(limit);
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as unknown as Message[];
   }
 
   // Get all conversations for current user
@@ -83,38 +66,28 @@ class MessagesService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    // Get all messages involving the user
     const { data: messages, error } = await supabase
       .from('messages')
-      .select(`
-        *,
-        sender:sender_id (user_id, full_name, profile_picture),
-        receiver:receiver_id (user_id, full_name, profile_picture)
-      `)
+      .select('*')
       .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
-    // Group by conversation partner
     const conversationsMap = new Map<string, Conversation>();
 
     messages?.forEach(msg => {
       const partnerId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
-      const partner = msg.sender_id === user.id ? msg.receiver : msg.sender;
 
       if (!conversationsMap.has(partnerId)) {
         conversationsMap.set(partnerId, {
           user_id: partnerId,
-          full_name: partner.full_name,
-          profile_picture: partner.profile_picture,
           last_message: msg.content,
           last_message_at: msg.created_at,
           unread_count: 0
         });
       }
 
-      // Count unread messages
       if (msg.receiver_id === user.id && msg.status !== 'read') {
         const conv = conversationsMap.get(partnerId)!;
         conv.unread_count++;
@@ -151,7 +124,6 @@ class MessagesService {
 
       const channelName = `messages:${user.id}`;
       
-      // Remove existing channel if any
       if (this.channels.has(channelName)) {
         this.channels.get(channelName)?.unsubscribe();
       }
@@ -167,17 +139,7 @@ class MessagesService {
             filter: `receiver_id=eq.${user.id}`
           },
           async (payload) => {
-            // Fetch sender details
-            const { data: sender } = await supabase
-              .from('profiles')
-              .select('user_id, full_name, profile_picture')
-              .eq('user_id', payload.new.sender_id)
-              .single();
-
-            callback({
-              ...payload.new,
-              sender
-            } as Message);
+            callback(payload.new as unknown as Message);
           }
         )
         .subscribe();
@@ -255,16 +217,6 @@ class MessagesService {
       .eq('sender_id', user.id);
 
     if (error) throw error;
-  }
-
-  // Update analytics
-  private async updateAnalytics(userId: string, field: string): Promise<void> {
-    const { error } = await supabase.rpc('increment_analytics', {
-      p_user_id: userId,
-      p_field: field
-    });
-
-    if (error) console.error('Analytics update failed:', error);
   }
 }
 

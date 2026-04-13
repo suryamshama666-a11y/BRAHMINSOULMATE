@@ -3,7 +3,7 @@ import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Upload, X, Image as ImageIcon, Link, Camera } from 'lucide-react';
+import { X, Image as ImageIcon, Link, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ImageUploadProps {
@@ -64,7 +64,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         setIsUploading(false);
       };
       reader.readAsDataURL(file);
-    } catch (error) {
+    } catch {
       toast.error('Failed to upload image');
       setIsUploading(false);
     }

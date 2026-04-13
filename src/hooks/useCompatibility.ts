@@ -1,9 +1,9 @@
 
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSupabaseAuth } from './useSupabaseAuth';
 import { toast } from 'sonner';
-import { horoscopeService, Horoscope } from '@/services/api/horoscope.service';
-import { supabase } from '@/lib/supabase';
+import { horoscopeService } from '@/services/api/horoscope.service';
+import { supabase, backendCall } from '@/services/api/base';
 
 export interface CompatibilityMatch {
   id: string;
@@ -21,15 +21,53 @@ export interface CompatibilityMatch {
   compatibility_details?: any;
 }
 
+const fetchPotentialMatchesData = async (userId: string | undefined): Promise<CompatibilityMatch[]> => {
+  if (!userId) return [];
+
+  // Create mock compatibility matches since we don't have the table
+  const mockMatches: CompatibilityMatch[] = [
+    {
+      id: 'match-1',
+      user1_id: userId,
+      user2_id: 'user-2',
+      overall_score: 85,
+      guna_milan_score: 28,
+      personality_score: 90,
+      lifestyle_score: 80,
+      family_score: 85,
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 'match-2',
+      user1_id: userId,
+      user2_id: 'user-3',
+      overall_score: 78,
+      guna_milan_score: 25,
+      personality_score: 75,
+      lifestyle_score: 82,
+      family_score: 77,
+      created_at: new Date().toISOString()
+    }
+  ];
+
+  return mockMatches;
+};
+
 export const useCompatibility = () => {
   const { user } = useSupabaseAuth();
-  const [matches, setMatches] = useState<CompatibilityMatch[]>([]);
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: matches = [], isLoading: loading, refetch } = useQuery({
+    queryKey: ['compatibility-matches', user?.id],
+    queryFn: () => fetchPotentialMatchesData(user?.id),
+    enabled: !!user,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  const fetchPotentialMatches = () => refetch();
 
   const calculateCompatibility = async (userId1: string, userId2: string) => {
     try {
-      setLoading(true);
-      
       // Fetch horoscope details for both users
       const { data: h1 } = await supabase
         .from('horoscope_details')
@@ -50,9 +88,44 @@ export const useCompatibility = () => {
 
       const compatibility = horoscopeService.calculateCompatibility(h1, h2);
       
+      // Attempt to get advanced matching from backend
+      try {
+        const advancedResponse = await backendCall<any>('horoscope/match', {
+          method: 'POST',
+          body: JSON.stringify({ partnerId: userId2 })
+        });
+        
+        if (!advancedResponse.error && advancedResponse.data) {
+          const ad = advancedResponse.data;
+          // Normalize API response shape if needed (backendCall already tries to normalize)
+          const finalAd = ad.data || ad; 
+          
+          return {
+            overall_score: Math.round((finalAd.score / finalAd.total_points) * 100),
+            guna_milan_score: finalAd.score,
+            rashi_compatibility: (finalAd.kootas?.find((k: any) => k.name === 'Varna')?.score || 0) * 100,
+            nakshatra_compatibility: (finalAd.kootas?.find((k: any) => k.name === 'Nadi')?.score || 0) * 12.5,
+            dosha_compatibility: compatibility.factors.manglik,
+            personality_score: 85,
+            lifestyle_score: 80,
+            family_score: 75,
+            compatibility_details: {
+              calculated_factors: {
+                rashi_match: compatibility.factors.moonSign >= 70,
+                manglik_match: compatibility.factors.manglik >= 60
+              },
+              details: compatibility.details,
+              advanced: finalAd
+            }
+          };
+        }
+      } catch (err) {
+        console.warn('Advanced matching failed, using local simplified calculation', err);
+      }
+
       return {
         overall_score: compatibility.score,
-        guna_milan_score: compatibility.factors.nakshatra, // Use nakshatra score as guna milan proxy
+        guna_milan_score: Math.round(compatibility.factors.nakshatra / 100 * 36), // Approximateguna score
         rashi_compatibility: compatibility.factors.moonSign,
         nakshatra_compatibility: compatibility.factors.nakshatra,
         dosha_compatibility: compatibility.factors.manglik,
@@ -70,8 +143,6 @@ export const useCompatibility = () => {
     } catch (error) {
       console.error('Error calculating compatibility:', error);
       return null;
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -99,46 +170,30 @@ export const useCompatibility = () => {
     return calculateCompatibility(user.id, targetUserId);
   };
 
-  // Mock function to get potential matches from profiles
-  const fetchPotentialMatches = async () => {
-    if (!user) return;
+  const saveMatchMutation = useMutation({
+    mutationFn: async (matchData: Omit<CompatibilityMatch, 'id' | 'created_at'>) => {
+      if (!user) throw new Error('User not authenticated');
 
-    setLoading(true);
-    try {
-      // Create mock compatibility matches since we don't have the table
-      const mockMatches: CompatibilityMatch[] = [
-        {
-          id: 'match-1',
-          user1_id: user.id,
-          user2_id: 'user-2',
-          overall_score: 85,
-          guna_milan_score: 28,
-          personality_score: 90,
-          lifestyle_score: 80,
-          family_score: 85,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: 'match-2',
-          user1_id: user.id,
-          user2_id: 'user-3',
-          overall_score: 78,
-          guna_milan_score: 25,
-          personality_score: 75,
-          lifestyle_score: 82,
-          family_score: 77,
-          created_at: new Date().toISOString()
-        }
-      ];
+      // For now, just return the new match since table doesn't exist
+      const newMatch: CompatibilityMatch = {
+        ...matchData,
+        id: `match-${Date.now()}`,
+        created_at: new Date().toISOString()
+      };
 
-      setMatches(mockMatches);
-    } catch (error) {
-      console.error('Error fetching potential matches:', error);
-      toast.error('Failed to load compatibility matches');
-    } finally {
-      setLoading(false);
+      return newMatch;
+    },
+    onSuccess: (newMatch) => {
+      toast.success('Compatibility match saved!');
+      queryClient.setQueryData(['compatibility-matches', user?.id], (old: CompatibilityMatch[] = []) => 
+        [newMatch, ...old]
+      );
+    },
+    onError: (error: any) => {
+      console.error('Error saving compatibility match:', error);
+      toast.error('Failed to save compatibility match');
     }
-  };
+  });
 
   const saveCompatibilityMatch = async (matchData: Omit<CompatibilityMatch, 'id' | 'created_at'>) => {
     if (!user) {
@@ -147,28 +202,12 @@ export const useCompatibility = () => {
     }
 
     try {
-      // For now, just add to local state since table doesn't exist
-      const newMatch: CompatibilityMatch = {
-        ...matchData,
-        id: `match-${Date.now()}`,
-        created_at: new Date().toISOString()
-      };
-
-      setMatches(prev => [newMatch, ...prev]);
-      toast.success('Compatibility match saved!');
-      return { success: true, match: newMatch };
+      const match = await saveMatchMutation.mutateAsync(matchData);
+      return { success: true, match };
     } catch (error: any) {
-      console.error('Error saving compatibility match:', error);
-      toast.error('Failed to save compatibility match');
       return { success: false, error: error.message };
     }
   };
-
-  useEffect(() => {
-    if (user) {
-      fetchPotentialMatches();
-    }
-  }, [user]);
 
   return {
     matches,

@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from './useSupabaseAuth';
 import { toast } from 'sonner';
+import { Database } from '@/types/supabase';
+
+type ShortlistRow = Database['public']['Tables']['shortlists']['Row'];
+type InsertShortlist = Database['public']['Tables']['shortlists']['Insert'];
 
 export const useShortlist = () => {
   const { user } = useSupabaseAuth();
@@ -12,12 +16,11 @@ export const useShortlist = () => {
 
     try {
       const { data, error } = await supabase
-        .from('matches')
+        .from('shortlists')
         .insert({
           user_id: user.id,
-          matched_user_id: userId,
-          status: 'shortlisted',
-        })
+          shortlist_user_id: userId,
+        } as unknown as InsertShortlist)
         .select()
         .single();
 
@@ -25,7 +28,7 @@ export const useShortlist = () => {
 
       setShortlistedUsers(prev => new Set([...prev, userId]));
       toast.success('Added to shortlist');
-      return { success: true, data };
+      return { success: true, data: data as ShortlistRow };
     } catch (error) {
       console.error('Error adding to shortlist:', error);
       toast.error('Failed to add to shortlist');
@@ -38,11 +41,10 @@ export const useShortlist = () => {
 
     try {
       const { error } = await supabase
-        .from('matches')
+        .from('shortlists')
         .delete()
         .eq('user_id', user.id)
-        .eq('matched_user_id', userId)
-        .eq('status', 'shortlisted');
+        .eq('shortlist_user_id', userId);
 
       if (error) throw error;
 

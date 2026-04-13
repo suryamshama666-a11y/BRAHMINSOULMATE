@@ -12,7 +12,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [subscription, setSubscription] = useState<UserSubscription | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<AuthError | null>(null);
 
@@ -29,23 +29,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const { data: { user: authUser } } = await supabase.auth.getUser();
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
-            .upsert({
+            .insert({
               user_id: userId,
               email: authUser?.email || '',
-              name: authUser?.email?.split('@')[0] || 'User',
+              first_name: authUser?.user_metadata?.first_name || authUser?.email?.split('@')[0] || 'User',
+              last_name: authUser?.user_metadata?.last_name || '',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
               profile_completion: 10
             })
             .select()
             .single();
-          
-          if (!createError) {
+
+          if (!createError && newProfile) {
             setProfile(newProfile as UserProfile);
           }
         }
-      } else {
-        setProfile(profileData as UserProfile);
+      } else if (profileData) {
+        setProfile(profileData as unknown as UserProfile);
       }
 
       const { data: subscriptionData, error: subError } = await supabase
@@ -57,7 +58,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         .limit(1)
         .maybeSingle();
 
-      if (!subError) {
+      if (!subError && subscriptionData) {
         setSubscription(subscriptionData as UserSubscription);
       }
     } catch (err) {
@@ -65,12 +66,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
+  // effect:audited — Auth state listener (Supabase auth subscription)
   useEffect(() => {
     const initAuth = async () => {
       try {
         if (isDevBypassMode()) {
-          setUser(getDevUser() as any);
-          setProfile(getDevProfile() as any);
+          setUser(getDevUser() as unknown as User);
+          setProfile(getDevProfile() as unknown as UserProfile);
           setLoading(false);
           return;
         }
@@ -131,16 +133,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (error) throw error;
 
     if (data.user) {
-      await supabase.from('profiles').upsert({
+      const { error: profileError } = await supabase.from('profiles').insert({
         user_id: data.user.id,
         email: email,
-        name: `${options?.firstName || ''} ${options?.lastName || ''}`.trim() || email.split('@')[0],
-        first_name: options?.firstName,
-        last_name: options?.lastName,
+        first_name: options?.firstName || email.split('@')[0],
+        last_name: options?.lastName || '',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         profile_completion: 10
       });
+
+      if (profileError) {
+        console.error('Profile creation failed:', profileError);
+        // Don't throw here as auth was successful
+      }
     }
   };
 
@@ -165,39 +171,95 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       .from('profiles')
       .update({ ...profileData, updated_at: new Date().toISOString() })
       .eq('user_id', user.id);
-    
+
     if (error) throw error;
     await fetchUserData(user.id);
     toast.success('Profile updated');
   };
 
-  const upgradeSubscription = async (planId: string) => { /* Mock */ };
-  const setNameVisibility = async (visible: boolean) => { /* Mock */ };
-  const updatePassword = async (newPassword: string) => { /* Mock */ };
-  const signInWithGoogle = async () => { /* Mock */ };
-  const signInWithFacebook = async () => { /* Mock */ };
-  const updateLastActive = async () => { /* Mock */ };
+  const upgradeSubscription = async (planId: string) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from('user_subscriptions')
+      .insert({
+        user_id: user.id,
+        plan_id: planId,
+        start_date: new Date().toISOString(),
+        end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        status: 'active',
+      });
+    if (error) throw error;
+    await fetchUserData(user.id);
+    toast.success('Subscription upgraded');
+  };
+
+  const setNameVisibility = async (visible: boolean) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        name_visibility: visible,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', user.id);
+    if (error) throw error;
+    await fetchUserData(user.id);
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+    toast.success('Password updated');
+  };
+
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (error) throw error;
+  };
+
+  const signInWithFacebook = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'facebook',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (error) throw error;
+  };
+
+  const updateLastActive = async () => {
+    if (!user) return;
+    const { error } = await supabase
+      .from('profiles')
+      .update({ last_active: new Date().toISOString() })
+      .eq('user_id', user.id);
+    if (error) throw error;
+  };
+
+  const isPremium = subscription?.status === 'active';
 
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        profile,
-        subscription,
-        loading,
-        error,
-        signUp,
-        signIn,
-        signOut,
-        resetPassword,
-        updateProfile,
-        upgradeSubscription: upgradeSubscription as any,
-        setNameVisibility: setNameVisibility as any,
-        updatePassword: updatePassword as any,
-        signInWithGoogle: signInWithGoogle as any,
-        signInWithFacebook: signInWithFacebook as any,
-        updateLastActive: updateLastActive as any,
-      }}
+        value={{
+          user,
+          profile,
+          subscription,
+          isPremium,
+          loading,
+          error,
+          signUp,
+          signIn,
+          signOut,
+          resetPassword,
+          updateProfile,
+          upgradeSubscription,
+          setNameVisibility,
+          updatePassword,
+          signInWithGoogle,
+          signInWithFacebook,
+          updateLastActive,
+        }}
     >
       {children}
     </AuthContext.Provider>

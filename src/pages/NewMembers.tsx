@@ -1,22 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Link, useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Eye, UserPlus, Calendar, MapPin, Filter, Users, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { UserPlus, Filter } from 'lucide-react';
 import ProfileCard from '@/components/ProfileCard';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Pagination } from '@/components/ui/pagination';
 import { cn } from '@/lib/utils';
+import { ProfileCardSkeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
+
+interface NewMemberProfile {
+  id: string;
+  name: string;
+  age: number;
+  gender: string;
+  height: number;
+  religion: string;
+  caste: string;
+  location: string;
+  education: string;
+  profession: string;
+  subscription_type: string;
+  joinedDate: string;
+  profileCompletion: number;
+  lastActive: string;
+  gotra?: string;
+  profile_picture?: string;
+}
 
 const NewMembers = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [newMembers, setNewMembers] = useState([]);
+  const [newMembers, setNewMembers] = useState<NewMemberProfile[]>([]);
   const [loading, setLoading] = useState(true);
     const [showFilters, setShowFilters] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
@@ -24,11 +44,11 @@ const NewMembers = () => {
     
     const itemsPerPageOptions = [9, 15, 21];
 
-    useEffect(() => {
-      if (!itemsPerPageOptions.includes(itemsPerPage)) {
-        setItemsPerPage(itemsPerPageOptions[0]);
-      }
-    }, []);
+    // Items per page validation - ensure current value is in available options
+    // Reset to first option if current value is not in available options
+    const validatedItemsPerPage = itemsPerPageOptions.includes(itemsPerPage) 
+      ? itemsPerPage 
+      : itemsPerPageOptions[0];
 
     
     const [filterOnline, setFilterOnline] = useState(false);
@@ -192,7 +212,7 @@ const NewMembers = () => {
         toast.success(`${profileName} has been unblocked`);
         break;
       default:
-        console.log('Unknown action:', action);
+        logger.log('Unknown action:', action);
     }
   };
 
@@ -204,13 +224,9 @@ const NewMembers = () => {
     setSortBy('newest');
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-amber-50 to-red-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-600"></div>
-      </div>
-    );
-  }
+  // Render loading state within the main layout to maintain header/filters visibility or use a full page skeleton
+  // Here we will use the full page structure but with skeletons
+  const isLoading = loading;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50/30 via-white to-amber-50/40">
@@ -301,64 +317,71 @@ const NewMembers = () => {
                   </CardContent>
                 </Card>
               )}
-                  <div className={showFilters ? 'lg:col-span-2' : 'lg:col-span-3'}>
-                  {filteredMembers.length > 0 ? (
-                    <>
-                            <div className={cn(
-                              "grid gap-4",
-                              showFilters 
-                                ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-2" 
-                                : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3"
-                            )}>
-                              {currentMembers.map((profile) => {
-                                return (
-                                  <ProfileCard 
-                                    key={profile.id}
-                                    profile={{
-                                      ...profile, 
-                                      joinedDate: profile.joinedDate,
-                                      height: formatHeightInch(profile.height),
-                                      gotra: profile.gotra || 'Gotra not specified'
-                                    }}
-                                    variant="new"
-                                    onAction={handleProfileAction}
-                                  />
-                                )
-                              })}
+          <div className={showFilters ? 'lg:col-span-2' : 'lg:col-span-3'}>
+              {isLoading ? (
+                <div className={cn(
+                  "grid gap-4",
+                  showFilters 
+                    ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-2" 
+                    : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3"
+                )}>
+                  {[...Array(6)].map((_, i) => (
+                    <ProfileCardSkeleton key={i} />
+                  ))}
+                </div>
+              ) : filteredMembers.length > 0 ? (
+                <>
+                  <div className={cn(
+                    "grid gap-4",
+                    showFilters 
+                      ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-2" 
+                      : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3"
+                  )}>
+                    {currentMembers.map((profile) => {
+                      return (
+                        <ProfileCard 
+                          key={profile.id}
+                          profile={{
+                            ...profile, 
+                            joinedDate: profile.joinedDate,
+                            height: formatHeightInch(profile.height),
+                            gotra: profile.gotra || 'Gotra not specified'
+                          }}
+                          variant="new"
+                          onAction={handleProfileAction}
+                        />
+                      )
+                    })}
+                  </div>
 
-                        </div>
-  
-                        <div className="mt-8">
-                          <Pagination
-                            currentPage={currentPage}
-                            totalPages={totalPages}
-                            onPageChange={setCurrentPage}
-                            itemsPerPage={itemsPerPage}
-                            onItemsPerPageChange={(val) => {
-                              setItemsPerPage(val);
-                              setCurrentPage(1);
-                            }}
-                            itemsPerPageOptions={itemsPerPageOptions}
-                          />
-                        </div>
-
-                    </>
-                ) : (
-
-              <Card className="text-center py-16">
-                <CardContent>
-                  <UserPlus className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-xl font-semibold mb-2">No New Members This Week</h3>
-                  <p className="text-gray-600 mb-6">Check back later for new profiles</p>
-                    <Link to="/search">
-                      <Button className="bg-purple-600 hover:bg-purple-700 text-white shadow-md">
-                        Browse All Profiles
-                      </Button>
-                    </Link>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                  <div className="mt-8">
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                      itemsPerPage={itemsPerPage}
+                      onItemsPerPageChange={(val) => {
+                        setItemsPerPage(val);
+                        setCurrentPage(1);
+                      }}
+                      itemsPerPageOptions={itemsPerPageOptions}
+                    />
+                  </div>
+                </>
+              ) : (
+                <Card className="py-8 border-dashed border-2 shadow-none bg-white/50">
+                  <CardContent className="p-0">
+                    <EmptyState 
+                      variant="no-results" 
+                      title="No New Members This Week" 
+                      description="Check back later for new profiles or browse our existing members." 
+                      actionLabel="Browse All Profiles"
+                      actionHref="/search"
+                    />
+                  </CardContent>
+                </Card>
+              )}
+            </div>
         </div>
       </div>
     </div>

@@ -9,9 +9,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
-  Menu, X, Bell, MessageCircle, Heart, Search, User,
-  Home, Video, ChevronDown, DollarSign, Info, Eye,
+import {
+  Menu, X, MessageCircle, Heart, Search, User,
+  Home, Video, ChevronDown, DollarSign, Info,
   HelpCircle, Star, BookOpen, Settings, Users, Calendar, LogOut
 } from 'lucide-react';
 

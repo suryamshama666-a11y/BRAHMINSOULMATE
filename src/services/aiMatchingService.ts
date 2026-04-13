@@ -1,4 +1,4 @@
-import { getSupabase } from '@/lib/getSupabase';
+import { supabase } from '@/integrations/supabase/client';
 import { analyticsService } from './analyticsService';
 import { toast } from 'sonner';
 import { Profile } from '@/types/profile';
@@ -42,7 +42,7 @@ interface MLFeatures {
 }
 
 class AIMatchingService {
-  private supabase = getSupabase();
+  private supabaseClient = supabase;
   private modelWeights = {
     compatibility: 0.25,    // Basic compatibility (age, height, etc.)
     preferences: 0.20,      // User preferences match

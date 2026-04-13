@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Heart, Star, Calendar, Loader2 } from 'lucide-react';
 import Footer from '@/components/Footer';
 import { successStoriesService, SuccessStory } from '@/services/api/success-stories.service';
+import SEO from '@/components/SEO';
 
 export default function SuccessStories() {
   const [stories, setStories] = useState<SuccessStory[]>([]);
@@ -80,6 +81,11 @@ export default function SuccessStories() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEO 
+        title="Brahmin Success Stories"
+        description="Read the beautiful journeys of Brahmin couples who found their soulmates through our platform. Real stories of love, tradition, and happiness."
+        keywords="Brahmin wedding stories, Brahmin success stories, matrimony testimonials, happy couples"
+      />
       <main className="flex-grow container mx-auto px-4 py-12">
         <div className="text-center mb-12">
           <h1 

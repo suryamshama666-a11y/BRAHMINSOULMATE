@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { 
-  ArrowLeft, ThumbsUp, Reply, Eye, Clock, User,
+  ArrowLeft, ThumbsUp, Reply, Eye, 
   MessageSquare, Share2, Flag, Pin 
 } from 'lucide-react';
 import { useForumPosts } from '@/hooks/forum/useForumPosts';
@@ -14,7 +14,6 @@ import { useForumReplies } from '@/hooks/forum/useForumReplies';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { UserAvatar } from '@/components/community/UserAvatar';
 import { formatDistanceToNow } from 'date-fns';
-import { toast } from 'sonner';
 
 export default function ForumPost() {
   const { postId } = useParams<{ postId: string }>();

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, Users, Clock, ArrowLeft, Loader2, Share2, CheckCircle } from 'lucide-react';
+import { Calendar, MapPin, Users, ArrowLeft, Loader2, Share2, CheckCircle } from 'lucide-react';
 import Footer from '@/components/Footer';
 import { eventsService, Event } from '@/services/api/events.service';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +18,7 @@ export default function EventDetails() {
 
   useEffect(() => {
     if (id) loadEvent();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadEvent = async () => {

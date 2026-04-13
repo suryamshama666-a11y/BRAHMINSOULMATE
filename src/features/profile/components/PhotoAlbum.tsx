@@ -56,6 +56,7 @@ export default function PhotoAlbum({
     if (photos.length > 0 && !selectedPhoto) {
       setSelectedPhoto(photos[0]);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [photos]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {

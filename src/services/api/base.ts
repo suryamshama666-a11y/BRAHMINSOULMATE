@@ -1,8 +1,4 @@
-/**
- * Base API Client with Error Handling
- * Provides common functionality for all API services
- */
-
+import { env } from '@/config/env';
 import { supabase } from '@/integrations/supabase/client';
 
 // Error codes enum
@@ -111,6 +107,73 @@ export async function apiCall<T>(
 
     return {
       data,
+      error: null
+    };
+  } catch (error) {
+    return {
+      data: null,
+      error: handleAPIError(error)
+    };
+  }
+}
+
+/**
+ * Enhanced helper for backend API calls
+ * Handles authentication headers automatically
+ */
+export async function backendCall<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<APIResponse<T>> {
+  try {
+    // Get current session for JWT
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+
+    // Remove leading slash if present
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
+    const url = `${env.api.url}/${cleanEndpoint}`;
+
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : '',
+        ...options.headers,
+      },
+    });
+
+    // Handle 204 No Content
+    if (response.status === 204) {
+      return { data: null, error: null };
+    }
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      // Create specific error based on status code
+      let code = ErrorCode.UNKNOWN_ERROR;
+      if (response.status === 401) code = ErrorCode.AUTH_ERROR;
+      if (response.status === 403) code = ErrorCode.PERMISSION_DENIED;
+      if (response.status === 404) code = ErrorCode.NOT_FOUND;
+      if (response.status === 400) code = ErrorCode.VALIDATION_ERROR;
+
+      return {
+        data: null,
+        error: new APIError(
+          code,
+          result.error || 'API request failed',
+          response.status,
+          result
+        )
+      };
+    }
+
+    // Backend returns data in different shapes, normalize it
+    const data = result.profile || result.profiles || result.data || result;
+
+    return {
+      data: data as T,
       error: null
     };
   } catch (error) {

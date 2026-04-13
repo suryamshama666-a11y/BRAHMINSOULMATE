@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Trash2, Star, Eye, Camera, Plus } from 'lucide-react';
+import { Upload, Trash2, Star, Camera, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 type Photo = {
@@ -26,10 +26,10 @@ export default function PhotoManager({
   onUpload, 
   onDelete, 
   onSetProfilePicture, 
-  onReorder,
+  _onReorder,
   maxPhotos = 10 
 }: PhotoManagerProps) {
-  const [draggedPhoto, setDraggedPhoto] = useState<string | null>(null);
+  const [_draggedPhoto, _setDraggedPhoto] = useState<string | null>(null);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;

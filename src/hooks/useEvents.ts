@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from './useSupabaseAuth';
 import { toast } from 'sonner';
@@ -18,37 +18,33 @@ export interface Event {
   updated_at: string;
 }
 
+const fetchEventsData = async (): Promise<Event[]> => {
+  const { data, error } = await supabase
+    .from('events')
+    .select('*')
+    .eq('is_private', false)
+    .order('event_date', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+};
+
 export const useEvents = () => {
   const { user } = useSupabaseAuth();
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
 
-  const fetchEvents = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('events')
-        .select('*')
-        .eq('is_private', false)
-        .order('event_date', { ascending: true });
+  const { data: events = [], isLoading: loading, refetch } = useQuery({
+    queryKey: ['events'],
+    queryFn: fetchEventsData,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
 
-      if (error) throw error;
-      setEvents(data || []);
-    } catch (error) {
-      console.error('Error fetching events:', error);
-      toast.error('Failed to load events');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchEvents = () => refetch();
 
-  const createEvent = async (eventData: Omit<Event, 'id' | 'creator_id' | 'current_participants' | 'created_at' | 'updated_at'>) => {
-    if (!user) {
-      toast.error('Please login to create events');
-      return { success: false };
-    }
+  const createMutation = useMutation({
+    mutationFn: async (eventData: Omit<Event, 'id' | 'creator_id' | 'current_participants' | 'created_at' | 'updated_at'>) => {
+      if (!user) throw new Error('User not authenticated');
 
-    try {
       const { data, error } = await supabase
         .from('events')
         .insert({
@@ -70,23 +66,22 @@ export const useEvents = () => {
           status: 'attending'
         });
 
-      await fetchEvents();
+      return data;
+    },
+    onSuccess: () => {
       toast.success('Event created successfully!');
-      return { success: true, event: data };
-    } catch (error: any) {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+    },
+    onError: (error: any) => {
       console.error('Error creating event:', error);
       toast.error('Failed to create event');
-      return { success: false, error: error.message };
     }
-  };
+  });
 
-  const joinEvent = async (eventId: string) => {
-    if (!user) {
-      toast.error('Please login to join events');
-      return { success: false };
-    }
+  const joinMutation = useMutation({
+    mutationFn: async (eventId: string) => {
+      if (!user) throw new Error('User not authenticated');
 
-    try {
       // Check if already joined
       const { data: existingParticipant } = await supabase
         .from('event_participants')
@@ -96,8 +91,7 @@ export const useEvents = () => {
         .single();
 
       if (existingParticipant) {
-        toast.error('You are already registered for this event');
-        return { success: false };
+        throw new Error('Already registered');
       }
 
       // Join event
@@ -111,7 +105,7 @@ export const useEvents = () => {
 
       if (error) throw error;
 
-      // Update participant count manually
+      // Update participant count
       const { data: currentEvent } = await supabase
         .from('events')
         .select('current_participants')
@@ -124,24 +118,25 @@ export const useEvents = () => {
           .update({ current_participants: currentEvent.current_participants + 1 })
           .eq('id', eventId);
       }
-
-      await fetchEvents();
+    },
+    onSuccess: () => {
       toast.success('Successfully joined the event!');
-      return { success: true };
-    } catch (error: any) {
-      console.error('Error joining event:', error);
-      toast.error('Failed to join event');
-      return { success: false, error: error.message };
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+    },
+    onError: (error: any) => {
+      if (error.message === 'Already registered') {
+        toast.error('You are already registered for this event');
+      } else {
+        console.error('Error joining event:', error);
+        toast.error('Failed to join event');
+      }
     }
-  };
+  });
 
-  const leaveEvent = async (eventId: string) => {
-    if (!user) {
-      toast.error('Please login to leave events');
-      return { success: false };
-    }
+  const leaveMutation = useMutation({
+    mutationFn: async (eventId: string) => {
+      if (!user) throw new Error('User not authenticated');
 
-    try {
       const { error } = await supabase
         .from('event_participants')
         .delete()
@@ -150,7 +145,7 @@ export const useEvents = () => {
 
       if (error) throw error;
 
-      // Update participant count manually
+      // Update participant count
       const { data: currentEvent } = await supabase
         .from('events')
         .select('current_participants')
@@ -163,20 +158,58 @@ export const useEvents = () => {
           .update({ current_participants: Math.max(currentEvent.current_participants - 1, 0) })
           .eq('id', eventId);
       }
-
-      await fetchEvents();
+    },
+    onSuccess: () => {
       toast.success('Successfully left the event');
-      return { success: true };
-    } catch (error: any) {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+    },
+    onError: (error: any) => {
       console.error('Error leaving event:', error);
       toast.error('Failed to leave event');
+    }
+  });
+
+  const createEvent = async (eventData: Omit<Event, 'id' | 'creator_id' | 'current_participants' | 'created_at' | 'updated_at'>) => {
+    if (!user) {
+      toast.error('Please login to create events');
+      return { success: false };
+    }
+
+    try {
+      const data = await createMutation.mutateAsync(eventData);
+      return { success: true, event: data };
+    } catch (error: any) {
       return { success: false, error: error.message };
     }
   };
 
-  useEffect(() => {
-    fetchEvents();
-  }, []);
+  const joinEvent = async (eventId: string) => {
+    if (!user) {
+      toast.error('Please login to join events');
+      return { success: false };
+    }
+
+    try {
+      await joinMutation.mutateAsync(eventId);
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  const leaveEvent = async (eventId: string) => {
+    if (!user) {
+      toast.error('Please login to leave events');
+      return { success: false };
+    }
+
+    try {
+      await leaveMutation.mutateAsync(eventId);
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  };
 
   return {
     events,

@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import * as Sentry from '@sentry/node';
 
 interface AppError extends Error {
   statusCode?: number;
@@ -10,14 +11,38 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction
 ) => {
-  console.error('Error:', err);
-
   const statusCode = err.statusCode || 500;
-  const message = err.message || 'Internal Server Error';
+  
+  // Capture the error in Sentry
+  if (statusCode >= 500) {
+    Sentry.captureException(err, {
+      extra: {
+        url: req.originalUrl,
+        method: req.method,
+        body: req.body,
+        params: req.params,
+        query: req.query,
+      }
+    });
+  }
+
+  // Log to console for local monitoring
+  console.error(`[SERVER ERROR] ${req.method} ${req.originalUrl}:`, err);
+
+  // Mask sensitive messages in production
+  let message = err.message || 'Internal Server Error';
+  
+  if (process.env.NODE_ENV === 'production' && statusCode === 500) {
+    message = 'An unexpected error occurred. Please contact support if the issue persists.';
+  }
 
   res.status(statusCode).json({
     success: false,
     error: message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    ...(process.env.NODE_ENV === 'development' && { 
+      stack: err.stack,
+      details: err
+    })
   });
 };
+

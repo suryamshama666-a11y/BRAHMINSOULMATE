@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Heart, Users, Calendar, Gem, Star, Shield } from "lucide-react";
+import SEO from '@/components/SEO';
 
 export default function About() {
   const features = [
@@ -39,6 +39,11 @@ export default function About() {
 
   return (
     <div className="container mx-auto py-8 px-4">
+      <SEO 
+        title="About Our Community"
+        description="Learn about the mission, values, and technology behind Brahmin Soulmate Connect. The trusted matrimonial platform dedicated to the Brahmin community worldwide."
+        keywords="Brahmin matrimony about, marriage platform mission, Brahmin community values"
+      />
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <h1 

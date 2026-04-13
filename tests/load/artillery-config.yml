@@ -1,0 +1,168 @@
+# Artillery Load Testing Configuration
+# Install: npm install -g artillery
+# Run: artillery run tests/load/artillery-config.yml
+# Run with report: artillery run --output report.json tests/load/artillery-config.yml && artillery report report.json
+
+config:
+  target: "http://localhost:3001"
+  phases:
+    # Warm-up phase
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm up"
+    
+    # Ramp up phase
+    - duration: 120
+      arrivalRate: 5
+      rampTo: 50
+      name: "Ramp up to 50 users/sec"
+    
+    # Sustained load
+    - duration: 300
+      arrivalRate: 50
+      name: "Sustained load - 50 users/sec"
+    
+    # Spike test
+    - duration: 60
+      arrivalRate: 100
+      name: "Spike test - 100 users/sec"
+    
+    # Cool down
+    - duration: 60
+      arrivalRate: 10
+      name: "Cool down"
+  
+  # Performance thresholds
+  ensure:
+    maxErrorRate: 1  # Max 1% error rate
+    p95: 500         # 95th percentile response time < 500ms
+    p99: 1000        # 99th percentile response time < 1000ms
+  
+  # HTTP settings
+  http:
+    timeout: 10
+    pool: 50  # Connection pool size
+  
+  # Variables
+  variables:
+    testEmail: "test@example.com"
+    testPassword: "Test123!@#"
+  
+  # Plugins
+  plugins:
+    metrics-by-endpoint:
+      stripQueryString: true
+      ignoreUnknownEndpoints: false
+
+scenarios:
+  # Scenario 1: Anonymous user browsing
+  - name: "Anonymous Browsing"
+    weight: 40
+    flow:
+      - get:
+          url: "/health"
+          capture:
+            - json: "$.status"
+              as: "healthStatus"
+      
+      - think: 2
+      
+      - get:
+          url: "/api/profile/search/all?gender=female&limit=20"
+          expect:
+            - statusCode: 200
+      
+      - think: 3
+      
+      - get:
+          url: "/api/events"
+          expect:
+            - statusCode: 200
+      
+      - think: 2
+
+  # Scenario 2: User authentication and profile viewing
+  - name: "Authenticated User Flow"
+    weight: 30
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "{{ testEmail }}"
+            password: "{{ testPassword }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      
+      - think: 2
+      
+      - get:
+          url: "/api/matching/recommendations"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      
+      - think: 3
+      
+      - get:
+          url: "/api/profile/{{ $randomString() }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      
+      - think: 2
+
+  # Scenario 3: Messaging flow
+  - name: "Messaging Flow"
+    weight: 20
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "{{ testEmail }}"
+            password: "{{ testPassword }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      
+      - think: 1
+      
+      - get:
+          url: "/api/messages"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      
+      - think: 2
+      
+      - post:
+          url: "/api/messages"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            receiver_id: "00000000-0000-0000-0000-000000000002"
+            content: "Load test message {{ $randomString() }}"
+      
+      - think: 3
+
+  # Scenario 4: Search and filter
+  - name: "Search and Filter"
+    weight: 10
+    flow:
+      - get:
+          url: "/api/profile/search/all?gender=male&min_age=25&max_age=35&limit=20"
+          expect:
+            - statusCode: 200
+      
+      - think: 2
+      
+      - get:
+          url: "/api/profile/search/all?gender=female&city=Mumbai&limit=20"
+          expect:
+            - statusCode: 200
+      
+      - think: 3
+      
+      - get:
+          url: "/api/profile/search/all?religion=Hindu&limit=20"
+          expect:
+            - statusCode: 200
+      
+      - think: 2

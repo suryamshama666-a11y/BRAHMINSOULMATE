@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { CreditCard, Landmark, IndianRupee, Smartphone, ShieldCheck, Zap } from 'lucide-react';
 import { toast } from 'sonner';
+import { backendCall } from '@/services/api/base';
 
 declare global {
   interface Window {
@@ -71,7 +72,12 @@ export default function PaymentForm({ planName, planPrice, onSuccess, onCancel }
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
 
   useEffect(() => {
-    loadRazorpayScript().then(setRazorpayLoaded);
+    loadRazorpayScript()
+      .then(setRazorpayLoaded)
+      .catch((error) => {
+        console.error('Failed to load Razorpay:', error);
+        setRazorpayLoaded(false);
+      });
   }, []);
 
   const formatPrice = (price: number) => {
@@ -87,13 +93,9 @@ export default function PaymentForm({ planName, planPrice, onSuccess, onCancel }
     setIsProcessing(true);
 
     try {
-      // Create order on backend
-      const orderResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/payments/create-order`, {
+      // Create order on backend using centralized helper
+      const response = await backendCall<{ id: string; amount: number; currency: string }>('payments/create-order', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('sb-ogwfcshjrrbbrndsdqgg-auth-token')}`
-        },
         body: JSON.stringify({
           plan_id: planName.toLowerCase().replace(' ', '_'),
           amount: planPrice,
@@ -101,8 +103,9 @@ export default function PaymentForm({ planName, planPrice, onSuccess, onCancel }
         })
       });
 
-      const orderData = await orderResponse.json();
-      if (!orderData.id) throw new Error(orderData.error || 'Failed to create order');
+      if (response.error) throw new Error(response.error.message);
+      const orderData = response.data;
+      if (!orderData?.id) throw new Error('Order creation failed');
 
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
@@ -111,27 +114,23 @@ export default function PaymentForm({ planName, planPrice, onSuccess, onCancel }
         name: 'Brahmin Soulmate Connect',
         description: `${planName} Subscription`,
         order_id: orderData.id,
-        handler: async function (response: any) {
+        handler: async function (handlerResponse: any) {
           try {
-            const verifyResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/payments/verify`, {
+            // Verify payment on backend using centralized helper
+            const verifyResponse = await backendCall<{ success: boolean }>('payments/verify', {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('sb-ogwfcshjrrbbrndsdqgg-auth-token')}`
-              },
               body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature
+                razorpay_order_id: handlerResponse.razorpay_order_id,
+                razorpay_payment_id: handlerResponse.razorpay_payment_id,
+                razorpay_signature: handlerResponse.razorpay_signature
               })
             });
 
-            const verifyData = await verifyResponse.json();
-            if (verifyData.success) {
+            if (verifyResponse.data?.success) {
               toast.success('Payment verified and subscription activated!');
               if (onSuccess) onSuccess();
             } else {
-              throw new Error(verifyData.error || 'Verification failed');
+              throw new Error(verifyResponse.error?.message || 'Verification failed');
             }
           } catch (error: any) {
             toast.error(`Verification error: ${error.message}`);

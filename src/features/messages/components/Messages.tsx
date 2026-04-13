@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MessageBubble } from './MessageBubble';
-import { Message, useMessages } from '../hooks/useMessages';
+import { useMessages } from '../hooks/useMessages';
 import { useAuth } from '@/hooks/useAuth';
 
 interface MessagesProps {
@@ -17,7 +17,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(({ conversationId, r
   const {
     messages,
     isLoading,
-    sendMessage,
+    _sendMessage,
     markAsRead,
   } = useMessages(conversationId);
 

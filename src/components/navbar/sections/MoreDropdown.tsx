@@ -14,7 +14,7 @@ interface MoreDropdownProps {
 }
 
 export default function MoreDropdown({ currentPath }: MoreDropdownProps) {
-  const isActive = (path: string) => currentPath === path || (currentPath && currentPath.startsWith(`${path}/`));
+  const _isActive = (path: string) => currentPath === path || (currentPath && currentPath.startsWith(`${path}/`));
 
   return (
     <DropdownMenu>

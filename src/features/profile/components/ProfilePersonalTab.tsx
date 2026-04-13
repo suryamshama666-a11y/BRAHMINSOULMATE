@@ -2,14 +2,15 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Profile } from '@/types/profile';
-import { User, Calendar, MapPin, Heart } from 'lucide-react';
+import { User, MapPin, Heart } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 type ProfilePersonalTabProps = {
   profile: Profile;
 };
 
 export default function ProfilePersonalTab({ profile }: ProfilePersonalTabProps) {
-  console.log('ProfilePersonalTab rendering with profile:', profile);
+  logger.log('ProfilePersonalTab rendering with profile:', profile);
   
   return (
     <Card>

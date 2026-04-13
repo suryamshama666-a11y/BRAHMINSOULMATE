@@ -3,13 +3,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Heart, MessageCircle, Users, Video, Loader2, Crown, Sparkles, MapPin, Eye
+  Heart, MessageCircle, Users, Video, Crown, Sparkles, MapPin, Eye
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import Footer from '@/components/Footer';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton, StatsCardSkeleton, AvatarSkeleton } from '@/components/ui/skeleton';
+import { getMockOnlineProfiles, getMockNewProfiles, getMockRecommendedProfiles } from '@/data/fixtures/mockProfiles';
 
 // Type definitions
 interface MemberProfile {
@@ -43,14 +45,21 @@ interface RawProfile {
   height?: number | string;
 }
 
+interface DashboardStats {
+  profileViews: number;
+  interestsSent: number;
+  messageCount: number;
+  vDatesCount: number;
+}
+
 const Dashboard = () => {
   const { profile, user } = useAuth();
   const navigate = useNavigate();
-  const [stats] = useState({
-    profileViews: 237,
-    interestsSent: 10,
-    messageCount: 4,
-    vDatesCount: 1,
+  const [stats, setStats] = useState<DashboardStats>({
+    profileViews: 0,
+    interestsSent: 0,
+    messageCount: 0,
+    vDatesCount: 0,
   });
   const [onlineMembers, setOnlineMembers] = useState<MemberProfile[]>([]);
   const [newMembers, setNewMembers] = useState<MemberProfile[]>([]);
@@ -99,26 +108,20 @@ const Dashboard = () => {
         const userGender = profile?.gender || 'male';
         const oppositeGender = userGender === 'male' ? 'female' : 'male';
 
-        // Mock online profiles data
-        const mockOnlineProfiles = oppositeGender === 'female' ? [
-          { id: 'online1', first_name: 'Priya', age: 26, gender: 'female', city: 'Mumbai', state: 'Maharashtra', occupation: 'Software Engineer', profile_picture_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop', subscription_type: 'premium', gotra: 'Kashyap Gotra' },
-          { id: 'online2', first_name: 'Anjali', age: 24, gender: 'female', city: 'Bangalore', state: 'Karnataka', occupation: 'Doctor', profile_picture_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop', subscription_type: 'free', gotra: 'Bharadwaja Gotra' },
-          { id: 'online3', first_name: 'Kavya', age: 27, gender: 'female', city: 'Chennai', state: 'Tamil Nadu', occupation: 'Teacher', profile_picture_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop', subscription_type: 'premium', gotra: 'Vasishtha Gotra' },
-          { id: 'online4', first_name: 'Meera', age: 25, gender: 'female', city: 'Pune', state: 'Maharashtra', occupation: 'CA', profile_picture_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&h=150&fit=crop', subscription_type: 'free', gotra: 'Atri Gotra' },
-          { id: 'online5', first_name: 'Divya', age: 28, gender: 'female', city: 'Hyderabad', state: 'Telangana', occupation: 'Architect', profile_picture_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop', subscription_type: 'premium', gotra: 'Gautam Gotra' },
-          { id: 'online6', first_name: 'Sneha', age: 23, gender: 'female', city: 'Delhi', state: 'Delhi', occupation: 'Designer', profile_picture_url: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=150&h=150&fit=crop', subscription_type: 'free', gotra: 'Jamadagni Gotra' },
-          { id: 'online7', first_name: 'Riya', age: 26, gender: 'female', city: 'Kolkata', state: 'West Bengal', occupation: 'Lawyer', profile_picture_url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150&h=150&fit=crop', subscription_type: 'premium', gotra: 'Kashyap Gotra' },
-          { id: 'online8', first_name: 'Neha', age: 25, gender: 'female', city: 'Jaipur', state: 'Rajasthan', occupation: 'Manager', profile_picture_url: 'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=150&h=150&fit=crop', subscription_type: 'free', gotra: 'Bharadwaja Gotra' },
-        ] : [
-          { id: 'online1', first_name: 'Rahul', age: 28, gender: 'male', city: 'Mumbai', state: 'Maharashtra', occupation: 'Software Engineer', profile_picture_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop', subscription_type: 'premium', gotra: 'Kashyap Gotra' },
-          { id: 'online2', first_name: 'Aditya', age: 30, gender: 'male', city: 'Bangalore', state: 'Karnataka', occupation: 'Doctor', profile_picture_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop', subscription_type: 'free', gotra: 'Bharadwaja Gotra' },
-          { id: 'online3', first_name: 'Vikram', age: 27, gender: 'male', city: 'Chennai', state: 'Tamil Nadu', occupation: 'Lawyer', profile_picture_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop', subscription_type: 'premium', gotra: 'Vasishtha Gotra' },
-          { id: 'online4', first_name: 'Arjun', age: 29, gender: 'male', city: 'Pune', state: 'Maharashtra', occupation: 'CA', profile_picture_url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&h=150&fit=crop', subscription_type: 'free', gotra: 'Atri Gotra' },
-          { id: 'online5', first_name: 'Karthik', age: 26, gender: 'male', city: 'Hyderabad', state: 'Telangana', occupation: 'Architect', profile_picture_url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop', subscription_type: 'premium', gotra: 'Gautam Gotra' },
-          { id: 'online6', first_name: 'Sanjay', age: 31, gender: 'male', city: 'Delhi', state: 'Delhi', occupation: 'Business', profile_picture_url: 'https://images.unsplash.com/photo-1463453091185-61582044d556?w=150&h=150&fit=crop', subscription_type: 'free', gotra: 'Jamadagni Gotra' },
-          { id: 'online7', first_name: 'Rohan', age: 28, gender: 'male', city: 'Kolkata', state: 'West Bengal', occupation: 'Engineer', profile_picture_url: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&h=150&fit=crop', subscription_type: 'premium', gotra: 'Kashyap Gotra' },
-          { id: 'online8', first_name: 'Amit', age: 29, gender: 'male', city: 'Jaipur', state: 'Rajasthan', occupation: 'Manager', profile_picture_url: 'https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=150&h=150&fit=crop', subscription_type: 'free', gotra: 'Bharadwaja Gotra' },
-        ];
+        // Fetch real stats in parallel
+        const [profileViewsRes, interestsRes, messagesRes, vdatesRes] = await Promise.all([
+          supabase.from('profile_views').select('id', { count: 'exact', head: true }).eq('viewed_id', user.id),
+          supabase.from('interests').select('id', { count: 'exact', head: true }).eq('sender_id', user.id),
+          supabase.from('messages').select('id', { count: 'exact', head: true }).or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`),
+          supabase.from('vdates').select('id', { count: 'exact', head: true }).or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`),
+        ]);
+
+        setStats({
+          profileViews: profileViewsRes.count ?? 0,
+          interestsSent: interestsRes.count ?? 0,
+          messageCount: messagesRes.count ?? 0,
+          vDatesCount: vdatesRes.count ?? 0,
+        });
 
         // Fetch online members (active in last 60 mins)
         const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
@@ -148,12 +151,8 @@ const Dashboard = () => {
           const transformProfile = (p: RawProfile): MemberProfile => {
             const formatHeight = (height: number | string | undefined): string => {
               if (!height) return "160 cm";
-              if (typeof height === 'number') {
-                return `${height} cm`;
-              }
-              if (typeof height === 'string' && !isNaN(Number(height))) {
-                return `${height} cm`;
-              }
+              if (typeof height === 'number') return `${height} cm`;
+              if (!isNaN(Number(height))) return `${height} cm`;
               return height;
             };
 
@@ -165,47 +164,26 @@ const Dashboard = () => {
               location: `${p.city || 'Mumbai'}, ${p.state || 'Maharashtra'}`,
               profession: p.occupation || 'Professional',
               avatarUrl: p.profile_picture_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
-              subscription_type: p.subscription_type || (Math.random() > 0.5 ? 'premium' : 'free'),
+              subscription_type: p.subscription_type || 'free',
               gotra: p.gotra || 'Bharadwaja Gotra',
-              community: p.community || (Math.random() > 0.5 ? 'Iyer' : 'Deshastha'),
+              community: p.community || 'Brahmin',
               height: formatHeight(p.height),
-              matchPercentage: Math.floor(Math.random() * 20) + 80,
+              matchPercentage: 85,
               lastSeen: 'Active now'
             };
           };
   
-          // Use mock data if no online members from database
-          const onlineProfilesToUse = onlineData && onlineData.length > 0 ? onlineData : mockOnlineProfiles;
+          // Use mock data as fallback if no real data from database
+          const mockOnline = getMockOnlineProfiles(oppositeGender);
+          const onlineProfilesToUse = onlineData && onlineData.length > 0 ? onlineData : mockOnline;
           setOnlineMembers(onlineProfilesToUse.map((p) => transformProfile(p as RawProfile)));
           
-          // Use mock data if no new members from database
-          const mockNewMembers = oppositeGender === 'female' ? [
-            { id: 'new1', first_name: 'Lakshmi', age: 25, gender: 'female', city: 'Coimbatore', state: 'Tamil Nadu', occupation: 'Engineer', profile_picture_url: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=150', subscription_type: 'premium', gotra: 'Kashyap Gotra', height: 162 },
-            { id: 'new2', first_name: 'Radha', age: 24, gender: 'female', city: 'Mysore', state: 'Karnataka', occupation: 'Pharmacist', profile_picture_url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150', subscription_type: 'free', gotra: 'Bharadwaja Gotra', height: 158 },
-            { id: 'new3', first_name: 'Geetha', age: 26, gender: 'female', city: 'Kochi', state: 'Kerala', occupation: 'Banker', profile_picture_url: 'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=150', subscription_type: 'premium', gotra: 'Vasishtha Gotra', height: 160 },
-            { id: 'new4', first_name: 'Sita', age: 27, gender: 'female', city: 'Jaipur', state: 'Rajasthan', occupation: 'Professor', profile_picture_url: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=150', subscription_type: 'free', gotra: 'Atri Gotra', height: 165 },
-          ] : [
-            { id: 'new1', first_name: 'Suresh', age: 29, gender: 'male', city: 'Coimbatore', state: 'Tamil Nadu', occupation: 'Engineer', profile_picture_url: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150', subscription_type: 'premium', gotra: 'Kashyap Gotra', height: 175 },
-            { id: 'new2', first_name: 'Ganesh', age: 28, gender: 'male', city: 'Mysore', state: 'Karnataka', occupation: 'Pharmacist', profile_picture_url: 'https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=150', subscription_type: 'free', gotra: 'Bharadwaja Gotra', height: 172 },
-            { id: 'new3', first_name: 'Mohan', age: 30, gender: 'male', city: 'Kochi', state: 'Kerala', occupation: 'Banker', profile_picture_url: 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?w=150', subscription_type: 'premium', gotra: 'Vasishtha Gotra', height: 178 },
-            { id: 'new4', first_name: 'Krishna', age: 27, gender: 'male', city: 'Jaipur', state: 'Rajasthan', occupation: 'Professor', profile_picture_url: 'https://images.unsplash.com/photo-1528892952291-009c663ce843?w=150', subscription_type: 'free', gotra: 'Atri Gotra', height: 170 },
-          ];
-          const newProfilesToUse = newData && newData.length > 0 ? newData : mockNewMembers;
+          const mockNew = getMockNewProfiles(oppositeGender);
+          const newProfilesToUse = newData && newData.length > 0 ? newData : mockNew;
           setNewMembers(newProfilesToUse.map(p => transformProfile(p as RawProfile)));
           
-          // Use mock data if no recommended matches from database
-          const mockRecommendedMatches = oppositeGender === 'female' ? [
-            { id: 'rec1', first_name: 'Ananya', age: 25, gender: 'female', city: 'Ahmedabad', state: 'Gujarat', occupation: 'Data Scientist', profile_picture_url: 'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=150', subscription_type: 'premium', gotra: 'Gautam Gotra', height: 163 },
-            { id: 'rec2', first_name: 'Pooja', age: 26, gender: 'female', city: 'Lucknow', state: 'Uttar Pradesh', occupation: 'Marketing Manager', profile_picture_url: 'https://images.unsplash.com/photo-1464863979621-258859e62245?w=150', subscription_type: 'free', gotra: 'Jamadagni Gotra', height: 157 },
-            { id: 'rec3', first_name: 'Nisha', age: 24, gender: 'female', city: 'Indore', state: 'Madhya Pradesh', occupation: 'HR Manager', profile_picture_url: 'https://images.unsplash.com/photo-1485893086445-ed75865251e0?w=150', subscription_type: 'premium', gotra: 'Vishwamitra Gotra', height: 161 },
-            { id: 'rec4', first_name: 'Swati', age: 27, gender: 'female', city: 'Nagpur', state: 'Maharashtra', occupation: 'Consultant', profile_picture_url: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=150', subscription_type: 'free', gotra: 'Agastya Gotra', height: 159 },
-          ] : [
-            { id: 'rec1', first_name: 'Ravi', age: 29, gender: 'male', city: 'Ahmedabad', state: 'Gujarat', occupation: 'Data Scientist', profile_picture_url: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150', subscription_type: 'premium', gotra: 'Gautam Gotra', height: 176 },
-            { id: 'rec2', first_name: 'Amit', age: 30, gender: 'male', city: 'Lucknow', state: 'Uttar Pradesh', occupation: 'Marketing Manager', profile_picture_url: 'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=150', subscription_type: 'free', gotra: 'Jamadagni Gotra', height: 174 },
-            { id: 'rec3', first_name: 'Deepak', age: 28, gender: 'male', city: 'Indore', state: 'Madhya Pradesh', occupation: 'HR Manager', profile_picture_url: 'https://images.unsplash.com/photo-1522556189639-b150ed9c4330?w=150', subscription_type: 'premium', gotra: 'Vishwamitra Gotra', height: 177 },
-            { id: 'rec4', first_name: 'Nikhil', age: 31, gender: 'male', city: 'Nagpur', state: 'Maharashtra', occupation: 'Consultant', profile_picture_url: 'https://images.unsplash.com/photo-1480455624313-e29b44bbfde1?w=150', subscription_type: 'free', gotra: 'Agastya Gotra', height: 173 },
-          ];
-          const recommendedProfilesToUse = matchesData && matchesData.length > 0 ? matchesData : mockRecommendedMatches;
+          const mockRecommended = getMockRecommendedProfiles(oppositeGender);
+          const recommendedProfilesToUse = matchesData && matchesData.length > 0 ? matchesData : mockRecommended;
           setRecommendedMatches(recommendedProfilesToUse.map(p => transformProfile(p as RawProfile)));
 
       } catch (error) {
@@ -220,8 +198,62 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-red-600" />
+      <div className="min-h-screen bg-white flex flex-col font-sans">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
+          {/* Welcome Section Skeleton */}
+          <div className="mb-8">
+            <div className="bg-gradient-to-r from-gray-200 to-gray-300 rounded-3xl p-8 animate-pulse">
+              <Skeleton className="h-10 w-64 mb-2" />
+              <Skeleton className="h-6 w-48" />
+            </div>
+          </div>
+
+          {/* Stats Grid Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            {[...Array(4)].map((_, i) => (
+              <StatsCardSkeleton key={i} />
+            ))}
+          </div>
+
+          {/* Online Now Section Skeleton */}
+          <section className="mb-12 bg-gray-50 p-8 rounded-3xl">
+            <div className="flex items-center justify-between mb-8">
+              <Skeleton className="h-7 w-32" />
+              <Skeleton className="h-9 w-24 rounded-full" />
+            </div>
+            <div className="flex justify-between">
+              {[...Array(8)].map((_, i) => (
+                <AvatarSkeleton key={i} />
+              ))}
+            </div>
+          </section>
+
+          {/* Two Column Skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            {[1, 2].map((section) => (
+              <section key={section} className="bg-white rounded-[32px] border border-gray-100 p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <Skeleton className="h-7 w-40" />
+                  <Skeleton className="h-10 w-24 rounded-full" />
+                </div>
+                <div className="space-y-4">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-4 p-4">
+                      <Skeleton className="h-20 w-20 rounded-2xl" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-5 w-32" />
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-3 w-40" />
+                      </div>
+                      <Skeleton className="h-9 w-24 rounded-full" />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        </div>
+        <Footer />
       </div>
     );
   }

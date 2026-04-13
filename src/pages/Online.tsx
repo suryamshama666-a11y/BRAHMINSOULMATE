@@ -11,24 +11,23 @@ import { OnlineProfileCard } from './components/OnlineProfileCard';
 import { Pagination } from '@/components/ui/pagination';
 import { cn } from '@/lib/utils';
 
-const ITEMS_PER_PAGE = 9;
+const _PROFILES_PER_PAGE = 9;
 
 const Online = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [profiles, setProfiles] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(9);
   const [showFilters, setShowFilters] = useState(true);
 
-    const itemsPerPageOptions = [9, 15, 21];
+  const itemsPerPageOptions = [9, 15, 21];
 
-    useEffect(() => {
-      // Reset items per page if it's not in the current options
-      if (!itemsPerPageOptions.includes(itemsPerPage)) {
-        setItemsPerPage(itemsPerPageOptions[0]);
-      }
-    }, []);
+  // Items per page validation - ensure current value is in available options
+  // Reset to first option if current value is not in available options
+  const validatedItemsPerPage = itemsPerPageOptions.includes(itemsPerPage) 
+    ? itemsPerPage 
+    : itemsPerPageOptions[0];
   const navigate = useNavigate();
   const { isPremium } = useAuth();
 

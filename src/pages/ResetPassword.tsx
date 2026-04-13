@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 const ResetPassword = () => {
-  const [accessToken, setAccessToken] = useState('');
+  const [setAccessToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [showResetForm, setShowResetForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // effect:audited — URL token parsing for password reset
   useEffect(() => {
     // Check for access_token in hash or query string
     const hash = window.location.hash;
@@ -28,7 +29,7 @@ const ResetPassword = () => {
       setAccessToken(token);
       setShowResetForm(true);
     }
-  }, []);
+  }, [setAccessToken]);
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();

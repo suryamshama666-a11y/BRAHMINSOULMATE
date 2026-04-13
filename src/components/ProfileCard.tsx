@@ -3,9 +3,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
-import { 
-  Heart, MessageCircle, Eye, MapPin, Clock, Calendar, 
-  HeartOff, Check, X, Star, Crown, UserPlus, Briefcase, GraduationCap,
+import {
+  Heart, MessageCircle, Eye, MapPin, Clock, Calendar,
+  HeartOff, Star, Crown, UserPlus, Briefcase, GraduationCap,
   Flag, Shield
 } from 'lucide-react';
 
@@ -17,12 +17,12 @@ interface ProfileCardProps {
   compact?: boolean;
 }
 
-const ProfileCard: React.FC<ProfileCardProps> = ({ 
-  profile, 
-  variant = 'default', 
+const ProfileCard: React.FC<ProfileCardProps> = ({
+  profile,
+  variant = 'default',
   onAction,
   showActions = true,
-  compact = false 
+  compact: _compact = false
 }) => {
   const [isInterestExpressed, setIsInterestExpressed] = React.useState(false);
   const [isBlocked, setIsBlocked] = React.useState(false);
@@ -96,16 +96,18 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           </Badge>
         );
       case 'interest':
-        const statusColors: Record<string, string> = {
-          accepted: 'bg-green-100 text-green-800',
-          declined: 'bg-red-100 text-red-800',
-          pending: 'bg-yellow-100 text-yellow-800'
-        };
-        return (
-          <Badge className={`text-xs ${statusColors[profile.status] || statusColors.pending}`}>
-            {profile.status?.charAt(0).toUpperCase() + profile.status?.slice(1) || 'Pending'}
-          </Badge>
-        );
+        {
+          const statusColors: Record<string, string> = {
+            accepted: 'bg-green-100 text-green-800',
+            declined: 'bg-red-100 text-red-800',
+            pending: 'bg-yellow-100 text-yellow-800'
+          };
+          return (
+            <Badge className={`text-xs ${statusColors[profile.status] || statusColors.pending}`}>
+              {profile.status?.charAt(0).toUpperCase() + profile.status?.slice(1) || 'Pending'}
+            </Badge>
+          );
+        }
       default:
         if (profile.matchPercentage) {
           return (
@@ -179,11 +181,16 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           <div className="flex-shrink-0 flex flex-col border-r border-gray-100 w-40">
             {/* Profile Picture */}
             <div className="relative">
-              <div className="w-40 h-48 overflow-hidden bg-gradient-to-br from-red-100 to-orange-100">
+              <div className="w-40 h-48 overflow-hidden bg-gradient-to-br from-red-100 to-orange-100 relative group">
                 <img
                   src={profile.avatarUrl || `https://randomuser.me/api/portraits/${profile.gender === 'male' ? 'men' : 'women'}/${Math.floor(Math.random() * 50) + 1}.jpg`}
                   alt={profile.name}
-                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/placeholder-avatar.jpg'; // Production placeholder
+                  }}
                 />
               </div>
               
@@ -267,11 +274,11 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               <div className="space-y-1.5 mb-3 text-[13px]">
                 <div className="flex items-center text-gray-700">
                   <MapPin className="h-3.5 w-3.5 mr-2 text-red-500 flex-shrink-0" />
-                  <span className="truncate">{profile.location}</span>
+                  <span className="truncate">{typeof profile.location === 'object' ? `${profile.location.city || ''}${profile.location.state ? ', ' + profile.location.state : ''}` : profile.location || 'Location not specified'}</span>
                 </div>
                 <div className="flex items-center text-gray-700">
                   <GraduationCap className="h-3.5 w-3.5 mr-2 text-blue-500 flex-shrink-0" />
-                  <span className="truncate">{profile.education}</span>
+                  <span className="truncate">{typeof profile.education === 'object' ? `${profile.education.degree || ''}${profile.education.field ? ' in ' + profile.education.field : ''}` : profile.education || 'Education not specified'}</span>
                 </div>
                 <div className="flex items-center text-gray-700">
                   <Briefcase className="h-3.5 w-3.5 mr-2 text-amber-500 flex-shrink-0" />

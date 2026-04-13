@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { SavedSearch, SearchFilters } from '@/hooks/useAdvancedSearch';
-import { Bookmark, Calendar, Clock, X } from 'lucide-react';
+import { Bookmark, Clock, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface SavedSearchesProps {

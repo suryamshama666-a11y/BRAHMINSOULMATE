@@ -10,7 +10,7 @@ type AnyProfileType = Profile | UserProfile | any;
 
 export const useProfileInteractions = (profile: AnyProfileType) => {
   const [liked, setLiked] = useState(false);
-  const [isMessaging, setIsMessaging] = useState(false);
+  const [isMessaging, ] = useState(false);
   const navigate = useNavigate();
   const { isPremium } = useAuth();
 
@@ -29,7 +29,7 @@ export const useProfileInteractions = (profile: AnyProfileType) => {
 
   // Handle message
   const handleMessage = () => {
-    console.log('Handling message for profile:', profile.id);
+    logger.log('Handling message for profile:', profile.id);
     
     if (!isPremium) {
       toast.error("Messaging is only available for premium members", {
@@ -52,7 +52,7 @@ export const useProfileInteractions = (profile: AnyProfileType) => {
 
   // Handle video call
   const handleVideoCall = () => {
-    console.log('Handling video call for profile:', profile.id);
+    logger.log('Handling video call for profile:', profile.id);
     
     if (!isPremium) {
       toast.error("Video calling is only available for premium members", {
@@ -75,7 +75,7 @@ export const useProfileInteractions = (profile: AnyProfileType) => {
 
   // Handle phone call
   const handlePhone = () => {
-    console.log('Handling phone call for profile:', profile.id);
+    logger.log('Handling phone call for profile:', profile.id);
     
     if (!isPremium) {
       toast.error("Phone calling is only available for premium members", {
@@ -105,7 +105,7 @@ export const useProfileInteractions = (profile: AnyProfileType) => {
 
   // Handle calendar (for scheduling)
   const handleCalendar = () => {
-    console.log('Handling calendar/schedule for profile:', profile.id);
+    logger.log('Handling calendar/schedule for profile:', profile.id);
     
     if (!isPremium) {
       toast.error("Meeting scheduling is only available for premium members", {

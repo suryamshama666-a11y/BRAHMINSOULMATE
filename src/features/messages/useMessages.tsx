@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { transformRealTimeMessage } from './types';
 
 export const useMessages = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { profile } = useProfile();
@@ -38,14 +38,15 @@ export const useMessages = () => {
       setMobileViewChat(true);
       fetchMessages(conversationId);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
   
   // Load conversations on mount
   useEffect(() => {
-    if (isAuthenticated) {
+    if (user) {
       fetchConversations();
     }
-  }, [isAuthenticated]);
+  }, [user, fetchConversations]);
 
   // Enhanced setSelectedConversation to mark messages as read and update URL
   const setSelectedConversation = (partnerId: string) => {

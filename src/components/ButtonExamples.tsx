@@ -1,7 +1,5 @@
-
-import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Heart, Users, Send, Star, ArrowRight } from 'lucide-react';
+import { Heart, Send, Star, ArrowRight } from 'lucide-react';
 
 export default function ButtonExamples() {
   return (
@@ -13,10 +11,10 @@ export default function ButtonExamples() {
         <div className="flex flex-col items-center bg-white p-6 rounded-lg shadow-sm space-y-4">
           <h3 className="font-medium text-lg">Red and Gold Gradients</h3>
           <div className="flex flex-col gap-4 items-center">
-            <Button variant="red-gold" size="default" ripple={true} className="text-base">
+            <Button variant="red-gold" size="default" className="text-base">
               <Heart className="mr-1" /> Send Interest
             </Button>
-            <Button variant="gold-red" size="default" ripple={true} className="text-base">
+            <Button variant="gold-red" size="default" className="text-base">
               Premium Membership
             </Button>
           </div>
@@ -26,10 +24,10 @@ export default function ButtonExamples() {
         <div className="flex flex-col items-center bg-white p-6 rounded-lg shadow-sm space-y-4">
           <h3 className="font-medium text-lg">Primary Gradient</h3>
           <div className="flex flex-col gap-4 items-center">
-            <Button variant="primary" size="default" ripple={true} className="text-base">
+            <Button variant="primary" size="default" className="text-base">
               Register Now
             </Button>
-            <Button variant="primary" size="lg" ripple={true} className="text-base">
+            <Button variant="primary" size="lg" className="text-base">
               Find Matches <ArrowRight className="ml-1" />
             </Button>
           </div>
@@ -39,10 +37,10 @@ export default function ButtonExamples() {
         <div className="flex flex-col items-center bg-white p-6 rounded-lg shadow-sm space-y-4">
           <h3 className="font-medium text-lg">Gradient Buttons</h3>
           <div className="flex flex-col gap-4 items-center">
-            <Button variant="gradient-red-gold" size="default" ripple={true} className="text-base">
+            <Button variant="gradient-red-gold" size="default" className="text-base">
               <Heart className="mr-1" /> Send Interest
             </Button>
-            <Button variant="gradient-purple-pink" size="pill" ripple={true} className="text-base">
+            <Button variant="gradient-purple-pink" size="pill" className="text-base">
               Premium Match
             </Button>
           </div>
@@ -52,10 +50,10 @@ export default function ButtonExamples() {
         <div className="flex flex-col items-center bg-white p-6 rounded-lg shadow-sm space-y-4">
           <h3 className="font-medium text-lg">More Gradients</h3>
           <div className="flex flex-col gap-4 items-center">
-            <Button variant="gradient-blue-cyan" size="default" ripple={true} className="text-base">
+            <Button variant="gradient-blue-cyan" size="default" className="text-base">
               <Star className="mr-1" /> Upgrade Plan
             </Button>
-            <Button variant="gradient-emerald-lime" size="pill" ripple={true} className="text-base">
+            <Button variant="gradient-emerald-lime" size="pill" className="text-base">
               <Send className="mr-1" /> Connect
             </Button>
           </div>
@@ -91,10 +89,10 @@ export default function ButtonExamples() {
         <div className="flex flex-col items-center bg-white p-6 rounded-lg shadow-sm space-y-4">
           <h3 className="font-medium text-lg">Call to Action</h3>
           <div className="flex flex-col gap-4 items-center">
-            <Button variant="gradient-amber-rose" size="xl" className="w-full text-base" ripple={true}>
+            <Button variant="gradient-amber-rose" size="xl" className="w-full text-base">
               Create Free Account
             </Button>
-            <Button variant="red-gold" size="lg" className="w-full text-base" ripple={true}>
+            <Button variant="red-gold" size="lg" className="w-full text-base">
               Premium Membership
             </Button>
           </div>

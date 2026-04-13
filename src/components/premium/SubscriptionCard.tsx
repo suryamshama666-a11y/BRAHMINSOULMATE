@@ -40,7 +40,7 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
     }
   };
 
-  const getGradient = () => {
+  const _getGradient = () => {
     switch (plan.type) {
       case 'premium':
         return 'from-purple-50 to-indigo-50';

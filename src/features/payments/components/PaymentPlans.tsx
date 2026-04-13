@@ -11,13 +11,13 @@ interface PaymentPlansProps {
   category?: 'all' | 'consultations' | 'matching' | 'charts';
 }
 
-export default function PaymentPlans({ category = 'all' }: PaymentPlansProps) {
-  const { user, isAuthenticated } = useAuth();
+export default function PaymentPlans({ category: _category = 'all' }: PaymentPlansProps) {
+  const { user } = useAuth();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const navigate = useNavigate();
   
   const handleSubscribe = async (plan: PaymentPlan) => {
-    if (!isAuthenticated || !user) {
+    if (!user) {
       toast.error("Please login to subscribe to a plan");
       navigate('/login');
       return;

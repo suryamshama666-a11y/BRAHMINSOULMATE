@@ -1,10 +1,11 @@
 import { User, AuthError } from '@supabase/supabase-js';
-import { UserProfile, UserSubscription } from '@/types';
+import { UserProfile, UserSubscription } from './index';
 
 export interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
   subscription: UserSubscription | null;
+  isPremium: boolean;
   loading: boolean;
   error: AuthError | null;
   signUp: (email: string, password: string, options?: { firstName?: string; lastName?: string }) => Promise<void>;

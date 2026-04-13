@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getSupabase } from '@/lib/getSupabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
 export const useTypingIndicator = () => {
   const { user } = useAuth();
   const [typingUsers, setTypingUsers] = useState<Record<string, string[]>>({});
   const channelRef = useRef<any>(null);
-  const supabase = getSupabase();
 
+  // effect:audited — Real-time Supabase presence subscription for typing indicators
   useEffect(() => {
     if (!user) return;
 
@@ -46,6 +46,7 @@ export const useTypingIndicator = () => {
     return () => {
       supabase.removeChannel(channel);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, supabase]);
 
   const setTyping = useCallback(async (conversationId: string, isTyping: boolean) => {

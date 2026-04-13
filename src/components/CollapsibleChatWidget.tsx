@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useConversations } from '@/features/messages/hooks/useConversations';
-import { MessageSquare, X, ChevronDown, Send, Search, User, Users, MoreVertical, Paperclip, Smile, Settings, BellOff, Bell, ArrowLeft, MoreHorizontal, Circle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { MessageSquare, X, Send, Search, User, Users, Smile, BellOff, Bell, ArrowLeft, Circle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
@@ -24,13 +23,10 @@ export function CollapsibleChatWidget() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   
-  const { conversations, totalUnread, isLoading: convsLoading } = useConversations();
+  const { conversations, isLoading: convsLoading } = useConversations();
   const { isUserOnline } = usePresence();
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const prevUnreadRef = useRef(0);
-  const originalTitleRef = useRef(document.title);
-  const flashIntervalRef = useRef<any>(null);
 
   useEffect(() => {
     if (user) {
@@ -38,12 +34,12 @@ export function CollapsibleChatWidget() {
     }
   }, [user]);
 
-  // Use bypass mode if enabled
-  const isBypass = import.meta.env.VITE_DEV_BYPASS_AUTH === 'true';
+  // Use bypass mode if enabled (build-time constant)
+  const isBypass = import.meta.env.DEV && import.meta.env.VITE_DEV_BYPASS_AUTH === 'true';
   const showWidget = !!user || loading || isBypass;
 
   // Calculate total unread count
-  const totalUnreadCount = totalUnread ?? (conversations?.reduce((acc: number, conv: any) => acc + (conv.unread_count || 0), 0) || 0);
+  const totalUnreadCount = conversations?.reduce((acc: number, conv: any) => acc + (conv.unread_count || 0), 0) || 0;
 
   // Debug logging
   useEffect(() => {

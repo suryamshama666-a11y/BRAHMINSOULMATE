@@ -1,45 +1,19 @@
-/**
- * Profiles Service
- * Handles all profile-related API operations
- */
-
 import { UserProfile } from '@/types';
-import { supabase, apiCall, APIResponse, getCurrentUserId } from './base';
+import { supabase, apiCall, backendCall, APIResponse, getCurrentUserId } from './base';
 
 export class ProfilesService {
   /**
-   * Get profile by user ID
+   * Get profile by ID (uses backend to enforce privacy rules)
    */
   static async getProfile(userId: string): Promise<APIResponse<UserProfile>> {
-    return apiCall(async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      return { data, error };
-    });
+    return backendCall<UserProfile>(`profile/${userId}`);
   }
 
   /**
    * Get current user's profile
    */
   static async getCurrentProfile(): Promise<APIResponse<UserProfile>> {
-    const userId = await getCurrentUserId();
-    if (!userId) {
-      return {
-        data: null,
-        error: {
-          code: 'AUTH_ERROR',
-          message: 'User not authenticated',
-          statusCode: 401,
-          name: 'APIError'
-        } as any
-      };
-    }
-
-    return this.getProfile(userId);
+    return backendCall<UserProfile>('profile/me');
   }
 
   /**
@@ -104,82 +78,22 @@ export class ProfilesService {
    * Search profiles with filters
    */
   static async searchProfiles(filters: {
-    ageRange?: { min: number; max: number };
-    heightRange?: { min: number; max: number };
-    locations?: string[];
-    educationLevels?: string[];
-    occupations?: string[];
-    gotras?: string[];
-    subcastes?: string[];
-    maritalStatus?: string[];
-    excludeSameGotra?: boolean;
-    currentUserGotra?: string;
+    gender?: string;
+    min_age?: number;
+    max_age?: number;
+    city?: string;
+    religion?: string;
     limit?: number;
-    offset?: number;
   }): Promise<APIResponse<UserProfile[]>> {
-    return apiCall(async () => {
-      let query = supabase
-        .from('profiles')
-        .select('*')
-        .eq('account_status', 'active');
+    const params = new URLSearchParams();
+    if (filters.gender) params.append('gender', filters.gender);
+    if (filters.min_age) params.append('min_age', filters.min_age.toString());
+    if (filters.max_age) params.append('max_age', filters.max_age.toString());
+    if (filters.city) params.append('city', filters.city);
+    if (filters.religion) params.append('religion', filters.religion);
+    if (filters.limit) params.append('limit', filters.limit.toString());
 
-      // Age range filter
-      if (filters.ageRange) {
-        query = query
-          .gte('age', filters.ageRange.min)
-          .lte('age', filters.ageRange.max);
-      }
-
-      // Height range filter
-      if (filters.heightRange) {
-        query = query
-          .gte('height', filters.heightRange.min)
-          .lte('height', filters.heightRange.max);
-      }
-
-      // Location filter
-      if (filters.locations && filters.locations.length > 0) {
-        query = query.in('location->>city', filters.locations);
-      }
-
-      // Education filter
-      if (filters.educationLevels && filters.educationLevels.length > 0) {
-        query = query.in('education->>level', filters.educationLevels);
-      }
-
-      // Occupation filter
-      if (filters.occupations && filters.occupations.length > 0) {
-        query = query.in('employment->>profession', filters.occupations);
-      }
-
-      // Gotra filter
-      if (filters.gotras && filters.gotras.length > 0) {
-        query = query.in('gotra', filters.gotras);
-      }
-
-      // Exclude same Gotra
-      if (filters.excludeSameGotra && filters.currentUserGotra) {
-        query = query.neq('gotra', filters.currentUserGotra);
-      }
-
-      // Subcaste filter
-      if (filters.subcastes && filters.subcastes.length > 0) {
-        query = query.in('subcaste', filters.subcastes);
-      }
-
-      // Marital status filter
-      if (filters.maritalStatus && filters.maritalStatus.length > 0) {
-        query = query.in('marital_status', filters.maritalStatus);
-      }
-
-      // Pagination
-      const limit = filters.limit || 20;
-      const offset = filters.offset || 0;
-      query = query.range(offset, offset + limit - 1);
-
-      const { data, error } = await query;
-      return { data, error };
-    });
+    return backendCall<UserProfile[]>(`profile/search/all?${params.toString()}`);
   }
 
   /**
@@ -197,7 +111,7 @@ export class ProfilesService {
         .order('last_active', { ascending: false })
         .limit(limit);
 
-      return { data, error };
+      return { data: data as UserProfile[], error };
     });
   }
 
@@ -213,7 +127,7 @@ export class ProfilesService {
         .order('created_at', { ascending: false })
         .limit(limit);
 
-      return { data, error };
+      return { data: data as UserProfile[], error };
     });
   }
 
@@ -277,8 +191,7 @@ export class ProfilesService {
     const completion = this.calculateProfileCompletion(profileResponse.data);
 
     return apiCall(async () => {
-      const { error } = await supabase
-        .from('profiles')
+      const { error } = await (supabase.from('profiles' as any) as any)
         .update({ profile_completion: completion })
         .eq('user_id', userId);
 

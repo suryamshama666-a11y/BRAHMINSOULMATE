@@ -1,22 +1,41 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Link, useNavigate } from 'react-router-dom';
-import { Eye, MessageCircle, Heart, Clock, Filter } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Eye, Clock, Filter } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ProfileCard from '@/components/ProfileCard';
 import { useAuth } from '@/hooks/useAuth';
 import { profileViewsService } from '@/services/api';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
 import { ListFilters } from '@/components/ListFilters';
 import { Pagination } from '@/components/ui/pagination';
+import { ProfileCardSkeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
+
+interface ViewerProfile {
+  id: string;
+  name: string;
+  age: number;
+  gender: string;
+  height: number;
+  religion: string;
+  caste: string;
+  gotra: string;
+  location: string;
+  education: string;
+  profession: string;
+  subscription_type: string;
+  lastActive: string;
+  viewedAt: string;
+  avatarUrl?: string;
+  profile_picture?: string;
+}
 
 const WhoViewedYou = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [viewers, setViewers] = useState([]);
+  const [viewers, setViewers] = useState<ViewerProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -70,9 +89,12 @@ const WhoViewedYou = () => {
               height: 165,
               religion: 'Hindu',
               caste: 'Brahmin',
+              gotra: 'Bharadwaj',
               location: 'Delhi, Delhi',
+              education: 'MBA',
               profession: 'Software Engineer',
               subscription_type: 'premium',
+              lastActive: new Date().toISOString(),
               viewedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
             },
             {
@@ -83,9 +105,12 @@ const WhoViewedYou = () => {
               height: 178,
               religion: 'Hindu',
               caste: 'Brahmin',
+              gotra: 'Kashyap',
               location: 'Chennai, Tamil Nadu',
+              education: 'M.Tech',
               profession: 'Data Scientist',
               subscription_type: 'free',
+              lastActive: new Date().toISOString(),
               viewedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
             }
           ];
@@ -182,16 +207,27 @@ const WhoViewedYou = () => {
         toast.success(`${profileName} has been blocked`);
         break;
       default:
-        console.log('Unknown action:', action);
+        logger.log('Unknown action:', action);
     }
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-amber-50 to-red-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-600"></div>
-      </div>
-    );
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-red-50 via-amber-50 to-red-100 p-8">
+          <div className="container mx-auto">
+            <div className="h-40 w-full bg-gradient-to-r from-blue-200 to-indigo-200 rounded-2xl animate-pulse mb-8"></div>
+            <div className="flex gap-4 mb-4">
+              <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <ProfileCardSkeleton key={i} />
+              ))}
+            </div>
+          </div>
+        </div>
+      );
   }
 
   return (
@@ -270,33 +306,20 @@ const WhoViewedYou = () => {
 
           </>
         ) : (
-          <Card className="text-center py-16">
-            <CardContent>
-              <div className="bg-gray-50 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Eye className="h-10 w-10 text-gray-300" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">
-                {searchTerm ? 'No matches found' : 'No Profile Views Yet'}
-              </h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                {searchTerm 
-                  ? `We couldn't find any profile views matching "${searchTerm}". Try a different search term.`
-                  : 'Complete your profile to attract more viewers and see who visits your page.'}
-              </p>
-              {searchTerm ? (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setSearchTerm('')}
-                >
-                  Clear Search
-                </Button>
-              ) : (
-                  <Link to="/profile/manage">
-                    <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md">
-                      Complete Your Profile
-                    </Button>
-                  </Link>
-              )}
+          <Card className="py-8 border-dashed border-2 shadow-none bg-white/50">
+            <CardContent className="p-0">
+              <EmptyState 
+                variant={searchTerm ? "no-results" : "no-notifications"}
+                title={searchTerm ? "No Matches Found" : "No Profile Views Yet"}
+                description={
+                  searchTerm 
+                    ? `We couldn't find any profile views matching "${searchTerm}". Try a different search term.` 
+                    : "Complete your profile to attract more viewers and see who visits your page."
+                }
+                actionLabel={searchTerm ? "Clear Search" : "Complete Your Profile"}
+                onAction={searchTerm ? () => setSearchTerm('') : undefined}
+                actionHref={searchTerm ? undefined : "/profile/manage"}
+              />
             </CardContent>
           </Card>
         )}

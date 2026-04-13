@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Profile } from '@/data/profiles';
+import { supabase } from '@/integrations/supabase/client';
 
 export type CallState = 'connecting' | 'connected' | 'ended';
 export type ConnectionQuality = 'excellent' | 'good' | 'poor';
@@ -33,10 +34,10 @@ export const useVideoCall = (userId: string, profile: Profile | undefined) => {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [autoEndTimer, setAutoEndTimer] = useState<number | null>(null);
 
-  const [vdateId, setVdateId] = useState<string | null>(null);
+  const [_vdateId, setVdateId] = useState<string | null>(null);
   const [meetingUrl, setMeetingUrl] = useState<string | null>(null);
 
-  // Initialize participants and vdate
+  // effect:audited — Initialize participants and fetch V-Date data on profile change
   useEffect(() => {
     if (profile) {
       setParticipants([
@@ -84,7 +85,7 @@ export const useVideoCall = (userId: string, profile: Profile | undefined) => {
     }
   }, [userId, profile]);
 
-  // Simulate connection with real meeting check
+  // effect:audited — Connection simulation timer with quality monitoring
   useEffect(() => {
     const connectionTimer = setTimeout(() => {
       setCallState('connected');
@@ -104,7 +105,7 @@ export const useVideoCall = (userId: string, profile: Profile | undefined) => {
     return () => clearTimeout(connectionTimer);
   }, [profile]);
 
-  // Call duration timer with safety limits
+  // effect:audited — Call duration interval timer with safety warnings
   useEffect(() => {
     let durationTimer: number | undefined;
     
@@ -134,7 +135,7 @@ export const useVideoCall = (userId: string, profile: Profile | undefined) => {
     };
   }, [callState]);
 
-  // Auto-end timer for safety (can be set from safety controls)
+  // effect:audited — Auto-end timer check for safety controls
   useEffect(() => {
     if (autoEndTimer && callDuration >= autoEndTimer) {
       toast.info('Call automatically ended for safety');
@@ -240,13 +241,13 @@ export const useVideoCall = (userId: string, profile: Profile | undefined) => {
     isScreenSharing,
     participants,
     chatMessages,
+    meetingUrl,
     toggleAudio,
     toggleVideo,
     toggleScreenShare,
     endCall,
     sendChatMessage,
     changeBackground,
-    setAutoEnd,
-    meetingUrl
+    setAutoEnd
   };
 };

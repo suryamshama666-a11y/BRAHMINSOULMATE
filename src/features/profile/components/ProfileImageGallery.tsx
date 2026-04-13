@@ -24,17 +24,17 @@ export default function ProfileImageGallery({ profile }: ProfileImageGalleryProp
 
   const handlePhotoUpload = (files: FileList) => {
     // Mock implementation - in real app, this would upload to server
-    console.log('Uploading photos:', files);
+    logger.log('Uploading photos:', files);
   };
 
   const handlePhotoDelete = (photoId: string) => {
     // Mock implementation - in real app, this would delete from server
-    console.log('Deleting photo:', photoId);
+    logger.log('Deleting photo:', photoId);
   };
 
   const handleSetProfilePicture = (photoId: string) => {
     // Mock implementation - in real app, this would update server
-    console.log('Setting profile picture:', photoId);
+    logger.log('Setting profile picture:', photoId);
   };
   
   return (

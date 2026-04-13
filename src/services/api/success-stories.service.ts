@@ -2,14 +2,18 @@ import { supabase } from '@/lib/supabase';
 
 export interface SuccessStory {
   id: string;
-  user_id_1: string;
-  user_id_2: string;
-  title: string;
-  story: string;
+  user_id_1?: string;
+  user_id_2?: string;
+  user1_id?: string;
+  user2_id?: string;
+  title?: string;
+  story?: string;
   marriage_date?: string;
   image_url?: string;
-  status: 'pending' | 'approved' | 'rejected';
-  created_at: string;
+  images?: string[];
+  status?: 'pending' | 'approved' | 'rejected';
+  approved?: boolean;
+  created_at?: string;
   approved_at?: string;
   user1?: any;
   user2?: any;
@@ -17,6 +21,7 @@ export interface SuccessStory {
 
 class SuccessStoriesService {
   private readonly BUCKET_NAME = 'success-stories';
+  private readonly successStories = supabase.from('success_stories' as any) as any;
 
   // Submit success story
   async submitStory(storyData: {
@@ -37,8 +42,7 @@ class SuccessStoriesService {
     }
 
     // Create success story
-    const { data, error } = await supabase
-      .from('success_stories')
+    const { data, error } = await this.successStories
       .insert({
         user_id_1: user.id,
         user_id_2: storyData.partnerId,
@@ -62,7 +66,7 @@ class SuccessStoriesService {
     // Notify admins
     await this.notifyAdmins(data.id);
 
-    return data;
+    return this.toSuccessStory(data);
   }
 
   // Upload story image
@@ -117,8 +121,7 @@ class SuccessStoriesService {
 
   // Get approved success stories
   async getApprovedStories(limit: number = 20): Promise<SuccessStory[]> {
-    const { data, error } = await supabase
-      .from('success_stories')
+    const { data, error } = await this.successStories
       .select(`
         *,
         user1:user_id_1 (
@@ -137,7 +140,7 @@ class SuccessStoriesService {
       .limit(limit);
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(story => this.toSuccessStory(story));
   }
 
   // Get my success stories
@@ -145,8 +148,7 @@ class SuccessStoriesService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const { data, error } = await supabase
-      .from('success_stories')
+    const { data, error } = await this.successStories
       .select(`
         *,
         user1:user_id_1 (
@@ -164,7 +166,7 @@ class SuccessStoriesService {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(story => this.toSuccessStory(story));
   }
 
   // Admin: Get pending stories
@@ -183,8 +185,7 @@ class SuccessStoriesService {
       throw new Error('Unauthorized: Admin access required');
     }
 
-    const { data, error } = await supabase
-      .from('success_stories')
+    const { data, error } = await this.successStories
       .select(`
         *,
         user1:user_id_1 (
@@ -204,7 +205,7 @@ class SuccessStoriesService {
       .order('created_at', { ascending: true });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(story => this.toSuccessStory(story));
   }
 
   // Admin: Approve story
@@ -213,8 +214,7 @@ class SuccessStoriesService {
     if (!user) throw new Error('Not authenticated');
 
     // Get story
-    const { data: story, error: fetchError } = await supabase
-      .from('success_stories')
+    const { data: story, error: fetchError } = await this.successStories
       .select('*')
       .eq('id', storyId)
       .single();
@@ -223,8 +223,7 @@ class SuccessStoriesService {
     if (!story) throw new Error('Story not found');
 
     // Update status
-    const { error: updateError } = await supabase
-      .from('success_stories')
+    const { error: updateError } = await this.successStories
       .update({
         status: 'approved',
         approved_at: new Date().toISOString()
@@ -234,7 +233,7 @@ class SuccessStoriesService {
     if (updateError) throw updateError;
 
     // Send congratulations to both users
-    await this.sendApprovalNotifications(story);
+    await this.sendApprovalNotifications(this.toSuccessStory(story));
   }
 
   // Admin: Reject story
@@ -243,8 +242,7 @@ class SuccessStoriesService {
     if (!user) throw new Error('Not authenticated');
 
     // Get story
-    const { data: story, error: fetchError } = await supabase
-      .from('success_stories')
+    const { data: story, error: fetchError } = await this.successStories
       .select('*')
       .eq('id', storyId)
       .single();
@@ -253,15 +251,17 @@ class SuccessStoriesService {
     if (!story) throw new Error('Story not found');
 
     // Update status
-    const { error: updateError } = await supabase
-      .from('success_stories')
+    const { error: updateError } = await this.successStories
       .update({ status: 'rejected' })
       .eq('id', storyId);
 
     if (updateError) throw updateError;
 
     // Notify submitter
-    await this.sendRejectionNotification(story.user_id_1, reason);
+    const normalizedStory = this.toSuccessStory(story);
+    if (normalizedStory.user_id_1) {
+      await this.sendRejectionNotification(normalizedStory.user_id_1, reason);
+    }
   }
 
   // Delete story
@@ -270,8 +270,7 @@ class SuccessStoriesService {
     if (!user) throw new Error('Not authenticated');
 
     // Get story
-    const { data: story, error: fetchError } = await supabase
-      .from('success_stories')
+    const { data: story, error: fetchError } = await this.successStories
       .select('*')
       .eq('id', storyId)
       .or(`user_id_1.eq.${user.id},user_id_2.eq.${user.id}`)
@@ -281,13 +280,13 @@ class SuccessStoriesService {
     if (!story) throw new Error('Story not found');
 
     // Delete image if exists
-    if (story.image_url) {
-      await this.deleteImage(story.image_url);
+    const normalizedStory = this.toSuccessStory(story);
+    if (normalizedStory.image_url) {
+      await this.deleteImage(normalizedStory.image_url);
     }
 
     // Delete story
-    const { error: deleteError } = await supabase
-      .from('success_stories')
+    const { error: deleteError } = await this.successStories
       .delete()
       .eq('id', storyId);
 
@@ -322,6 +321,9 @@ class SuccessStoriesService {
   // Send approval notifications
   private async sendApprovalNotifications(story: SuccessStory): Promise<void> {
     try {
+      if (!story.user_id_1 || !story.user_id_2) {
+        return;
+      }
       const notifications = [
         {
           user_id: story.user_id_1,
@@ -360,6 +362,20 @@ class SuccessStoriesService {
     } catch (error) {
       console.error('Failed to send rejection notification:', error);
     }
+  }
+
+  private toSuccessStory(data: any): SuccessStory {
+    const userId1 = data?.user_id_1 ?? data?.user1_id;
+    const userId2 = data?.user_id_2 ?? data?.user2_id;
+    const status = data?.status ?? (data?.approved ? 'approved' : 'pending');
+    const imageUrl = data?.image_url ?? (Array.isArray(data?.images) ? data.images[0] : undefined);
+    return {
+      ...data,
+      user_id_1: userId1,
+      user_id_2: userId2,
+      status,
+      image_url: imageUrl
+    };
   }
 }
 

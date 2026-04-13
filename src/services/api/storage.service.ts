@@ -118,7 +118,7 @@ export class StorageService {
         const fileName = `${userId}/${Date.now()}.${fileExt}`;
 
         // Upload to Supabase Storage
-        const { data, error } = await supabase.storage
+        const { error } = await supabase.storage
           .from(this.PHOTOS_BUCKET)
           .upload(fileName, compressedBlob, {
             contentType: 'image/jpeg',
@@ -204,7 +204,7 @@ export class StorageService {
         const fileName = `${userId}/${Date.now()}.${fileExt}`;
 
         // Upload to Supabase Storage
-        const { data, error } = await supabase.storage
+        const { error } = await supabase.storage
           .from(this.DOCUMENTS_BUCKET)
           .upload(fileName, file, {
             contentType: file.type,
@@ -256,7 +256,7 @@ export class StorageService {
         const fileName = `${userId}/horoscope.${fileExt}`;
 
         // Upload to Supabase Storage (upsert to replace existing)
-        const { data, error } = await supabase.storage
+        const { error } = await supabase.storage
           .from(this.HOROSCOPE_BUCKET)
           .upload(fileName, file, {
             contentType: file.type,

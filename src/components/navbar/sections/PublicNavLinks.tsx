@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Book, Info, DollarSign, Star } from 'lucide-react';
+import { Info, DollarSign, Star } from 'lucide-react';
 
 export default function PublicNavLinks() {
   const location = useLocation();

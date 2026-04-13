@@ -26,19 +26,21 @@ import { useToast } from '@/hooks/use-toast';
 interface EventFormData {
   title: string;
   description: string;
-  event_date: string;
+  date: string;
+  time: string;
   location: string;
-  capacity: number;
-  image_url?: string;
+  max_participants: number;
+  image: string | null;
 }
 
 const initialFormData: EventFormData = {
   title: '',
   description: '',
-  event_date: '',
+  date: '',
+  time: '',
   location: '',
-  capacity: 50,
-  image_url: ''
+  max_participants: 50,
+  image: null
 };
 
 export function EventsManagementTab() {
@@ -102,10 +104,11 @@ export function EventsManagementTab() {
     setFormData({
       title: event.title,
       description: event.description,
-      event_date: event.event_date.slice(0, 16),
+      date: event.date,
+      time: event.time,
       location: event.location,
-      capacity: event.capacity,
-      image_url: event.image_url || ''
+      max_participants: event.max_participants || 50,
+      image: event.image
     });
     setIsDialogOpen(true);
   };
@@ -115,7 +118,7 @@ export function EventsManagementTab() {
     try {
       const data = await eventsService.getEventParticipants(event.id);
       setParticipants(data);
-    } catch (error) {
+    } catch {
       setParticipants([]);
     }
     setIsParticipantsOpen(true);
@@ -129,17 +132,27 @@ export function EventsManagementTab() {
 
     setSaving(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const submitData = {
+        ...formData,
+        organizer_id: user.id,
+        current_participants: selectedEvent?.current_participants || 0
+      };
+
       if (selectedEvent) {
-        await eventsService.updateEvent(selectedEvent.id, formData);
+        await eventsService.updateEvent(selectedEvent.id, submitData);
         toast({ title: 'Success', description: 'Event updated successfully' });
       } else {
-        await eventsService.createEvent(formData);
+        await eventsService.createEvent(submitData);
         toast({ title: 'Success', description: 'Event created successfully' });
       }
       setIsDialogOpen(false);
       await loadEvents();
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message || 'Failed to save event', variant: 'destructive' });
+    } catch (error) {
+      const err = error as Error;
+      toast({ title: 'Error', description: err.message || 'Failed to save event', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -153,8 +166,9 @@ export function EventsManagementTab() {
       await eventsService.deleteEvent(eventId);
       toast({ title: 'Deleted', description: 'Event deleted successfully' });
       await loadEvents();
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message || 'Failed to delete event', variant: 'destructive' });
+    } catch (error) {
+      const err = error as Error;
+      toast({ title: 'Error', description: err.message || 'Failed to delete event', variant: 'destructive' });
     } finally {
       setDeleting(null);
     }
@@ -203,17 +217,17 @@ export function EventsManagementTab() {
               {events.map((event) => (
                 <TableRow key={event.id}>
                   <TableCell className="font-medium">{event.title}</TableCell>
-                  <TableCell>{formatDate(event.event_date)}</TableCell>
+                  <TableCell>{formatDate(event.date)}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <MapPin className="h-3 w-3 text-gray-400" />
                       {event.location}
                     </div>
                   </TableCell>
-                  <TableCell>{event.capacity}</TableCell>
+                  <TableCell>{event.max_participants}</TableCell>
                   <TableCell>
-                    <Badge variant={event.participant_count! >= event.capacity ? "destructive" : "secondary"}>
-                      {event.participant_count || 0}/{event.capacity}
+                    <Badge variant={(event.participant_count || 0) >= (event.max_participants || 0) ? "destructive" : "secondary"}>
+                      {event.participant_count || 0}/{event.max_participants || 0}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
@@ -277,22 +291,30 @@ export function EventsManagementTab() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium mb-1 block">Date & Time *</label>
+                <label className="text-sm font-medium mb-1 block">Date *</label>
                 <Input
-                  type="datetime-local"
-                  value={formData.event_date}
-                  onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Capacity *</label>
+                <label className="text-sm font-medium mb-1 block">Time *</label>
                 <Input
-                  type="number"
-                  min={1}
-                  value={formData.capacity}
-                  onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) || 50 })}
+                  type="time"
+                  value={formData.time}
+                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
                 />
               </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Capacity *</label>
+              <Input
+                type="number"
+                min={1}
+                value={formData.max_participants}
+                onChange={(e) => setFormData({ ...formData, max_participants: parseInt(e.target.value) || 50 })}
+              />
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Location *</label>
@@ -305,8 +327,8 @@ export function EventsManagementTab() {
             <div>
               <label className="text-sm font-medium mb-1 block">Image URL</label>
               <Input
-                value={formData.image_url}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                value={formData.image || ''}
+                onChange={(e) => setFormData({ ...formData, image: e.target.value || null })}
                 placeholder="https://..."
               />
             </div>
@@ -334,15 +356,15 @@ export function EventsManagementTab() {
               <div className="space-y-3 max-h-80 overflow-y-auto">
                 {participants.map((p, idx) => (
                   <div key={p.id || idx} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                      {p.user?.profile_picture ? (
-                        <img src={p.user.profile_picture} alt="" className="h-10 w-10 rounded-full object-cover" />
+                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                      {p.user?.images?.[0] ? (
+                        <img src={p.user.images[0]} alt="" className="h-10 w-10 rounded-full object-cover" />
                       ) : (
                         <Users className="h-5 w-5 text-gray-400" />
                       )}
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium">{p.user?.full_name || 'Unknown'}</p>
+                      <p className="font-medium">{p.user?.name || 'Unknown'}</p>
                       <p className="text-sm text-gray-500">{p.user?.email}</p>
                     </div>
                     <Badge variant="outline">

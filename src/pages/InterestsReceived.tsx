@@ -10,6 +10,8 @@ import { ListFilters } from '@/components/ListFilters';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
+import { ProfileCardSkeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
 
 type StatusFilter = 'all' | 'accepted' | 'pending' | 'declined';
 type DateFilter = 'all' | '7days' | '30days' | '90days';
@@ -108,9 +110,7 @@ const InterestsReceived = () => {
     return filteredAndSortedInterests.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredAndSortedInterests, currentPage, itemsPerPage]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, sortBy, itemsPerPage, statusFilter, dateFilter]);
+  // Page reset is handled inline in filter change handlers below
 
   // Accept interest mutation
   const acceptMutation = useMutation({
@@ -148,12 +148,48 @@ const InterestsReceived = () => {
     }
   };
 
+  // Reset page when filters change (inline instead of useEffect)
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
+
+  const handleSortChange = (value: string) => {
+    setSortBy(value);
+    setCurrentPage(1);
+  };
+
+  const handleStatusFilterChange = (value: StatusFilter) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
+
+  const handleDateFilterChange = (value: DateFilter) => {
+    setDateFilter(value);
+    setCurrentPage(1);
+  };
+
+  const handleItemsPerPageChange = (value: number) => {
+    setItemsPerPage(value);
+    setCurrentPage(1);
+  };
+
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-amber-50 to-red-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-amber-50 to-red-100 p-8">
+        <div className="container mx-auto">
+          <div className="h-40 w-full bg-gradient-to-r from-red-200 to-amber-200 rounded-2xl animate-pulse mb-8"></div>
+          <div className="flex gap-4 mb-4">
+            <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <ProfileCardSkeleton key={i} />
+            ))}
+          </div>
+        </div>
       </div>
-    );
   }
 
   return (
@@ -178,9 +214,9 @@ const InterestsReceived = () => {
 
           <ListFilters
             searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
+            onSearchChange={handleSearchChange}
             sortBy={sortBy}
-            onSortChange={setSortBy}
+            onSortChange={handleSortChange}
             sortOptions={sortOptions}
           />
 
@@ -189,7 +225,7 @@ const InterestsReceived = () => {
             <Button
               variant={statusFilter === 'all' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setStatusFilter('all')}
+              onClick={() => handleStatusFilterChange('all')}
               className={statusFilter === 'all' ? 'bg-gray-700 hover:bg-gray-800 text-white' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-gray-700'}
             >
               <Users className="h-4 w-4 mr-1.5" />
@@ -198,7 +234,7 @@ const InterestsReceived = () => {
             <Button
               variant={statusFilter === 'accepted' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setStatusFilter('accepted')}
+              onClick={() => handleStatusFilterChange('accepted')}
               className={statusFilter === 'accepted' ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-white text-green-600 border-green-300 hover:bg-green-50 hover:text-green-700'}
             >
               <CheckCircle className="h-4 w-4 mr-1.5" />
@@ -207,7 +243,7 @@ const InterestsReceived = () => {
             <Button
               variant={statusFilter === 'pending' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setStatusFilter('pending')}
+              onClick={() => handleStatusFilterChange('pending')}
               className={statusFilter === 'pending' ? 'bg-yellow-500 hover:bg-yellow-600 text-white' : 'bg-white text-yellow-600 border-yellow-300 hover:bg-yellow-50 hover:text-yellow-700'}
             >
               <Clock className="h-4 w-4 mr-1.5" />
@@ -216,7 +252,7 @@ const InterestsReceived = () => {
             <Button
               variant={statusFilter === 'declined' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setStatusFilter('declined')}
+              onClick={() => handleStatusFilterChange('declined')}
               className={statusFilter === 'declined' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-white text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700'}
             >
               <XCircle className="h-4 w-4 mr-1.5" />
@@ -238,7 +274,7 @@ const InterestsReceived = () => {
                 key={option.value}
                 variant={dateFilter === option.value ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setDateFilter(option.value as DateFilter)}
+                onClick={() => handleDateFilterChange(option.value as DateFilter)}
                 className={dateFilter === option.value ? 'bg-amber-600 hover:bg-amber-700 text-white h-7 text-xs' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:text-gray-700 h-7 text-xs'}
               >
                 {option.label}
@@ -291,32 +327,24 @@ const InterestsReceived = () => {
                   totalPages={totalPages}
                   onPageChange={setCurrentPage}
                   itemsPerPage={itemsPerPage}
-                  onItemsPerPageChange={setItemsPerPage}
+                  onItemsPerPageChange={handleItemsPerPageChange}
                   className="mt-8"
                 />
               </>
             ) : (
-          <Card className="text-center py-16">
-            <CardContent>
-              <div className="bg-gray-50 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Heart className="h-10 w-10 text-gray-300" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">
-                {searchTerm ? 'No matches found' : 'No Interests Yet'}
-              </h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                {searchTerm 
-                  ? `We couldn't find any interests matching "${searchTerm}". Try a different search term.`
-                  : "You haven't received any interests yet. Keep your profile updated to attract matches!"}
-              </p>
-              {searchTerm && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setSearchTerm('')}
-                >
-                  Clear Search
-                </Button>
-              )}
+          <Card className="py-8 border-dashed border-2 shadow-none bg-white/50">
+            <CardContent className="p-0">
+              <EmptyState 
+                variant={searchTerm ? "no-results" : "no-notifications"}
+                title={searchTerm ? "No Matches Found" : "No Interests Yet"}
+                description={
+                  searchTerm 
+                    ? `We couldn't find any interests matching "${searchTerm}". Try a different search term.` 
+                    : "You haven't received any interests yet. Keep your profile updated to attract matches!"
+                }
+                actionLabel={searchTerm ? "Clear Search" : undefined}
+                onAction={searchTerm ? () => setSearchTerm('') : undefined}
+              />
             </CardContent>
           </Card>
         )}

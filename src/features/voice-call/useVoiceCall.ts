@@ -28,13 +28,13 @@ export const useVoiceCall = (userId: string, profile: Profile | undefined) => {
   const [callState, setCallState] = useState<CallState>('connecting');
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [callDuration, setCallDuration] = useState(0);
-  const [connectionQuality, setConnectionQuality] = useState<ConnectionQuality>('good');
+  const [connectionQuality, _setConnectionQuality] = useState<ConnectionQuality>('good');
   const [recordingEnabled, setRecordingEnabled] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [meetingUrl, setMeetingUrl] = useState<string | null>(null);
 
-  // Initialize participants
+  // effect:audited — Initialize participants when profile changes
   useEffect(() => {
     if (profile) {
       setParticipants([
@@ -56,7 +56,7 @@ export const useVoiceCall = (userId: string, profile: Profile | undefined) => {
     }
   }, [userId, profile, user]);
 
-  // Fetch meeting URL from Supabase (vdates table)
+  // effect:audited — Fetch meeting URL from Supabase for voice call
   useEffect(() => {
     if (!profile || !user) return;
 
@@ -94,7 +94,7 @@ export const useVoiceCall = (userId: string, profile: Profile | undefined) => {
     fetchMeeting();
   }, [profile, user]);
 
-  // Call duration timer
+  // effect:audited — Call duration interval timer
   useEffect(() => {
     let durationTimer: number | undefined;
     

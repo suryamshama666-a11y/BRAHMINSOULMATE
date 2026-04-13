@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import type { Database } from '@/types/supabase';
 
 export interface VerificationRequest {
   id: string;
@@ -10,6 +11,12 @@ export interface VerificationRequest {
   created_at: string;
   reviewed_at?: string;
   reviewer_id?: string;
+  user?: {
+    user_id: string;
+    full_name: string;
+    email: string;
+    phone: string;
+  };
 }
 
 class VerificationService {
@@ -72,7 +79,7 @@ class VerificationService {
     // Notify admins
     await this.notifyAdmins(data.id);
 
-    return data;
+    return data as unknown as VerificationRequest;
   }
 
   // Get my verification requests
@@ -87,7 +94,7 @@ class VerificationService {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as unknown as VerificationRequest[];
   }
 
   // Get verification status
@@ -101,16 +108,18 @@ class VerificationService {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('verification_status')
+      .select('*')
       .eq('user_id', user.id)
       .single();
+
+    const profileData = profile as unknown as Database['public']['Tables']['profiles']['Row'];
 
     const verifications = await this.getMyVerifications();
     const pending = verifications.filter(v => v.status === 'pending').length;
     const approved = verifications.filter(v => v.status === 'approved').length;
 
     return {
-      isVerified: profile?.verification_status === 'verified',
+      isVerified: profileData?.verification_status === 'verified' || profileData?.verified === true,
       pendingRequests: pending,
       approvedCount: approved
     };
@@ -128,7 +137,7 @@ class VerificationService {
       .eq('user_id', user.id)
       .single();
 
-    if (profile?.role !== 'admin') {
+    if ((profile as unknown as Database['public']['Tables']['profiles']['Row'])?.role !== 'admin') {
       throw new Error('Unauthorized: Admin access required');
     }
 
@@ -147,7 +156,7 @@ class VerificationService {
       .order('created_at', { ascending: true });
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as unknown as VerificationRequest[];
   }
 
   // Admin: Approve verification
@@ -282,15 +291,14 @@ class VerificationService {
   private async notifyAdmins(requestId: string): Promise<void> {
     try {
       // Get all admin users
-      const { data: admins } = await supabase
-        .from('profiles')
-        .select('user_id, email')
+      const { data: admins } = await supabase.from('profiles')
+        .select('*')
         .eq('role', 'admin');
 
       if (!admins || admins.length === 0) return;
 
       // Create notifications for each admin
-      const notifications = admins.map(admin => ({
+      const notifications = (admins || []).map(admin => ({
         user_id: admin.user_id,
         type: 'verification_request',
         title: 'New Verification Request',

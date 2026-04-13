@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { 
   Calendar, MapPin, Users, DollarSign, 
-  Clock, User 
+  User 
 } from 'lucide-react';
 import { Event } from '@/hooks/useEvents';
 import { format } from 'date-fns';

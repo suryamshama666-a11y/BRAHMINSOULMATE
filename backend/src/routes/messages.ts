@@ -1,12 +1,9 @@
 import express from 'express';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../config/supabase';
 import { authMiddleware } from '../middleware/auth';
+import { messageLimiter } from '../middleware/rateLimiter';
 
 const router = express.Router();
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 // Helper function to get error message
 const getErrorMessage = (error: unknown): string => {
@@ -21,10 +18,16 @@ interface Conversation {
 }
 
 // Send message
-router.post('/send', authMiddleware, async (req, res) => {
+router.post('/send', authMiddleware, messageLimiter, async (req, res) => {
   try {
     const senderId = req.user?.id;
     const { receiverId, content, type = 'text' } = req.body;
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(receiverId)) {
+      return res.status(400).json({ success: false, error: 'Invalid receiver ID format' });
+    }
 
     // Check if users are connected
     const { data: connection } = await supabase
@@ -98,65 +101,62 @@ router.get('/conversation/:userId', authMiddleware, async (req, res) => {
   }
 });
 
-// Get all conversations
+// Get all conversations - Optimized with batched queries to avoid N+1
 router.get('/conversations', authMiddleware, async (req, res) => {
   try {
     const userId = req.user?.id;
 
-    // Get all unique conversation partners
-    const { data: messages, error } = await supabase
+    // 1. Get all unique conversation partners in one call
+    const { data: partnersData, error: partnersError } = await supabase
       .from('messages')
-      .select('sender_id, receiver_id, created_at')
+      .select('sender_id, receiver_id, created_at, content, type, read')
       .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (partnersError) throw partnersError;
 
-    // Get unique partners
-    const partners = new Set<string>();
-    messages?.forEach(msg => {
-      if (msg.sender_id !== userId) partners.add(msg.sender_id);
-      if (msg.receiver_id !== userId) partners.add(msg.receiver_id);
+    // 2. Identify unique partner IDs and their latest message
+    const partnerMap = new Map<string, any>();
+    partnersData?.forEach(msg => {
+      const partnerId = msg.sender_id === userId ? msg.receiver_id : msg.sender_id;
+      if (!partnerMap.has(partnerId)) {
+        partnerMap.set(partnerId, {
+          lastMessage: msg,
+          unreadCount: 0
+        });
+      }
+      // Increment unread count if applicable
+      if (msg.receiver_id === userId && !msg.read) {
+        partnerMap.get(partnerId).unreadCount++;
+      }
     });
 
-    const conversations: Conversation[] = [];
-    for (const partnerId of partners) {
-      // Get partner profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', partnerId)
-        .single();
-
-      // Get last message
-      const { data: lastMessage } = await supabase
-        .from('messages')
-        .select('*')
-        .or(`and(sender_id.eq.${userId},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${userId})`)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      // Get unread count
-      const { count } = await supabase
-        .from('messages')
-        .select('*', { count: 'exact', head: true })
-        .eq('sender_id', partnerId)
-        .eq('receiver_id', userId)
-        .eq('read', false);
-
-      conversations.push({
-        profile,
-        lastMessage,
-        unreadCount: count || 0
-      });
+    const partnerIds = Array.from(partnerMap.keys());
+    if (partnerIds.length === 0) {
+      return res.json({ success: true, conversations: [] });
     }
 
-    // Sort by last message time
+    // 3. Batch fetch all partner profiles
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, user_id, first_name, last_name, display_name, profile_picture_url, last_active, verified')
+      .in('user_id', partnerIds);
+
+    if (profilesError) throw profilesError;
+
+    // 4. Assemble final conversations array
+    const conversations = profiles.map(profile => {
+      const partnerData = partnerMap.get(profile.user_id);
+      return {
+        profile,
+        lastMessage: partnerData.lastMessage,
+        unreadCount: partnerData.unreadCount
+      };
+    });
+
+    // 5. Final sort by last message time
     conversations.sort((a, b) => {
-      const aTime = a.lastMessage?.created_at as string | undefined;
-      const bTime = b.lastMessage?.created_at as string | undefined;
-      return new Date(bTime || 0).getTime() - new Date(aTime || 0).getTime();
+      return new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime();
     });
 
     res.json({ success: true, conversations });

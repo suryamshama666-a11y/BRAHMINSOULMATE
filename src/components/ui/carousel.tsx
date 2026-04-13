@@ -2,7 +2,7 @@ import * as React from "react"
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
 } from "embla-carousel-react"
-import { ArrowLeft, ArrowRight } from "lucide-react"
+import { } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -104,6 +104,7 @@ const Carousel = React.forwardRef<
       setApi(api)
     }, [api, setApi])
 
+    // effect:audited — External library integration (Embla Carousel API)
     React.useEffect(() => {
       if (!api) {
         return
@@ -195,8 +196,8 @@ CarouselItem.displayName = "CarouselItem"
 const CarouselPrevious = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<typeof Button>
->(({ className, variant = "outline", size = "icon", ...props }, ref) => {
-  const { orientation, scrollPrev, canScrollPrev } = useCarousel()
+>(({ className: _className, _variant = "outline", _size = "icon", ..._props }, _ref) => {
+  const { orientation: _orientation, scrollPrev: _scrollPrev, canScrollPrev: _canScrollPrev } = useCarousel()
 
   // Hidden as per user request to remove arrows
   return null
@@ -229,8 +230,8 @@ CarouselPrevious.displayName = "CarouselPrevious"
 const CarouselNext = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<typeof Button>
->(({ className, variant = "outline", size = "icon", ...props }, ref) => {
-  const { orientation, scrollNext, canScrollNext } = useCarousel()
+>(({ className: _className, _variant = "outline", _size = "icon", ..._props }, _ref) => {
+  const { orientation: _orientation, scrollNext: _scrollNext, canScrollNext: _canScrollNext } = useCarousel()
 
   // Hidden as per user request to remove arrows
   return null

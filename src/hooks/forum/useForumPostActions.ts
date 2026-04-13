@@ -7,7 +7,7 @@ import { ForumPost } from './types';
 
 export const useForumPostActions = () => {
   const { user } = useSupabaseAuth();
-  const [loading, setLoading] = useState(false);
+  const [loading, ] = useState(false);
 
   const createPost = async (categoryId: string, title: string, content: string) => {
     if (!user) {

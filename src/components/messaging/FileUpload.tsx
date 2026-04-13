@@ -1,7 +1,7 @@
 
 import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Paperclip, Image, FileText, Video } from 'lucide-react';
+import { Paperclip, Image, Video } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { toast } from 'sonner';
@@ -24,7 +24,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled }
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
       
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('message-files')
         .upload(fileName, file);
 

@@ -1,5 +1,4 @@
 import { supabase } from '@/lib/supabase';
-import { Database } from '@/types/supabase';
 
 type Subscription = {
   subscription_type: string | null;
@@ -77,7 +76,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001
 
 export class PaymentService {
   // Create Razorpay order via backend
-  static async createOrder(planId: string, userId: string): Promise<any> {
+  static async createOrder(planId: string, _userId: string): Promise<any> {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
@@ -228,7 +227,7 @@ export class PaymentService {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      const { data: existing, error: fetchError } = await supabase
+      const { data: existing, error: _fetchError } = await supabase
         .from('user_activity')
         .select('id, count')
         .eq('user_id', userId)
@@ -240,9 +239,9 @@ export class PaymentService {
         await supabase
           .from('user_activity')
           .update({ 
-            count: (existing.count || 0) + 1,
+            count: ((existing as any).count || 0) + 1,
             updated_at: new Date().toISOString()
-          })
+          } as any)
           .eq('id', existing.id);
       } else {
         await supabase

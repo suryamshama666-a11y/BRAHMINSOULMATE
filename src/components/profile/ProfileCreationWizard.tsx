@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { PersonalInfoStep } from './steps/PersonalInfoStep';
 import { FamilyInfoStep } from './steps/FamilyInfoStep';
@@ -24,7 +23,7 @@ const steps = [
 export const ProfileCreationWizard = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({});
-  const { createProfile, updateProfile, loading } = useProfile();
+  const { updateProfile, isLoading } = useProfile();
 
   const progress = ((currentStep + 1) / steps.length) * 100;
   const CurrentStepComponent = steps[currentStep].component;
@@ -36,9 +35,9 @@ export const ProfileCreationWizard = () => {
     if (currentStep === steps.length - 1) {
       // Final step - create/update profile
       try {
-        await createProfile(updatedData);
+        await updateProfile(updatedData);
         toast.success('Profile created successfully!');
-      } catch (error) {
+      } catch {
         toast.error('Failed to create profile');
       }
     } else {

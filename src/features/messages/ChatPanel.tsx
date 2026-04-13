@@ -23,14 +23,14 @@ type ChatPanelProps = {
   handleSendMessage: (e: React.FormEvent) => void;
 };
 
-export const ChatPanel = ({ 
+export const ChatPanel = ({
   conversationPartner,
   setMobileViewChat,
   conversationMessages,
   userId,
-  handlePhoneCall,
-  handleVideoCall,
-  handleViewProfile,
+  _handlePhoneCall,
+  _handleVideoCall,
+  _handleViewProfile,
   newMessage,
   setNewMessage,
   handleSendMessage

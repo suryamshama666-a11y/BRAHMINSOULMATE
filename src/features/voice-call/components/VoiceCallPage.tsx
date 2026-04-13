@@ -29,12 +29,12 @@ export default function VoiceCallPage() {
     audioEnabled,
     callDuration,
     connectionQuality,
-    participants,
-    chatMessages,
-    meetingUrl,
+    _participants,
+    _chatMessages,
+    _meetingUrl,
     toggleAudio,
     endCall,
-    sendChatMessage,
+    _sendChatMessage,
     recordingEnabled,
     toggleRecording
   } = useVoiceCall(id!, profile);

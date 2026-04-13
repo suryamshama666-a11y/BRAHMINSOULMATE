@@ -1,12 +1,9 @@
 import express from 'express';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../config/supabase';
 import { authMiddleware } from '../middleware/auth';
+import { profileViewLimiter } from '../middleware/rateLimiter';
 
 const router = express.Router();
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 // Helper function to get error message
 const getErrorMessage = (error: unknown): string => {
@@ -14,7 +11,7 @@ const getErrorMessage = (error: unknown): string => {
 };
 
 // Track profile view
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', authMiddleware, profileViewLimiter, async (req, res) => {
   try {
     const viewerId = req.user?.id;
     const { viewedProfileId } = req.body;
@@ -34,7 +31,7 @@ router.post('/', authMiddleware, async (req, res) => {
       .from('profile_views')
       .select('id')
       .eq('viewer_id', viewerId)
-      .eq('viewed_profile_id', viewedProfileId)
+      .eq('viewed_id', viewedProfileId)
       .gte('viewed_at', oneDayAgo.toISOString())
       .single();
 
@@ -47,7 +44,7 @@ router.post('/', authMiddleware, async (req, res) => {
       .from('profile_views')
       .insert({
         viewer_id: viewerId,
-        viewed_profile_id: viewedProfileId,
+        viewed_id: viewedProfileId,
         viewed_at: new Date().toISOString()
       })
       .select()
@@ -73,27 +70,23 @@ router.get('/who-viewed-me', authMiddleware, async (req, res) => {
       .select(`
         id,
         viewed_at,
-        viewer:viewer_id(
+        viewer:profiles!viewer_id(
           id,
           user_id,
-          full_name,
+          first_name,
+          last_name,
+          display_name,
           age,
           gender,
-          height,
-          religion,
-          caste,
-          gotra,
           city,
           state,
-          education,
-          occupation,
+          verified,
+          profile_picture_url,
           subscription_type,
-          last_active,
-          avatar_url,
-          profile_picture
+          last_active
         )
       `)
-      .eq('viewed_profile_id', userId)
+      .eq('viewed_id', userId)
       .order('viewed_at', { ascending: false });
 
     // Apply time filters
@@ -131,24 +124,20 @@ router.get('/i-viewed', authMiddleware, async (req, res) => {
       .select(`
         id,
         viewed_at,
-        viewed_profile:viewed_profile_id(
+        viewed_profile:profiles!viewed_id(
           id,
           user_id,
-          full_name,
+          first_name,
+          last_name,
+          display_name,
           age,
           gender,
-          height,
-          religion,
-          caste,
-          gotra,
           city,
           state,
-          education,
-          occupation,
+          verified,
+          profile_picture_url,
           subscription_type,
-          last_active,
-          avatar_url,
-          profile_picture
+          last_active
         )
       `)
       .eq('viewer_id', userId)
@@ -186,7 +175,7 @@ router.get('/count', authMiddleware, async (req, res) => {
     const { count, error } = await supabase
       .from('profile_views')
       .select('*', { count: 'exact', head: true })
-      .eq('viewed_profile_id', userId);
+      .eq('viewed_id', userId);
 
     if (error) throw error;
 

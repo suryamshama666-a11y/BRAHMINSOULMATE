@@ -8,14 +8,14 @@ import { api } from '@/lib/api';
 
 const FeaturedProfiles: React.FC = () => {
   const [featuredProfiles, setFeaturedProfiles] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadFeaturedProfiles = async () => {
       try {
         setLoading(true);
         const result = await api.getProfiles({ page: 1, limit: 6 });
-        const profiles = Array.isArray(result) ? result : result.data || [];
+        const profiles = Array.isArray(result) ? result : (result as any).data || [];
         setFeaturedProfiles(profiles);
       } catch (error) {
         console.error('Error loading featured profiles:', error);

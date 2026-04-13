@@ -2,7 +2,18 @@
  * Core type definitions for the application
  */
 
-// User Profile Types
+// User Profile Types - consolidated with all properties
+interface LocationData {
+  city: string;
+  state: string;
+  country: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+  address?: string;
+}
+
 export interface UserProfile {
   id: string;
   user_id: string;
@@ -10,80 +21,103 @@ export interface UserProfile {
   first_name?: string;
   last_name?: string;
   age: number;
-  gender: 'male' | 'female' | 'other';
+  gender: string;
   images: string[];
   bio: string;
   phone?: string;
+  phone_number?: string;
   email?: string;
-  location: {
-    city: string;
-    state: string;
-    country: string;
-    coordinates?: {
-      latitude: number;
-      longitude: number;
-    };
-  };
+  location: LocationData | string;
+  city?: string;
+  state?: string;
+  address?: string;
   religion: string;
   caste: string;
-  subcaste: string | null;
-  marital_status: 'never_married' | 'divorced' | 'widowed' | 'separated';
-  height: number; // in cm
-  education: {
+  subcaste?: string;
+  gotra?: string;
+  marital_status?: string;
+  date_of_birth?: string;
+  height: number;
+  education?: {
     level: string;
     field: string;
     institution: string;
     year_completed?: number;
   };
-  employment: {
+  employment?: {
     profession: string;
     company: string;
     position: string;
     income_range: string;
     work_location?: string;
   };
-  family: {
-    father_occupation: string;
-    mother_occupation: string;
-    siblings: number;
-    family_type: 'nuclear' | 'joint' | 'other';
-    family_values: string;
-    about_family: string;
+  family?: {
+    father_occupation?: string;
+    mother_occupation?: string;
+    siblings?: number;
+    family_type?: string;
+    family_values?: string;
+    about_family?: string;
+    community?: string;
   };
-  preferences: {
-    age_range: { min: number; max: number };
-    height_range: { min: number; max: number };
-    location_preference: string[];
-    education_preference: string[];
-    occupation_preference: string[];
-    caste_preference: string[];
-    marital_status_preference?: ('never_married' | 'divorced' | 'widowed' | 'separated')[];
+  preferences?: {
+    age_range?: { min: number; max: number };
+    height_range?: { min: number; max: number };
+    location_preference?: string[];
+    education_preference?: string[];
+    occupation_preference?: string[];
+    caste_preference?: string[];
+    marital_status_preference?: string[];
   };
-  horoscope: {
-    birth_time: string;
-    birth_place: string;
-    moon_sign: string;
-    sun_sign: string;
-    nakshatra: string;
-    manglik: boolean;
+  horoscope?: {
+    birth_time?: string;
+    birth_place?: string;
+    moon_sign?: string;
+    sun_sign?: string;
+    nakshatra?: string;
+    rashi?: string;
+    charan?: string;
+    gan?: string;
+    nadi?: string;
+    devak?: string;
+    manglik?: boolean;
     horoscope_image?: string;
+    birth_date?: string;
   };
-  subscription_type: 'free' | 'premium' | 'gold';
+  subscription_type: string;
+  subscription_status?: string;
   subscription_expiry?: string;
+  subscriptionExpiryDate?: string;
   interests: string[];
   languages: string[];
   verified: boolean;
   created_at: string;
-  updated_at: string;
-  last_active: string;
+  updated_at?: string;
+  last_active?: string;
+  lastActive?: string;
+  profile_picture?: string;
+  profileNameVisibility?: string;
+  occupation?: string;
+  profession?: string;
+  role?: string;
   privacy_settings?: {
-    show_online_status: boolean;
-    show_profile_to: 'all' | 'matches' | 'none';
-    show_photos_to: 'all' | 'matches' | 'none';
-    show_contact_info_to: 'all' | 'matches' | 'none';
+    show_online_status?: boolean;
+    show_profile_to?: 'all' | 'matches' | 'none';
+    show_photos_to?: 'all' | 'matches' | 'none';
+    show_contact_info_to?: 'all' | 'matches' | 'none';
   };
   account_status?: 'active' | 'inactive' | 'suspended';
-  profile_completion?: number; // percentage of profile completed
+  profile_completion?: number;
+  verification_status?: 'pending' | 'verified' | 'rejected';
+  is_active?: boolean;
+  is_banned?: boolean;
+  deleted_at?: string;
+  last_seen_at?: string;
+  location_city?: string;
+  location_state?: string;
+  education_level?: string;
+  unreadMessages?: number;
+  [key: string]: unknown;
 }
 
 // Auth Types
@@ -131,19 +165,54 @@ export interface Message {
   status?: 'sent' | 'delivered' | 'read';
 }
 
+export interface MessageWithReactions extends Message {
+  reactions?: MessageReaction[];
+  updated_at?: string;
+}
+
+export interface MessageReaction {
+  id: string;
+  emoji: string;
+  count: number;
+  users?: string[];
+}
+
+export interface ReactionSummary {
+  emoji: string;
+  count: number;
+  user_ids: string[];
+  hasUserReacted?: boolean;
+}
+
+export interface EnhancedMessage extends Message {
+  reactions?: Record<string, ReactionSummary>;
+  is_own?: boolean;
+}
+
+// Conversation type - supports both legacy and new schema
 export interface Conversation {
   id: string;
-  user1_id: string;
-  user2_id: string;
+  // Legacy schema
+  user1_id?: string;
+  user2_id?: string;
+  // New schema
+  user_id?: string;
+  partner_id?: string;
+  partner_name?: string;
+  partner_avatar?: string | null;
+  // Common fields
   last_message_id?: string;
   last_message_content?: string;
+  last_message?: string | null;
   last_message_time?: string;
+  last_message_at?: string | null;
   unread_count?: number;
+  totalUnread?: number;
   created_at: string;
-  updated_at: string;
-  partner_id?: string;
+  updated_at?: string;
   partner_profile?: UserProfile;
 }
+
 
 // Event Types
 export interface Event {
@@ -171,15 +240,19 @@ export interface SubscriptionPlan {
   is_popular?: boolean;
 }
 
+// User subscription with plan details - consolidated
 export interface UserSubscription {
   id: string;
   user_id: string;
-  plan_id: string;
-  start_date: string;
-  end_date: string;
+  plan_id?: string;
+  plan?: string;
   status: 'active' | 'expired' | 'cancelled';
+  start_date?: string;
+  end_date?: string;
+  auto_renewal?: boolean;
   payment_id?: string;
 }
+
 
 // API Response Types
 export interface APIResponse<T> {
@@ -238,9 +311,80 @@ export interface Notification {
   id: string;
   user_id: string;
   type: 'match' | 'message' | 'profile_view' | 'interest' | 'system';
-  content: string;
-  related_user_id?: string;
-  related_entity_id?: string;
+  title: string;
+  message: string;
   read: boolean;
+  timestamp?: string;
+  action_url?: string | null;
+  sender_id?: string | null;
   created_at: string;
-} 
+  [key: string]: unknown;
+}
+
+// Chat Context Types
+export interface ChatContextType {
+  conversations: Conversation[];
+  contacts: {
+    id: string;
+    name: string;
+    profile_image?: string;
+    status: 'online' | 'offline';
+  }[];
+  isLoading: boolean;
+  isLoadingContacts: boolean;
+  error: Error | null;
+  totalUnread: number;
+  refreshConversations: () => Promise<void>;
+  refreshContacts: () => Promise<void>;
+  getOrCreateConversation: (partnerId: string) => Promise<Conversation>;
+}
+
+// Profile Location with coordinates
+export interface ProfileLocation {
+  city?: string;
+  state?: string;
+  country?: string;
+  address?: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+}
+
+// Profile Family with community
+export interface ProfileFamily {
+  father_occupation?: string;
+  mother_occupation?: string;
+  siblings?: number;
+  family_type?: string;
+  family_values?: string;
+  about_family?: string;
+  community?: string;
+}
+
+// Profile Employment
+export interface ProfileEmployment {
+  profession?: string;
+  company?: string;
+  position?: string;
+  income_range?: string;
+  work_location?: string;
+}
+
+// Profile Horoscope
+export interface ProfileHoroscope {
+  birth_time?: string;
+  birth_place?: string;
+  moon_sign?: string;
+  sun_sign?: string;
+  nakshatra?: string;
+  rashi?: string;
+  charan?: string;
+  gan?: string;
+  nadi?: string;
+  devak?: string;
+  manglik?: boolean;
+  horoscope_image?: string;
+  birth_date?: string;
+}
+ 

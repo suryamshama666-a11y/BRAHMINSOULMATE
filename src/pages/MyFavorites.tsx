@@ -1,20 +1,38 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Link, useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Eye, Star, HeartOff } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import ProfileCard from '@/components/ProfileCard';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { ListFilters } from '@/components/ListFilters';
 import { Pagination } from '@/components/ui/pagination';
+import { ProfileCardSkeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
+
+interface FavoriteProfile {
+  id: string;
+  name: string;
+  age: number;
+  gender: string;
+  height: number;
+  religion: string;
+  caste: string;
+  location: string;
+  education: string;
+  profession: string;
+  subscription_type: string;
+  lastActive: string;
+  addedToFavorites: string;
+  gotra?: string;
+  profile_picture?: string;
+}
 
 const MyFavorites = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [favorites, setFavorites] = useState([]);
+  const [favorites, setFavorites] = useState<FavoriteProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
@@ -97,13 +115,27 @@ const MyFavorites = () => {
 
   const totalPages = Math.ceil(filteredAndSortedFavorites.length / itemsPerPage);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, sortBy, itemsPerPage]);
+  // Page reset is handled inline in filter change handlers below
 
-  const removeFavorite = (profileId) => {
+  const removeFavorite = (profileId: string) => {
     setFavorites(favorites.filter(fav => fav.id !== profileId));
     toast.success('Removed from favorites');
+  };
+
+  // Reset page when filters change (inline instead of useEffect)
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
+
+  const handleSortChange = (value: string) => {
+    setSortBy(value);
+    setCurrentPage(1);
+  };
+
+  const handleItemsPerPageChange = (value: number) => {
+    setItemsPerPage(value);
+    setCurrentPage(1);
   };
 
   const handleProfileAction = (action: string, profileId: string) => {
@@ -134,14 +166,25 @@ const MyFavorites = () => {
         toast.success(`${profileName} has been unblocked`);
         break;
       default:
-        console.log('Unknown action:', action);
+        logger.log('Unknown action:', action);
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-amber-50 to-red-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-amber-50 to-red-100 p-8">
+        <div className="container mx-auto">
+          <div className="h-40 w-full bg-gradient-to-r from-red-200 to-amber-200 rounded-2xl animate-pulse mb-8"></div>
+          <div className="flex gap-4 mb-8">
+            <div className="h-10 w-64 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-10 w-40 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <ProfileCardSkeleton key={i} />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -169,9 +212,9 @@ const MyFavorites = () => {
 
           <ListFilters
             searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
+            onSearchChange={handleSearchChange}
             sortBy={sortBy}
-            onSortChange={setSortBy}
+            onSortChange={handleSortChange}
             sortOptions={sortOptions}
           />
 
@@ -198,40 +241,27 @@ const MyFavorites = () => {
                   totalPages={totalPages}
                   onPageChange={setCurrentPage}
                   itemsPerPage={itemsPerPage}
-                  onItemsPerPageChange={setItemsPerPage}
+                  onItemsPerPageChange={handleItemsPerPageChange}
                   className="mt-8"
                 />
               </>
             ) : (
-            <Card className="text-center py-16">
-              <CardContent>
-                <div className="bg-gray-50 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Heart className="h-10 w-10 text-gray-300" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">
-                  {searchTerm ? 'No matches found' : 'No Favorites Yet'}
-                </h3>
-                <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                  {searchTerm 
-                    ? `We couldn't find any profiles matching "${searchTerm}". Try a different search term.`
-                    : 'Start adding profiles to your favorites to see them here.'}
-                </p>
-                {searchTerm ? (
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setSearchTerm('')}
-                  >
-                    Clear Search
-                  </Button>
-                ) : (
-                  <Link to="/search">
-                    <Button className="bg-red-600 hover:bg-red-700 text-white shadow-md">
-                      Browse Profiles
-                    </Button>
-                  </Link>
-                )}
-              </CardContent>
-            </Card>
+              <Card className="py-8 shadow-sm">
+                <CardContent className="p-0">
+                  <EmptyState 
+                    variant={searchTerm ? "no-results" : "no-favorites"}
+                    title={searchTerm ? "No Matches Found" : "No Favorites Yet"}
+                    description={
+                      searchTerm 
+                        ? `We couldn't find any profiles matching "${searchTerm}". Try a different search term.` 
+                        : "Profiles you mark as favorite will appear here for quick access."
+                    }
+                    actionLabel={searchTerm ? "Clear Search" : "Browse Profiles"}
+                    onAction={searchTerm ? () => setSearchTerm('') : undefined}
+                    actionHref={searchTerm ? undefined : "/search"}
+                  />
+                </CardContent>
+              </Card>
           )}
         </div>
     </div>

@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
 class MatchingBackendService {
-  private readonly API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+  private readonly API_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
   private async getAuthToken(): Promise<string | null> {
     const { data: session } = await supabase.auth.getSession();

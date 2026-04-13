@@ -9,6 +9,7 @@ const Logout = () => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   
+  // effect:audited — Logout handler (triggers on mount)
   useEffect(() => {
     const performLogout = async () => {
       try {

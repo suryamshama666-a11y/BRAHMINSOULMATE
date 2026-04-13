@@ -54,7 +54,7 @@ export default function VideoCallPage() {
   const [showSafetyControls, setShowSafetyControls] = useState(false);
   const [showPostCallFeedback, setShowPostCallFeedback] = useState(false);
   const [showBackgrounds, setShowBackgrounds] = useState(false);
-  const [callEnded, setCallEnded] = useState(false);
+  const [_callEnded, setCallEnded] = useState(false);
 
   // Auto-show profile overlay briefly at start
   useEffect(() => {

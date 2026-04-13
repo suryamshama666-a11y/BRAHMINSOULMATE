@@ -15,6 +15,7 @@ const DarkModeToggle = () => {
     return false;
   });
 
+  // effect:audited — DOM class manipulation for theme
   useEffect(() => {
     // Update theme when component mounts and when isDarkMode changes
     if (isDarkMode) {

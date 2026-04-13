@@ -1,4 +1,4 @@
-import { getSupabase } from '@/lib/getSupabase';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AnalyticsEvent {
   event_name: string;
@@ -28,15 +28,48 @@ interface ConversionFunnel {
 }
 
 class AnalyticsService {
-  private supabase = getSupabase();
+  private supabaseClient = supabase;
   private sessionId: string;
   private userId?: string;
   private eventQueue: AnalyticsEvent[] = [];
   private isOnline = navigator.onLine;
   private flushInterval: NodeJS.Timeout | null = null;
+  private eventHandlers: {
+    popstate: () => void;
+    online: () => void;
+    offline: () => void;
+    beforeunload: () => void;
+    visibilitychange: () => void;
+  };
 
   constructor() {
     this.sessionId = this.generateSessionId();
+    
+    // Initialize event handlers
+    this.eventHandlers = {
+      popstate: () => this.trackPageView(),
+      online: () => {
+        this.isOnline = true;
+        this.flushEvents();
+      },
+      offline: () => {
+        this.isOnline = false;
+      },
+      beforeunload: () => {
+        this.track('session_end', {
+          session_duration: Date.now() - parseInt(this.sessionId.split('-')[0])
+        });
+        this.flushEvents();
+      },
+      visibilitychange: () => {
+        if (document.hidden) {
+          this.track('page_hidden');
+        } else {
+          this.track('page_visible');
+        }
+      }
+    };
+    
     this.initializeSession();
     this.setupEventListeners();
     this.startPeriodicFlush();
@@ -50,7 +83,7 @@ class AnalyticsService {
   // Initialize analytics session
   private async initializeSession() {
     try {
-      const user = await this.supabase.auth.getUser();
+      const user = await this.supabaseClient.auth.getUser();
       this.userId = user.data.user?.id;
 
       // Track session start
@@ -70,36 +103,17 @@ class AnalyticsService {
   // Setup event listeners for automatic tracking
   private setupEventListeners() {
     // Track page views
-    window.addEventListener('popstate', () => {
-      this.trackPageView();
-    });
+    window.addEventListener('popstate', this.eventHandlers.popstate);
 
     // Track online/offline status
-    window.addEventListener('online', () => {
-      this.isOnline = true;
-      this.flushEvents();
-    });
-
-    window.addEventListener('offline', () => {
-      this.isOnline = false;
-    });
+    window.addEventListener('online', this.eventHandlers.online);
+    window.addEventListener('offline', this.eventHandlers.offline);
 
     // Track session end
-    window.addEventListener('beforeunload', () => {
-      this.track('session_end', {
-        session_duration: Date.now() - parseInt(this.sessionId.split('-')[0])
-      });
-      this.flushEvents();
-    });
+    window.addEventListener('beforeunload', this.eventHandlers.beforeunload);
 
     // Track visibility changes
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        this.track('page_hidden');
-      } else {
-        this.track('page_visible');
-      }
-    });
+    document.addEventListener('visibilitychange', this.eventHandlers.visibilitychange);
   }
 
   // Start periodic event flushing
@@ -156,7 +170,7 @@ class AnalyticsService {
     };
 
     try {
-      await this.supabase.from('user_behavior').insert(behavior);
+      await this.supabaseClient.from('user_behavior').insert(behavior);
     } catch (error) {
       console.error('Failed to track user behavior:', error);
     }
@@ -174,7 +188,7 @@ class AnalyticsService {
     };
 
     try {
-      await this.supabase.from('conversion_funnel').insert(funnelStep);
+      await this.supabaseClient.from('conversion_funnel').insert(funnelStep);
     } catch (error) {
       console.error('Failed to track conversion step:', error);
     }
@@ -415,11 +429,22 @@ class AnalyticsService {
     }
   }
 
-  // Clean up
+  // Clean up - removes event listeners and flushes remaining events
   destroy() {
+    // Remove all event listeners
+    window.removeEventListener('popstate', this.eventHandlers.popstate);
+    window.removeEventListener('online', this.eventHandlers.online);
+    window.removeEventListener('offline', this.eventHandlers.offline);
+    window.removeEventListener('beforeunload', this.eventHandlers.beforeunload);
+    document.removeEventListener('visibilitychange', this.eventHandlers.visibilitychange);
+    
+    // Clear interval
     if (this.flushInterval) {
       clearInterval(this.flushInterval);
+      this.flushInterval = null;
     }
+    
+    // Flush remaining events
     this.flushEvents();
   }
 }

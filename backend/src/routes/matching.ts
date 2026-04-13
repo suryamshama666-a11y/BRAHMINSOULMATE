@@ -1,12 +1,11 @@
 import express from 'express';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../config/supabase';
 import { authMiddleware } from '../middleware/auth';
+import { interestLimiter } from '../middleware/rateLimiter';
+import { redis } from '../config/redis';
+import * as Sentry from '@sentry/node';
 
 const router = express.Router();
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 // Profile type for matching
 interface MatchProfile {
@@ -22,10 +21,10 @@ interface MatchProfile {
   gender?: string;
 }
 
-// Calculate compatibility score
+// Calculate compatibility score (0-100)
 function calculateCompatibility(profile1: MatchProfile, profile2: MatchProfile): number {
   let score = 0;
-  let factors = 0;
+  let totalPossible = 0;
 
   // Age compatibility (25 points)
   const ageDiff = Math.abs((profile1.age || 0) - (profile2.age || 0));
@@ -33,31 +32,38 @@ function calculateCompatibility(profile1: MatchProfile, profile2: MatchProfile):
   else if (ageDiff <= 5) score += 20;
   else if (ageDiff <= 10) score += 15;
   else score += 5;
-  factors++;
+  totalPossible += 25;
 
   // Height compatibility (15 points)
   const heightDiff = Math.abs((profile1.height || 0) - (profile2.height || 0));
   if (heightDiff <= 5) score += 15;
   else if (heightDiff <= 10) score += 10;
   else score += 5;
-  factors++;
+  totalPossible += 15;
 
   // Location compatibility (20 points)
   if (profile1.city === profile2.city) score += 20;
   else if (profile1.state === profile2.state) score += 15;
   else if (profile1.country === profile2.country) score += 10;
-  factors++;
+  else score += 5;
+  totalPossible += 20;
 
   // Education compatibility (15 points)
-  if (profile1.education_level === profile2.education_level) score += 15;
-  else if (Math.abs((profile1.education_level || 0) - (profile2.education_level || 0)) <= 1) score += 10;
-  factors++;
+  if (profile1.education_level && profile2.education_level) {
+    if (profile1.education_level === profile2.education_level) score += 15;
+    else if (Math.abs(profile1.education_level - profile2.education_level) <= 1) score += 10;
+    else score += 5;
+    totalPossible += 15;
+  }
 
   // Gotra compatibility (10 points) - different gotra preferred
-  if (profile1.gotra !== profile2.gotra) score += 10;
-  factors++;
+  if (profile1.gotra && profile2.gotra) {
+    if (profile1.gotra !== profile2.gotra) score += 10;
+    else score += 0;
+    totalPossible += 10;
+  }
 
-  // Horoscope compatibility (15 points)
+  // Rashi compatibility (15 points)
   if (profile1.rashi && profile2.rashi) {
     const compatibleRashis: Record<string, string[]> = {
       'Aries': ['Leo', 'Sagittarius', 'Gemini', 'Aquarius'],
@@ -74,74 +80,92 @@ function calculateCompatibility(profile1: MatchProfile, profile2: MatchProfile):
       'Pisces': ['Cancer', 'Scorpio', 'Taurus', 'Capricorn']
     };
     
-    if (compatibleRashis[profile1.rashi]?.includes(profile2.rashi)) {
-      score += 15;
-    } else {
-      score += 5;
-    }
-    factors++;
+    if (profile1.rashi === profile2.rashi) score += 10;
+    else if (compatibleRashis[profile1.rashi]?.includes(profile2.rashi)) score += 15;
+    else score += 5;
+    totalPossible += 15;
   }
 
-  return Math.round(score / factors);
+  return totalPossible > 0 ? Math.round((score / totalPossible) * 100) : 50;
 }
 
-// Get recommended matches
+// Get recommended matches with Caching
 router.get('/recommendations', authMiddleware, async (req, res) => {
   try {
     const userId = req.user?.id;
     const limit = parseInt(req.query.limit as string) || 20;
+    const cacheKey = `user_rec:${userId}:${limit}`;
 
-    // Get user profile
+    // 1. Try to get from Redis first
+    if (redis) {
+      try {
+        const cachedMatch = await redis.get(cacheKey);
+        if (cachedMatch) {
+          return res.json({ 
+            success: true, 
+            matches: JSON.parse(cachedMatch), 
+            from_cache: true 
+          });
+        }
+      } catch (cacheErr) {
+        console.error('[Redis Cache Error]:', cacheErr);
+        Sentry.captureException(cacheErr);
+        // Fall through to DB query
+      }
+    }
+
+    // 2. Fetch User Profile
     const { data: userProfile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', userId)
+      .eq('user_id', userId)
       .single();
 
     if (profileError) throw profileError;
 
-    // Get opposite gender profiles
+    // 3. Fetch Candidates
     const targetGender = userProfile.gender === 'male' ? 'female' : 'male';
-    
     let query = supabase
       .from('profiles')
-      .select('*')
+      .select('id, user_id, first_name, last_name, display_name, age, height, city, state, country, education_level, gotra, rashi, gender, verified, profile_picture_url')
       .eq('gender', targetGender)
       .eq('verified', true)
-      .neq('id', userId);
+      .is('deleted_at', null)
+      .neq('user_id', userId);
 
-    // Apply preference filters
-    if (userProfile.preferences) {
-      const prefs = userProfile.preferences as { ageMin?: number; ageMax?: number; heightMin?: number; heightMax?: number };
-      if (prefs.ageMin) query = query.gte('age', prefs.ageMin);
-      if (prefs.ageMax) query = query.lte('age', prefs.ageMax);
-      if (prefs.heightMin) query = query.gte('height', prefs.heightMin);
-      if (prefs.heightMax) query = query.lte('height', prefs.heightMax);
-    }
+    const prefs = userProfile.preferences as { ageMin?: number; ageMax?: number };
+    if (prefs?.ageMin) query = query.gte('age', prefs.ageMin);
+    if (prefs?.ageMax) query = query.lte('age', prefs.ageMax);
 
     const { data: profiles, error } = await query.limit(limit * 2);
     if (error) throw error;
 
-    // Calculate compatibility scores
+    // 4. Compatibility Calc
     const matchesWithScores = profiles.map(profile => ({
       ...profile,
       compatibility_score: calculateCompatibility(userProfile as MatchProfile, profile as MatchProfile)
     }));
 
-    // Sort by compatibility and limit
     const topMatches = matchesWithScores
       .sort((a, b) => b.compatibility_score - a.compatibility_score)
       .slice(0, limit);
 
-    res.json({ success: true, matches: topMatches });
+    // 5. Store in Redis (TTL 30 mins)
+    if (redis && topMatches.length > 0) {
+      await redis.setex(cacheKey, 1800, JSON.stringify(topMatches));
+    }
+
+    res.json({ success: true, matches: topMatches, from_cache: false });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    res.status(500).json({ success: false, error: message });
+    console.error('[Recommendations Error]:', error);
+    Sentry.captureException(error);
+    res.status(500).json({ success: false, error: 'Failed to fetch recommendations' });
   }
 });
 
+
 // Send interest
-router.post('/interest/send', authMiddleware, async (req, res) => {
+router.post('/interest/send', authMiddleware, interestLimiter, async (req, res) => {
   try {
     const senderId = req.user?.id;
     const { receiverId, message } = req.body;
@@ -198,7 +222,7 @@ router.get('/interests/sent', authMiddleware, async (req, res) => {
       .from('interests')
       .select(`
         *,
-        receiver:profiles!interests_receiver_id_fkey(*)
+        receiver:profiles!interests_receiver_id_fkey(id, first_name, last_name, display_name, age, city, state, profile_picture_url, verified)
       `)
       .eq('sender_id', userId)
       .order('created_at', { ascending: false });
@@ -220,7 +244,7 @@ router.get('/interests/received', authMiddleware, async (req, res) => {
       .from('interests')
       .select(`
         *,
-        sender:profiles!interests_sender_id_fkey(*)
+        sender:profiles!interests_sender_id_fkey(id, first_name, last_name, display_name, age, city, state, profile_picture_url, verified)
       `)
       .eq('receiver_id', userId)
       .eq('status', 'pending')

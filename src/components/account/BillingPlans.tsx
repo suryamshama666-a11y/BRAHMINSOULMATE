@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 
 export const BillingPlans = () => {
-  const { upgradeSubscription, isPremium, profile } = useAuth();
+  const { upgradeSubscription, profile } = useAuth();
   const navigate = useNavigate();
 
   const plans = [

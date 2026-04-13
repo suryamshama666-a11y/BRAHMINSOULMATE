@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { ChevronLeft, ChevronRight, Quote } from 'lucide-react';
+import { Quote } from 'lucide-react';
 
 interface SuccessStory {
   id: number;
@@ -37,14 +37,14 @@ const successStories: SuccessStory[] = [
 const SuccessStoriesSlider: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const handlePrev = () => {
-    setCurrentIndex((prevIndex) => 
+  const _handlePrev = () => {
+    setCurrentIndex((prevIndex) =>
       prevIndex === 0 ? successStories.length - 1 : prevIndex - 1
     );
   };
 
-  const handleNext = () => {
-    setCurrentIndex((prevIndex) => 
+  const _handleNext = () => {
+    setCurrentIndex((prevIndex) =>
       prevIndex === successStories.length - 1 ? 0 : prevIndex + 1
     );
   };

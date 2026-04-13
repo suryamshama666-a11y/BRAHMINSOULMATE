@@ -1,174 +1,228 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Avatar } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Search, MessageCircle } from 'lucide-react';
-import { ChatWindow } from '@/components/messaging/ChatWindow';
+import { ChatBox } from '@/features/messages/components/ChatBox';
 import { useAuth } from '@/hooks/useAuth';
 import { messagesService } from '@/services/api';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
+import { Skeleton, MessageItemSkeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const Messages = () => {
   const { user } = useAuth();
-  const [searchParams] = useSearchParams();
-  const [selectedUser, setSelectedUser] = useState<string | null>(
-    searchParams.get('user')
-  );
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedUser = searchParams.get('user');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Mock conversations for development
-  const mockConversations = [
-    {
-      user_id: 'user-1',
-      full_name: 'Priya Sharma',
-      profile_picture: 'https://randomuser.me/api/portraits/women/1.jpg',
-      last_message: 'Hi! Thanks for showing interest in my profile.',
-      last_message_at: new Date().toISOString(),
-      unread_count: 2
-    },
-    {
-      user_id: 'user-2',
-      full_name: 'Anjali Patel',
-      profile_picture: 'https://randomuser.me/api/portraits/women/2.jpg',
-      last_message: 'Would love to connect and know more about you.',
-      last_message_at: new Date(Date.now() - 3600000).toISOString(),
-      unread_count: 0
-    },
-    {
-      user_id: 'user-3',
-      full_name: 'Kavya Iyer',
-      profile_picture: 'https://randomuser.me/api/portraits/women/3.jpg',
-      last_message: 'Looking forward to our V-Date!',
-      last_message_at: new Date(Date.now() - 7200000).toISOString(),
-      unread_count: 1
-    }
-  ];
-
   // Fetch conversations
-  const { data: conversations = mockConversations, isLoading } = useQuery({
+  const { data: conversations = [], isLoading } = useQuery({
     queryKey: ['conversations', user?.id],
     queryFn: async () => {
-      try {
-        const data = await messagesService.getConversations();
-        return data.length > 0 ? data : mockConversations;
-      } catch (error) {
-        return mockConversations;
-      }
+      return await messagesService.getConversations();
     },
     enabled: !!user?.id,
-    refetchInterval: 5000 // Refresh every 5 seconds
+    refetchInterval: 5000 
   });
 
   // Filter conversations based on search
-  const filteredConversations = conversations.filter(conv =>
-    conv.full_name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredConversations = useMemo(() => 
+    conversations.filter(conv =>
+      conv.full_name.toLowerCase().includes(searchQuery.toLowerCase())
+    ), [conversations, searchQuery]
   );
 
-  const selectedConversation = conversations.find(c => c.user_id === selectedUser);
+  const selectedConversation = useMemo(() => 
+    conversations.find(c => c.user_id === selectedUser),
+    [conversations, selectedUser]
+  );
 
-  if (isLoading) {
+  const handleSelectUser = (userId: string) => {
+    setSearchParams({ user: userId });
+  };
+
+  const getConversationId = (partnerId: string) => {
+    if (!user?.id) return '';
+    const ids = [user.id, partnerId].sort();
+    return `conv_${ids[0]}_${ids[1]}`;
+  };
+
+  if (isLoading && conversations.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-amber-50 to-red-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-600"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="container mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[700px]">
+            <Card className="lg:col-span-1 h-full">
+              <CardContent className="p-4 space-y-4">
+                <Skeleton className="h-10 w-full mb-4" />
+                {[...Array(6)].map((_, i) => (
+                  <MessageItemSkeleton key={i} />
+                ))}
+              </CardContent>
+            </Card>
+            <Card className="lg:col-span-2 h-full hidden lg:flex flex-col">
+              <CardContent className="p-0 flex-1 flex items-center justify-center">
+                <div className="space-y-4 text-center">
+                  <div className="h-16 w-16 bg-gray-100 rounded-full animate-pulse mx-auto" />
+                  <Skeleton className="h-6 w-48 mx-auto" />
+                  <Skeleton className="h-4 w-64 mx-auto" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50/30 via-white to-amber-50/40">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-serif font-bold mb-2 flex items-center">
-            <MessageCircle className="h-8 w-8 mr-3 text-amber-600" />
-            Messages
-          </h1>
-          <p className="text-gray-600">Chat with your connections</p>
+    <div className="min-h-screen bg-gradient-to-br from-red-50/50 via-white to-amber-50/50 pt-20 pb-10">
+      <div className="container mx-auto px-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-serif font-bold text-gray-900 flex items-center gap-3">
+              <span className="bg-red-600 p-2 rounded-xl text-white shadow-lg shadow-red-200">
+                <MessageCircle className="h-6 w-6" />
+              </span>
+              Conversations
+            </h1>
+            <p className="text-gray-500 mt-1">Manage your chats and connections</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="bg-white px-3 py-1 font-medium border-red-100 text-red-600">
+              {conversations.reduce((acc, curr) => acc + curr.unread_count, 0)} Unread
+            </Badge>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Conversations List */}
-          <Card className="lg:col-span-1">
-            <CardContent className="p-4">
-              <div className="mb-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search conversations..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-280px)] min-h-[600px]">
+          {/* Sidebar */}
+          <Card className={`${selectedUser ? 'hidden lg:flex' : 'flex'} flex-col lg:col-span-1 shadow-xl border-red-50 overflow-hidden`}>
+            <div className="p-4 bg-white border-b border-gray-100">
+              <div className="relative group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-red-500 transition-colors" />
+                <Input
+                  placeholder="Search chats..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 bg-gray-50 border-none focus-visible:ring-red-500 rounded-xl"
+                />
+              </div>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+              {filteredConversations.length === 0 ? (
+                <div className="h-full flex items-center justify-center p-4">
+                  <EmptyState 
+                    variant="no-messages" 
+                    title={searchQuery ? "No matches found" : "No messages yet"}
+                    description={searchQuery ? "Try a different search term" : "Start connecting to see your chats here."}
+                    className="py-8"
                   />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                {filteredConversations.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <MessageCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>No conversations yet</p>
-                  </div>
-                ) : (
-                  filteredConversations.map((conversation) => (
+              ) : (
+                <div className="divide-y divide-gray-50">
+                  {filteredConversations.map((conversation) => (
                     <div
                       key={conversation.user_id}
-                      onClick={() => setSelectedUser(conversation.user_id)}
-                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                      onClick={() => handleSelectUser(conversation.user_id)}
+                      className={`flex items-center gap-4 p-4 cursor-pointer transition-all duration-200 hover:bg-red-50/30 ${
                         selectedUser === conversation.user_id
-                          ? 'bg-amber-100'
-                          : 'hover:bg-gray-100'
+                          ? 'bg-red-50 border-r-4 border-red-600'
+                          : ''
                       }`}
                     >
-                      <div className="relative">
-                        <Avatar 
-                          src={conversation.profile_picture} 
-                          fallback={conversation.full_name[0]} 
-                          className="h-10 w-10"
-                        />
-                        {/* Online indicator */}
-                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                      <div className="relative flex-shrink-0">
+                        <Avatar className="h-14 w-14 border-2 border-white shadow-sm">
+                          <AvatarImage src={conversation.profile_picture} />
+                          <AvatarFallback className="bg-red-100 text-red-700">
+                            {conversation.full_name[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></span>
                       </div>
+                      
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-semibold truncate">{conversation.full_name}</h4>
+                        <div className="flex justify-between items-start mb-1">
+                          <h4 className={`font-bold truncate ${selectedUser === conversation.user_id ? 'text-red-900' : 'text-gray-900'}`}>
+                            {conversation.full_name}
+                          </h4>
+                          {conversation.last_message_at && (
+                            <span className="text-[10px] text-gray-400 uppercase font-bold tracking-tighter shrink-0">
+                              {new Date(conversation.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex justify-between items-center gap-2">
+                          <p className={`text-sm truncate ${conversation.unread_count > 0 ? 'text-gray-900 font-semibold' : 'text-gray-500'}`}>
+                            {conversation.last_message || 'Start a conversation'}
+                          </p>
                           {conversation.unread_count > 0 && (
-                            <Badge className="bg-red-600 text-white">
+                            <Badge className="bg-red-600 hover:bg-red-700 text-white h-5 w-5 rounded-full flex items-center justify-center p-0 text-[10px]">
                               {conversation.unread_count}
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600 truncate">
-                          {conversation.last_message}
-                        </p>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
+                  ))}
+                </div>
+              )}
+            </div>
           </Card>
 
-          {/* Chat Window */}
-          <div className="lg:col-span-2">
+          {/* Main Chat Area */}
+          <div className={`${!selectedUser ? 'hidden lg:block' : 'block'} lg:col-span-2 h-full relative`}>
             {selectedUser && selectedConversation ? (
-              <ChatWindow
+              <ChatBox
+                conversationId={getConversationId(selectedUser)}
                 partnerId={selectedUser}
                 partnerName={selectedConversation.full_name}
-                partnerImage={selectedConversation.profile_picture}
+                partnerAvatar={selectedConversation.profile_picture}
+                onBack={() => setSearchParams({})}
               />
             ) : (
-              <Card className="h-[600px] flex items-center justify-center">
-                <CardContent className="text-center">
-                  <MessageCircle className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-xl font-semibold mb-2">Select a conversation</h3>
-                  <p className="text-gray-600">Choose a conversation from the list to start chatting</p>
-                </CardContent>
+              <Card className="h-full flex flex-col items-center justify-center border-dashed border-2 border-gray-200 bg-gray-50/30 shadow-none">
+                <div className="text-center p-8">
+                  <div className="inline-flex items-center justify-center w-24 h-24 bg-red-50 rounded-full mb-6 animate-bounce-slow">
+                    <MessageCircle className="h-10 w-10 text-red-600" />
+                  </div>
+                  <h3 className="text-2xl font-serif font-bold text-gray-900 mb-2">Select a Soulmate</h3>
+                  <p className="text-gray-500 max-w-xs mx-auto">
+                    Choose one of your connections from the left sidebar to begin your conversation.
+                  </p>
+                </div>
               </Card>
             )}
           </div>
         </div>
       </div>
+      
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 5px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #eee;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #ddd;
+        }
+        @keyframes bounce-slow {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        .animate-bounce-slow {
+          animation: bounce-slow 3s infinite ease-in-out;
+        }
+      `}</style>
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { Database } from '@/types/supabase';
 
 export interface Match {
   id: string;
@@ -24,17 +25,25 @@ export interface CompatibilityFactors {
 class MatchingService {
   // Calculate compatibility score between two users
   calculateCompatibility(user: any, candidate: any): { score: number; factors: CompatibilityFactors } {
+    // TRADITIONAL SAGOTRA VETO: Strict requirement in Brahmin marriages
+    if (user.gotra && candidate.gotra && user.gotra === candidate.gotra) {
+      return { 
+        score: 0, 
+        factors: { age: 0, height: 0, location: 0, education: 0, occupation: 0, gotra: 0, horoscope: 0 } 
+      };
+    }
+
     const factors: CompatibilityFactors = {
       age: this.calculateAgeScore(user, candidate),
       height: this.calculateHeightScore(user, candidate),
       location: this.calculateLocationScore(user, candidate),
       education: this.calculateEducationScore(user, candidate),
       occupation: this.calculateOccupationScore(user, candidate),
-      gotra: this.calculateGotraScore(user, candidate),
+      gotra: 1.0, // Different gotras are compatible
       horoscope: this.calculateHoroscopeScore(user, candidate)
     };
 
-    const score = (
+    const weightedScore = (
       factors.age * 0.20 +
       factors.height * 0.10 +
       factors.location * 0.15 +
@@ -44,18 +53,29 @@ class MatchingService {
       factors.horoscope * 0.10
     );
 
-    return { score: Math.round(score * 100), factors };
+    return { score: Math.round(weightedScore * 100), factors };
   }
 
   private calculateAgeScore(user: any, candidate: any): number {
-    if (!user.age || !candidate.age) return 0.5;
+    if (!user.date_of_birth || !candidate.date_of_birth) return 0.5;
     
-    const ageDiff = Math.abs(user.age - candidate.age);
+    const userAge = this.calculateAge(user.date_of_birth);
+    const candidateAge = this.calculateAge(candidate.date_of_birth);
+    const ageDiff = Math.abs(userAge - candidateAge);
+
     if (ageDiff <= 2) return 1.0;
     if (ageDiff <= 5) return 0.8;
     if (ageDiff <= 8) return 0.6;
-    if (ageDiff <= 10) return 0.4;
     return 0.2;
+  }
+
+  private calculateAge(dob: string): number {
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+    return age;
   }
 
   private calculateHeightScore(user: any, candidate: any): number {
@@ -64,75 +84,36 @@ class MatchingService {
     const heightDiff = Math.abs(user.height - candidate.height);
     if (heightDiff <= 5) return 1.0;
     if (heightDiff <= 10) return 0.8;
-    if (heightDiff <= 15) return 0.6;
     return 0.4;
   }
 
   private calculateLocationScore(user: any, candidate: any): number {
-    if (!user.city || !candidate.city) return 0.5;
-    
     if (user.city === candidate.city) return 1.0;
     if (user.state === candidate.state) return 0.7;
-    if (user.country === candidate.country) return 0.4;
     return 0.2;
   }
 
   private calculateEducationScore(user: any, candidate: any): number {
-    if (!user.education || !candidate.education) return 0.5;
-    
-    const educationLevels = ['High School', 'Diploma', 'Bachelor', 'Master', 'Doctorate'];
-    const userLevel = educationLevels.indexOf(user.education);
-    const candidateLevel = educationLevels.indexOf(candidate.education);
-    
-    if (userLevel === -1 || candidateLevel === -1) return 0.5;
-    
-    const diff = Math.abs(userLevel - candidateLevel);
-    if (diff === 0) return 1.0;
-    if (diff === 1) return 0.8;
-    if (diff === 2) return 0.6;
-    return 0.4;
+    if (!user.education_level || !candidate.education_level) return 0.5;
+    if (user.education_level === candidate.education_level) return 1.0;
+    return 0.5;
   }
 
   private calculateOccupationScore(user: any, candidate: any): number {
-    if (!user.occupation || !candidate.occupation) return 0.5;
-    
-    // Simple matching - can be enhanced with occupation categories
     if (user.occupation === candidate.occupation) return 1.0;
     return 0.5;
   }
 
   private calculateGotraScore(user: any, candidate: any): number {
-    if (!user.gotra || !candidate.gotra) return 0.5;
-    
-    // Same gotra is not compatible in traditional Hindu marriages
     if (user.gotra === candidate.gotra) return 0.0;
     return 1.0;
   }
 
   private calculateHoroscopeScore(user: any, candidate: any): number {
-    if (!user.moon_sign || !candidate.moon_sign) return 0.5;
+    if (!user.rashi || !candidate.rashi) return 0.5;
     
-    // Simplified horoscope compatibility
-    const compatibleSigns: Record<string, string[]> = {
-      'Aries': ['Leo', 'Sagittarius', 'Gemini', 'Aquarius'],
-      'Taurus': ['Virgo', 'Capricorn', 'Cancer', 'Pisces'],
-      'Gemini': ['Libra', 'Aquarius', 'Aries', 'Leo'],
-      'Cancer': ['Scorpio', 'Pisces', 'Taurus', 'Virgo'],
-      'Leo': ['Aries', 'Sagittarius', 'Gemini', 'Libra'],
-      'Virgo': ['Taurus', 'Capricorn', 'Cancer', 'Scorpio'],
-      'Libra': ['Gemini', 'Aquarius', 'Leo', 'Sagittarius'],
-      'Scorpio': ['Cancer', 'Pisces', 'Virgo', 'Capricorn'],
-      'Sagittarius': ['Aries', 'Leo', 'Libra', 'Aquarius'],
-      'Capricorn': ['Taurus', 'Virgo', 'Scorpio', 'Pisces'],
-      'Aquarius': ['Gemini', 'Libra', 'Aries', 'Sagittarius'],
-      'Pisces': ['Cancer', 'Scorpio', 'Taurus', 'Capricorn']
-    };
-
-    const userSign = user.moon_sign;
-    const candidateSign = candidate.moon_sign;
-    
-    if (compatibleSigns[userSign]?.includes(candidateSign)) return 1.0;
-    if (userSign === candidateSign) return 0.7;
+    // Simplified compatibility based on Rashi
+    if (user.rashi === candidate.rashi) return 1.0;
     return 0.5;
   }
 
@@ -142,96 +123,65 @@ class MatchingService {
       .from('matches')
       .select(`
         *,
-        profile:user2_id (
-          user_id,
-          full_name,
-          age,
-          height,
-          city,
-          state,
-          education,
-          occupation,
-          gotra,
-          photos,
-          profile_picture
-        )
+        profile:profiles!matches_user2_id_fkey(*)
       `)
       .eq('user1_id', userId)
       .order('compatibility_score', { ascending: false })
       .limit(limit);
 
     if (error) throw error;
-    return data || [];
+    return data as any[];
   }
 
-  // Calculate and store matches for a user
+  // Calculate and store matches for a user - PRODUCTION OPTIMIZED
   async calculateMatches(userId: string): Promise<void> {
-    // Get user profile
-    const { data: userProfile, error: userError } = await supabase
+    const { data: userProfile } = await supabase
       .from('profiles')
       .select('*')
       .eq('user_id', userId)
       .single();
 
-    if (userError) throw userError;
+    if (!userProfile) return;
 
-    // Get potential matches (opposite gender, not same user)
-    const { data: candidates, error: candidatesError } = await supabase
+    // PRODUCTION SCALABILITY: Limit candidates to recent/relevant ones
+    const { data: candidates } = await supabase
       .from('profiles')
       .select('*')
       .neq('user_id', userId)
-      .neq('gender', userProfile.gender);
+      .neq('gender', userProfile.gender)
+      .order('last_active', { ascending: false })
+      .limit(100); // Only process top 100 most active potential matches
 
-    if (candidatesError) throw candidatesError;
+    if (!candidates) return;
 
-    // Calculate compatibility for each candidate
-    const matches = candidates.map(candidate => {
-      const { score } = this.calculateCompatibility(userProfile, candidate);
-      return {
-        user1_id: userId,
-        user2_id: candidate.user_id,
-        compatibility_score: score,
-        status: 'pending' as const
-      };
-    });
+    const matches = candidates
+      .map(candidate => {
+        const { score } = this.calculateCompatibility(userProfile, candidate);
+        return {
+          user1_id: userId,
+          user2_id: candidate.user_id,
+          compatibility_score: score,
+          status: 'pending' as const
+        };
+      })
+      .filter(m => m.compatibility_score > 60); // Higher threshold for quality
 
-    // Filter matches with score > 50
-    const goodMatches = matches.filter(m => m.compatibility_score > 50);
-
-    // Upsert matches
-    if (goodMatches.length > 0) {
-      const { error: insertError } = await supabase
-        .from('matches')
-        .upsert(goodMatches, { 
-          onConflict: 'user1_id,user2_id',
-          ignoreDuplicates: false 
-        });
-
-      if (insertError) throw insertError;
+    if (matches.length > 0) {
+      await supabase.from('matches').upsert(matches, {
+        onConflict: 'user1_id,user2_id'
+      });
     }
   }
 
   // Get match score between two users
   async getMatchScore(user1Id: string, user2Id: string): Promise<number> {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('matches')
       .select('compatibility_score')
       .or(`and(user1_id.eq.${user1Id},user2_id.eq.${user2Id}),and(user1_id.eq.${user2Id},user2_id.eq.${user1Id})`)
       .single();
 
-    if (error) {
-      // If no match exists, calculate it
-      const { data: user1 } = await supabase.from('profiles').select('*').eq('user_id', user1Id).single();
-      const { data: user2 } = await supabase.from('profiles').select('*').eq('user_id', user2Id).single();
-      
-      if (user1 && user2) {
-        const { score } = this.calculateCompatibility(user1, user2);
-        return score;
-      }
-      return 0;
-    }
-
-    return data.compatibility_score;
+    return data?.compatibility_score || 0;
   }
 
   // Get recommended matches

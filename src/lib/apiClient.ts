@@ -1,5 +1,5 @@
-import { getSupabase } from './getSupabase';
-import { API_CONFIG, API_HEADERS, ApiResponse, ApiError, HTTP_STATUS } from '@/api/routes';
+import { supabase } from '@/integrations/supabase/client';
+import { API_CONFIG, API_HEADERS, ApiResponse, HTTP_STATUS } from '@/api/routes';
 
 class ApiClient {
   private baseURL: string;
@@ -16,7 +16,7 @@ class ApiClient {
 
   // Get authentication headers
   private async getAuthHeaders(): Promise<Record<string, string>> {
-    const { data: { session } } = await getSupabase().auth.getSession();
+    const { data: { session } } = await supabase.auth.getSession();
     const headers = { ...API_HEADERS };
     
     if (session?.access_token) {
@@ -109,7 +109,7 @@ class ApiClient {
   // Refresh authentication token
   private async refreshToken(): Promise<void> {
     try {
-      const { error } = await getSupabase().auth.refreshSession();
+      const { error } = await supabase.auth.refreshSession();
       if (error) throw error;
     } catch (error) {
       console.error('Token refresh failed:', error);

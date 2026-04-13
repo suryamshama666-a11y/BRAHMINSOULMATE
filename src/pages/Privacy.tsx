@@ -1,9 +1,15 @@
 import React from "react";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 
 const Privacy = () => {
   return (
     <div className="min-h-screen flex flex-col">
+      <SEO 
+        title="Privacy Policy - Your Data Security"
+        description="Learn how Brahmin Soulmate Connect protects your personal data, horoscope details, and communication privacy. Our commitment to secure matrimonial matching."
+        keywords="privacy policy, data protection, matrimony privacy, Brahmin Soulmate legal"
+      />
       <div className="flex-grow container mx-auto px-4 py-12 max-w-4xl">
         <h1 className="text-3xl font-bold text-brahmin-primary mb-6">Privacy Policy</h1>
         

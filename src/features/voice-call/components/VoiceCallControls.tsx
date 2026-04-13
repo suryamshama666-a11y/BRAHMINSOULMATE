@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Phone, Mic, MicOff, MessageSquare, Volume2, VolumeX } from 'lucide-react';
+import { Phone, Mic, MicOff, Volume2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface VoiceCallControlsProps {

@@ -73,7 +73,7 @@ export const VDateScheduler = ({
           <div className="mb-6">
             <Calendar
               mode="single"
-              selected={selectedDate}
+              selected={selectedDate || undefined}
               onSelect={onDateSelect}
               disabled={(date) => date < new Date() || date < new Date(Date.now() - 86400000)}
               className="rounded-md border"

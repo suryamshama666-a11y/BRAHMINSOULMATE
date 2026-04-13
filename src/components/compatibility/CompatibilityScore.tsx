@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useCompatibility } from '@/hooks/useCompatibility';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
-import { Star, Heart, Calculator, Sparkles } from 'lucide-react';
+import { Star, Calculator, Sparkles } from 'lucide-react';
 
 interface CompatibilityScoreProps {
   targetUserId: string;
@@ -24,6 +24,7 @@ export const CompatibilityScore: React.FC<CompatibilityScoreProps> = ({
 
   useEffect(() => {
     loadExistingCompatibility();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetUserId, user]);
 
   const loadExistingCompatibility = async () => {
@@ -126,6 +127,33 @@ export const CompatibilityScore: React.FC<CompatibilityScoreProps> = ({
                 <Progress value={(compatibilityData.guna_milan_score / 25) * 100} className="h-2" />
               </div>
             </div>
+
+            {/* Guna Milan Details Breakdown */}
+            {compatibilityData.compatibility_details?.advanced?.kootas && (
+              <div className="bg-purple-50 rounded-xl p-5 border border-purple-100">
+                <h4 className="font-bold text-purple-900 mb-4 flex items-center gap-2">
+                  <Calculator className="h-5 w-5" />
+                  Detailed 36 Guna Breakdown (Ashtakoot)
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  {compatibilityData.compatibility_details.advanced.kootas.map((koot: any, i: number) => (
+                    <div key={i} className="bg-white/60 p-3 rounded-lg border border-purple-50">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm font-semibold text-gray-700">{koot.name}</span>
+                        <span className="text-xs font-bold text-purple-600">{koot.score}/{koot.max}</span>
+                      </div>
+                      <Progress value={(koot.score / koot.max) * 100} className="h-1.5 bg-purple-100" />
+                      <p className="text-[10px] text-gray-500 mt-2 leading-tight">{koot.description}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 pt-4 border-t border-purple-200">
+                  <p className="text-sm font-medium text-purple-800 italic">
+                    " {compatibilityData.compatibility_details.advanced.conclusion} "
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Compatibility Details */}
             {compatibilityData.compatibility_details?.calculated_factors && (
