@@ -17,7 +17,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(({ conversationId, r
   const {
     messages,
     isLoading,
-    _sendMessage,
+    sendMessage,
     markAsRead,
   } = useMessages(conversationId);
 

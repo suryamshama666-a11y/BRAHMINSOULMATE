@@ -28,9 +28,9 @@ export const ChatPanel = ({
   setMobileViewChat,
   conversationMessages,
   userId,
-  _handlePhoneCall,
-  _handleVideoCall,
-  _handleViewProfile,
+  handlePhoneCall,
+  handleVideoCall,
+  handleViewProfile,
   newMessage,
   setNewMessage,
   handleSendMessage
@@ -88,8 +88,8 @@ export const ChatPanel = ({
   return (
     <>
       <ChatHeader
-        conversationPartner={conversationPartner}
-        setMobileViewChat={setMobileViewChat}
+        receiverId={conversationPartner?.id || ''}
+        onBack={() => setMobileViewChat(false)}
         onPhoneCall={handlePhoneCallClick}
         onVideoCall={handleVideoCallClick}
         onViewProfile={handleViewProfileClick}

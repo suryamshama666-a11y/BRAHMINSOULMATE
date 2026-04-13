@@ -92,7 +92,7 @@ export const ProfileComparison: React.FC<ProfileComparisonProps> = ({
                           {value}
                         </div>
                       ) : (
-                        <span>{String(value)}</span>
+                        <span>{value as React.ReactNode}</span>
                       )}
                     </td>
                   );

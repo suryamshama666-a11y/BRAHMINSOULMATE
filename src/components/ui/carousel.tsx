@@ -195,8 +195,8 @@ CarouselItem.displayName = "CarouselItem"
 
 const CarouselPrevious = React.forwardRef<
   HTMLButtonElement,
-  React.ComponentProps<typeof Button>
->(({ className: _className, _variant = "outline", _size = "icon", ..._props }, _ref) => {
+  any
+>(({ className: _className, _variant = "outline", _size = "icon", ..._props }: any, _ref) => {
   const { orientation: _orientation, scrollPrev: _scrollPrev, canScrollPrev: _canScrollPrev } = useCarousel()
 
   // Hidden as per user request to remove arrows
@@ -229,8 +229,8 @@ CarouselPrevious.displayName = "CarouselPrevious"
 
 const CarouselNext = React.forwardRef<
   HTMLButtonElement,
-  React.ComponentProps<typeof Button>
->(({ className: _className, _variant = "outline", _size = "icon", ..._props }, _ref) => {
+  any
+>(({ className: _className, _variant = "outline", _size = "icon", ..._props }: any, _ref) => {
   const { orientation: _orientation, scrollNext: _scrollNext, canScrollNext: _canScrollNext } = useCarousel()
 
   // Hidden as per user request to remove arrows

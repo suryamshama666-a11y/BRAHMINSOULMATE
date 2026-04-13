@@ -202,7 +202,7 @@ export function useConversations() {
         if (exchangeError) throw exchangeError;
         if (!exchanges || exchanges.length === 0) return [];
 
-        const contactIds = exchanges.map(ex => 
+        const contactIds = exchanges.map((ex: any) =>
           ex.sender_id === user.id ? ex.receiver_id : ex.sender_id
         );
 
@@ -315,7 +315,7 @@ export function useConversations() {
   });
 
   const { mutateAsync: reportUser } = useMutation({
-    mutationFn: async ({ _partnerId, _reason, _details }: ReportUserParams) => {
+    mutationFn: async ({ partnerId, reason, details }: ReportUserParams) => {
       if (!user) throw new ConversationError('Not authenticated');
       toast.success('Report submitted');
       return { success: true };

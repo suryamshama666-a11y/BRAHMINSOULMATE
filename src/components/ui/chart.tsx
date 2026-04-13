@@ -12,7 +12,7 @@ export type ChartConfig = {
     icon?: React.ComponentType
   } & (
     | { color?: string; theme?: never }
-    | { color?: never; theme: Record<keyof typeof THEMES, string> }
+    | { color?: never; theme: Record<keyof typeof _THEMES, string> }
   )
 }
 
@@ -79,24 +79,23 @@ const ChartTooltipContent = React.forwardRef<
       labelKey?: string
     }
 >(
-  (
-    {
-      active,
-      payload,
-      className,
-      indicator = "dot",
-      hideLabel = false,
-      hideIndicator = false,
-      label,
-      labelFormatter,
-      labelClassName,
-      formatter,
-      _color,
-      nameKey,
-      labelKey,
-    },
-    ref
-  ) => {
+    (
+      {
+        active,
+        payload,
+        className,
+        indicator = "dot",
+        hideLabel = false,
+        hideIndicator = false,
+        label,
+        labelFormatter,
+        labelClassName,
+        formatter,
+        nameKey,
+        labelKey,
+      }: any,
+      ref
+    ) => {
     const { config } = useChart()
 
     const tooltipLabel = React.useMemo(() => {

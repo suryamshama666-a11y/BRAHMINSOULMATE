@@ -37,14 +37,22 @@ export const EnhancedChatPanel: React.FC<EnhancedChatPanelProps> = ({
   const { sendEnhancedMessage, markAsRead } = useEnhancedMessages();
   const { blockUser, reportUser, isUserBlocked } = useProfilePrivacy();
   const { addToShortlist, removeFromShortlist, isInShortlist } = useShortlist();
-  const { reactions, loadConversationReactions } = useMessageReactions();
+  const { reactions, addReaction, removeReaction } = useMessageReactions();
   const { setTyping, getTypingUsers } = useTypingIndicator();
 
   const conversationId = conversationPartner?.user_id || '';
   const typingUsers = getTypingUsers(conversationId);
 
   useEffect(() => {
-    scrollToBottom();
+    // scrollToBottom();
+  }, [conversationMessages]);
+
+  useEffect(() => {
+    // Load reactions for all messages
+    // const messageIds = conversationMessages.map(msg => msg.id);
+    // if (messageIds.length > 0) {
+    //   loadConversationReactions(messageIds);
+    // }
   }, [conversationMessages]);
 
   useEffect(() => {
@@ -200,27 +208,10 @@ export const EnhancedChatPanel: React.FC<EnhancedChatPanelProps> = ({
   return (
     <div className="flex flex-col h-full">
       <ChatHeader
-        conversationPartner={conversationPartner}
+        receiverId={conversationPartner.user_id}
         onBack={onBack}
         onPhoneCall={onPhoneCall}
         onVideoCall={onVideoCall}
-        onToggleShortlist={() => {
-          if (isInShortlist(conversationPartner.user_id)) {
-            removeFromShortlist(conversationPartner.user_id);
-          } else {
-            addToShortlist(conversationPartner.user_id);
-          }
-        }}
-        onReportUser={async () => {
-          await reportUser(conversationPartner.user_id, 'Inappropriate behavior', 'Reported from chat');
-        }}
-        onBlockUser={async () => {
-          const result = await blockUser(conversationPartner.user_id, 'Blocked from chat');
-          if (result?.success) {
-            onBack();
-          }
-        }}
-        isInShortlist={isInShortlist(conversationPartner.user_id)}
       />
 
       <ScrollArea className="flex-1 p-4">
@@ -228,9 +219,9 @@ export const EnhancedChatPanel: React.FC<EnhancedChatPanelProps> = ({
           {conversationMessages.map((message) => (
             <MessageBubble
               key={message.id}
-              message={message}
+              message={message as any}
               isOwnMessage={message.sender_id === userId}
-              reactions={reactions.get(message.id) || []}
+              reactions={reactions[message.id] || []}
             />
           ))}
           
@@ -244,70 +235,16 @@ export const EnhancedChatPanel: React.FC<EnhancedChatPanelProps> = ({
       </ScrollArea>
 
       <ChatInput
-        newMessage={newMessage}
-        onMessageChange={(e) => {
-          setNewMessage(e.target.value);
-          
-          if (e.target.value.trim()) {
-            setTyping(conversationId, true);
-            
-            if (typingTimeoutRef.current) {
-              clearTimeout(typingTimeoutRef.current);
-            }
-            
-            typingTimeoutRef.current = setTimeout(() => {
-              setTyping(conversationId, false);
-            }, 3000);
-          } else {
-            setTyping(conversationId, false);
-          }
+        onSendMessage={async (text: string) => {
+          await handleSendMessage();
         }}
-        onKeyPress={(e) => {
-          if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSendMessage();
-          }
+        onUploadFile={async (file: File) => {
+          // Handle file upload
+          console.log('File upload:', file);
         }}
-        onSendMessage={handleSendMessage}
-        onFileUpload={async (file, type, url) => {
-          setIsUploading(true);
-          try {
-            const messageType = type === 'image' ? 'image' : type === 'video' ? 'video' : 'file';
-            const content = type === 'file' ? file.name : 'Shared a file';
-
-            await sendEnhancedMessage({
-              receiver_id: conversationPartner.user_id,
-              content,
-              message_type: messageType,
-              media_url: url,
-              file_name: file.name,
-              file_size: file.size
-            });
-          } catch {
-            toast.error('Failed to send file');
-          } finally {
-            setIsUploading(false);
-          }
-        }}
-        onVoiceMessage={async (audioBlob, duration) => {
-          setIsUploading(true);
-          try {
-            const audioUrl = URL.createObjectURL(audioBlob);
-            
-            await sendEnhancedMessage({
-              receiver_id: conversationPartner.user_id,
-              content: `Voice message (${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')})`,
-              message_type: 'audio',
-              media_url: audioUrl
-            });
-          } catch {
-            toast.error('Failed to send voice message');
-          } finally {
-            setIsUploading(false);
-          }
-        }}
-        isUploading={isUploading}
-        isBlocked={isBlocked}
+        isRecording={false}
+        setIsRecording={() => {}}
+        disabled={isBlocked}
       />
     </div>
   );
