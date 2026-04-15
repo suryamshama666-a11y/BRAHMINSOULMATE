@@ -3,8 +3,8 @@
     {
       "name": "brahmin-soulmate-backend",
       "script": "dist/server.js",
-      "instances": 1,
-      "exec_mode": "fork",
+      "instances": "max",
+      "exec_mode": "cluster",
       "env": {
         "NODE_ENV": "production"
       },
@@ -25,7 +25,9 @@
       "kill_timeout": 5000,
       "listen_timeout": 3000,
       "wait_ready": true,
-      "ready_timeout": 10000
+      "ready_timeout": 10000,
+      "merge_logs": true,
+      "node_args": "--max-old-space-size=512"
     }
   ]
 }

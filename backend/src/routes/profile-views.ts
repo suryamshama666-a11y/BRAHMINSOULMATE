@@ -2,6 +2,7 @@ import express from 'express';
 import { supabase } from '../config/supabase';
 import { authMiddleware } from '../middleware/auth';
 import { profileViewLimiter } from '../middleware/rateLimiter';
+import { logger } from '../utils/logger';
 
 const router = express.Router();
 
@@ -54,7 +55,7 @@ router.post('/', authMiddleware, profileViewLimiter, async (req, res) => {
 
     res.json({ success: true, view: data });
   } catch (error) {
-    console.error('Error tracking profile view:', error);
+    logger.error('Error tracking profile view:', error);
     res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
@@ -108,7 +109,7 @@ router.get('/who-viewed-me', authMiddleware, async (req, res) => {
 
     res.json({ success: true, views: data || [] });
   } catch (error) {
-    console.error('Error fetching profile viewers:', error);
+    logger.error('Error fetching profile viewers:', error);
     res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
@@ -162,7 +163,7 @@ router.get('/i-viewed', authMiddleware, async (req, res) => {
 
     res.json({ success: true, views: data || [] });
   } catch (error) {
-    console.error('Error fetching viewed profiles:', error);
+    logger.error('Error fetching viewed profiles:', error);
     res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
@@ -181,7 +182,7 @@ router.get('/count', authMiddleware, async (req, res) => {
 
     res.json({ success: true, count: count || 0 });
   } catch (error) {
-    console.error('Error fetching view count:', error);
+    logger.error('Error fetching view count:', error);
     res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });

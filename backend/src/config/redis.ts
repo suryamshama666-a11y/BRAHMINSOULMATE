@@ -1,5 +1,6 @@
 import Redis from 'ioredis';
 import * as Sentry from '@sentry/node';
+import { logger } from '../utils/logger';
 
 const redisUrl = process.env.REDIS_URL;
 
@@ -8,7 +9,7 @@ class RedisService {
 
   public static getInstance(): Redis | null {
     if (!redisUrl) {
-      console.warn('⚠️ REDIS_URL not found. Rate limiting will fall back to in-memory store.');
+      logger.warn('⚠️ REDIS_URL not found. Rate limiting will fall back to in-memory store.');
       return null;
     }
 
@@ -30,15 +31,15 @@ class RedisService {
         });
 
         this.instance.on('error', (err) => {
-          console.error('❌ Redis Connection Error:', err);
+          logger.error('❌ Redis Connection Error:', err);
           Sentry.captureException(err);
         });
 
         this.instance.on('connect', () => {
-          console.log('✅ Connected to Redis successfully');
+          logger.info('✅ Connected to Redis successfully');
         });
       } catch (error) {
-        console.error('❌ Failed to initialize Redis:', error);
+        logger.error('❌ Failed to initialize Redis:', error);
         Sentry.captureException(error);
         return null;
       }

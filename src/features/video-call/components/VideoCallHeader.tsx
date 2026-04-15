@@ -19,9 +19,9 @@ interface VideoCallHeaderProps {
 export const VideoCallHeader = ({
   connectionQuality,
   callDuration,
-  _showParticipants,
-  _showChat,
-  _showSettings,
+  showParticipants,
+  showChat,
+  showSettings,
   onToggleParticipants,
   onToggleChat,
   onToggleSettings,

@@ -4,8 +4,13 @@ import twilio from 'twilio';
 import { authMiddleware } from '../middleware/auth';
 import { adminMiddleware } from '../middleware/admin';
 import { communicationLimiter } from '../middleware/rateLimiter';
+import { preventHardDelete } from '../middleware/softDelete';
+import { logger } from '../utils/logger';
 
 const router = express.Router();
+
+// ✅ NEW: Prevent hard deletes on notifications
+router.use(preventHardDelete);
 
 // Helper function to get error message
 const getErrorMessage = (error: unknown): string => {
@@ -32,7 +37,7 @@ const initSendGrid = async (): Promise<void> => {
       sgMail = sendgridModule.default;
     }
   } catch {
-    console.log('SendGrid not installed. Email notifications will be disabled.');
+    logger.info('SendGrid not installed. Email notifications will be disabled.');
   }
 };
 
@@ -128,8 +133,9 @@ router.get('/', authMiddleware, async (req, res) => {
 
     const { data, error } = await supabase
       .from('notifications')
-      .select('*')
+      .select('id, user_id, type, title, message, read, action_url, sender_id, created_at')
       .eq('user_id', userId)
+      .is('deleted_at', null)  // Filter out deleted notifications
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -183,7 +189,7 @@ router.post('/email', authMiddleware, adminMiddleware, communicationLimiter, asy
     const { to, subject, message, type } = req.body;
 
     if (!sgMail || !process.env.SENDGRID_API_KEY) {
-      console.log('Email service not configured');
+      logger.warn('Email service not configured');
       return res.status(503).json({ success: false, error: 'Email service not configured' });
     }
 
@@ -218,7 +224,7 @@ router.post('/email', authMiddleware, adminMiddleware, communicationLimiter, asy
     await sgMail.send(msg);
     res.json({ success: true });
   } catch (error) {
-    console.error('Email send error:', error);
+    logger.error('Email send error:', error);
     res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });
@@ -243,7 +249,7 @@ router.post('/sms', authMiddleware, adminMiddleware, communicationLimiter, async
 
     res.json({ success: true });
   } catch (error) {
-    console.error('SMS send error:', error);
+    logger.error('SMS send error:', error);
     res.status(500).json({ success: false, error: getErrorMessage(error) });
   }
 });

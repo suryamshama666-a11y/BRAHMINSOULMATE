@@ -14,6 +14,7 @@ import { ChevronLeft, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { isDevBypassMode, getDevProfile } from '@/config/dev';
+import { Database } from '@/types/supabase';
 
 const ProfilePage = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,7 +26,7 @@ const ProfilePage = () => {
     isLoading,
     error,
     refetch,
-  } = useQuery({
+  } = useQuery<Database['public']['Tables']['profiles']['Row']>({
     queryKey: ['profile', id],
     queryFn: async () => {
       // Check if we're in dev bypass mode and no ID provided

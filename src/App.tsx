@@ -210,7 +210,8 @@ const AppContent = () => {
         );
 };
 
-const App = () => {
+// Inner component that uses auth context
+const AppWithAuth = () => {
   const { user } = useAuth();
 
   // effect:audited — Application startup resilience for transaction recovery
@@ -223,24 +224,32 @@ const App = () => {
   }, [user]);
 
   return (
+    <>
+      <AppContent />
+      <CollapsibleChatWidget />
+      <DevModeIndicator />
+      <Toaster 
+        position="top-right" 
+        richColors 
+        closeButton 
+        toastOptions={{
+          duration: 5000,
+          className: "toast-custom-class",
+        }}
+      />
+    </>
+  );
+};
+
+const App = () => {
+  return (
     <ErrorBoundary level="critical">
       <HelmetProvider>
         <SEO />
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <Router>
-              <AppContent />
-              <CollapsibleChatWidget />
-              <DevModeIndicator />
-              <Toaster 
-                position="top-right" 
-                richColors 
-                closeButton 
-                toastOptions={{
-                  duration: 5000,
-                  className: "toast-custom-class",
-                }}
-              />
+              <AppWithAuth />
             </Router>
           </AuthProvider>
         </QueryClientProvider>

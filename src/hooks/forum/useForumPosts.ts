@@ -39,8 +39,13 @@ export const useForumPosts = () => {
       const { data, error } = await supabase
         .from('forum_posts')
         .insert({
-          ...postData,
-          user_id: user.id
+          user_id: user.id,
+          author_id: user.id,
+          title: postData.title,
+          content: postData.content,
+          category: '', // Need to get this from somewhere
+          category_id: postData.category_id,
+          is_pinned: postData.is_pinned
         })
         .select()
         .single();
@@ -152,16 +157,16 @@ export const useForumPosts = () => {
       if (!user) throw new Error('User not authenticated');
 
       // Check if already liked
-      const { data: existingLike } = await (supabase as any)
+      const { data: existingLike } = await supabase
         .from('forum_likes')
         .select('id')
         .eq('post_id', postId)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (existingLike) {
         // Unlike
-        await (supabase as any)
+        await supabase
           .from('forum_likes')
           .delete()
           .eq('post_id', postId)
@@ -177,9 +182,9 @@ export const useForumPosts = () => {
         }
       } else {
         // Like
-        await (supabase as any)
+        await supabase
           .from('forum_likes')
-          .insert({ post_id: postId, user_id: user.id });
+          .insert({ post_id: postId, user_id: user.id, target_id: postId, target_type: 'post' });
 
         // Increment like count manually
         const currentPost = posts.find(p => p.id === postId);

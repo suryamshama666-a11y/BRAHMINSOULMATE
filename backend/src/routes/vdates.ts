@@ -142,7 +142,7 @@ router.put('/:id/reschedule', authMiddleware, async (req, res) => {
     // Get existing V-Date
     const { data: existingVDate, error: fetchError } = await supabase
       .from('vdates')
-      .select('*')
+      .select('id, user_id_1, user_id_2, status')
       .eq('id', id)
       .single();
 
@@ -197,7 +197,7 @@ router.put('/:id/cancel', authMiddleware, async (req, res) => {
     // Get existing V-Date
     const { data: existingVDate, error: fetchError } = await supabase
       .from('vdates')
-      .select('*')
+      .select('id, user_id_1, user_id_2, status')
       .eq('id', id)
       .single();
 

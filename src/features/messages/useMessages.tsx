@@ -17,7 +17,7 @@ export const useMessages = () => {
     messages: rtMessages,
     sendMessage,
     markAsRead,
-  } = useRealTimeMessages();
+  } = useRealTimeMessages({ userId: user?.id || '' });
 
   // Transform real-time messages to frontend format
   const messages = rtMessages.map(transformRealTimeMessage);

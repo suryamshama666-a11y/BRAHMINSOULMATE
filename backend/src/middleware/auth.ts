@@ -5,17 +5,13 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { supabase } from '../config/supabase';
+import { logger } from '../utils/logger';
 
 /**
  * Extended Request interface with user information
+ * Uses the Express Request type which is extended in types/express.d.ts
  */
-export interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    role: string;
-  };
-}
+export type AuthRequest = Request;
 
 /**
  * Authentication middleware
@@ -60,15 +56,11 @@ export const authMiddleware = async (
     }
 
     // Attach user information to request
-    req.user = {
-      id: user.id,
-      email: user.email,
-      role: user.user_metadata?.role || 'user'
-    };
+    req.user = user;
 
     next();
   } catch (error) {
-    console.error('[AuthMiddleware] Error:', error);
+    logger.error('[AuthMiddleware] Error:', error);
     res.status(500).json({
       success: false,
       error: 'Authentication failed. Please try again.'
@@ -93,11 +85,7 @@ export const optionalAuthMiddleware = async (
       const { data: { user }, error } = await supabase.auth.getUser(token);
 
       if (!error && user) {
-        req.user = {
-          id: user.id,
-          email: user.email,
-          role: user.user_metadata?.role || 'user'
-        };
+        req.user = user;
       }
     }
     
@@ -110,7 +98,10 @@ export const optionalAuthMiddleware = async (
 
 /**
  * Admin authentication middleware
- * Verifies user has admin role
+ * Verifies user has admin role from DATABASE (not user_metadata, which is client-controllable)
+ * 
+ * SECURITY: user_metadata can be set by the user during signup.
+ * Always verify roles against the profiles table.
  */
 export const adminMiddleware = async (
   req: AuthRequest,
@@ -118,10 +109,10 @@ export const adminMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // First run standard auth check
-    const authHeader = req.headers.authorization;
+    // Require user to be already authenticated (use authMiddleware first)
+    const userId = req.user?.id;
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!userId) {
       res.status(401).json({
         success: false,
         error: 'Authentication required.'
@@ -129,20 +120,15 @@ export const adminMiddleware = async (
       return;
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    // SECURITY: Check admin role from DATABASE, never from user_metadata
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
 
-    if (error || !user) {
-      res.status(401).json({
-        success: false,
-        error: 'Invalid or expired token.'
-      });
-      return;
-    }
-
-    // Check admin role
-    const role = user.user_metadata?.role || 'user';
-    if (role !== 'admin') {
+    if (error || !data || data.role !== 'admin') {
+      logger.warn(`[AdminMiddleware] Non-admin access attempt by user: ${userId}`);
       res.status(403).json({
         success: false,
         error: 'Admin access required.'
@@ -150,16 +136,12 @@ export const adminMiddleware = async (
       return;
     }
 
-    // Attach user information
-    req.user = {
-      id: user.id,
-      email: user.email,
-      role: role
-    };
+    // Set admin flag for downstream use
+    (req as any).isAdmin = true;
 
     next();
   } catch (error) {
-    console.error('[AdminMiddleware] Error:', error);
+    logger.error('[AdminMiddleware] Error:', error);
     res.status(500).json({
       success: false,
       error: 'Authentication failed.'
@@ -183,7 +165,17 @@ export const isAuthenticated = (req: AuthRequest): boolean => {
 
 /**
  * Check if user has specific role (helper function)
+ * IMPORTANT: For admin checks, always use adminMiddleware which verifies against DB
  */
-export const hasRole = (req: AuthRequest, role: string): boolean => {
-  return req.user?.role === role;
+export const hasRole = async (req: AuthRequest, role: string): Promise<boolean> => {
+  const userId = req.user?.id;
+  if (!userId) return false;
+  
+  const { data } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('user_id', userId)
+    .single();
+    
+  return data?.role === role;
 };

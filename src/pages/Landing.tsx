@@ -88,12 +88,11 @@ const Landing = () => {
             </div>
 
             {/* Main Heading */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4 sm:mb-6 leading-tight">
-              <span className="bg-gradient-to-r from-amber-600 via-rose-600 to-orange-600 bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4 sm:mb-6 leading-tight px-2">
+              <span className="bg-gradient-to-r from-amber-600 via-rose-600 to-orange-600 bg-clip-text text-transparent block">
                 Find Your Perfect
               </span>
-              <br />
-              <span className="text-gray-800">Life Partner</span>
+              <span className="text-gray-800 block">Life Partner</span>
             </h1>
 
             {/* Subtitle */}

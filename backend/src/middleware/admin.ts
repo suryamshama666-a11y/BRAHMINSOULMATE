@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { supabase } from '../config/supabase';
 import { asyncHandler } from '../utils/asyncHandler';
+import { logger } from '../utils/logger';
 
 /**
  * Middleware to check if user is admin
@@ -31,7 +32,7 @@ export const adminMiddleware = asyncHandler(async (req: Request, res: Response, 
     (req as any).user.isAdmin = true;
     next();
   } catch (error) {
-    console.error('Admin check failed:', error);
+    logger.error('Admin check failed:', error);
     res.status(500).json({ success: false, error: 'Failed to verify admin privileges' });
   }
 });

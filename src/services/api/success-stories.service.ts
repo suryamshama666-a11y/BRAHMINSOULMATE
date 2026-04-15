@@ -44,8 +44,8 @@ class SuccessStoriesService {
     // Create success story
     const { data, error } = await this.successStories
       .insert({
-        user_id_1: user.id,
-        user_id_2: storyData.partnerId,
+        user1_id: user.id,
+        user2_id: storyData.partnerId,
         title: storyData.title,
         story: storyData.story,
         marriage_date: storyData.marriageDate,
@@ -124,15 +124,17 @@ class SuccessStoriesService {
     const { data, error } = await this.successStories
       .select(`
         *,
-        user1:user_id_1 (
+        user1:user1_id (
           user_id,
-          full_name,
-          profile_picture
+          first_name,
+          last_name,
+          profile_picture_url
         ),
-        user2:user_id_2 (
+        user2:user2_id (
           user_id,
-          full_name,
-          profile_picture
+          first_name,
+          last_name,
+          profile_picture_url
         )
       `)
       .eq('status', 'approved')
@@ -140,7 +142,7 @@ class SuccessStoriesService {
       .limit(limit);
 
     if (error) throw error;
-    return (data || []).map(story => this.toSuccessStory(story));
+    return (data || []).map((story: any) => this.toSuccessStory(story));
   }
 
   // Get my success stories
@@ -151,22 +153,24 @@ class SuccessStoriesService {
     const { data, error } = await this.successStories
       .select(`
         *,
-        user1:user_id_1 (
+        user1:user1_id (
           user_id,
-          full_name,
-          profile_picture
+          first_name,
+          last_name,
+          profile_picture_url
         ),
-        user2:user_id_2 (
+        user2:user2_id (
           user_id,
-          full_name,
-          profile_picture
+          first_name,
+          last_name,
+          profile_picture_url
         )
       `)
-      .or(`user_id_1.eq.${user.id},user_id_2.eq.${user.id}`)
+      .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return (data || []).map(story => this.toSuccessStory(story));
+    return (data || []).map((story: any) => this.toSuccessStory(story));
   }
 
   // Admin: Get pending stories
@@ -188,24 +192,26 @@ class SuccessStoriesService {
     const { data, error } = await this.successStories
       .select(`
         *,
-        user1:user_id_1 (
+        user1:user1_id (
           user_id,
-          full_name,
+          first_name,
+          last_name,
           email,
-          profile_picture
+          profile_picture_url
         ),
-        user2:user_id_2 (
+        user2:user2_id (
           user_id,
-          full_name,
+          first_name,
+          last_name,
           email,
-          profile_picture
+          profile_picture_url
         )
       `)
       .eq('status', 'pending')
       .order('created_at', { ascending: true });
 
     if (error) throw error;
-    return (data || []).map(story => this.toSuccessStory(story));
+    return (data || []).map((story: any) => this.toSuccessStory(story));
   }
 
   // Admin: Approve story
@@ -273,7 +279,7 @@ class SuccessStoriesService {
     const { data: story, error: fetchError } = await this.successStories
       .select('*')
       .eq('id', storyId)
-      .or(`user_id_1.eq.${user.id},user_id_2.eq.${user.id}`)
+      .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
       .single();
 
     if (fetchError) throw fetchError;

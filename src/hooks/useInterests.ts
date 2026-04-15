@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from './useSupabaseAuth';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export interface UserInterest {
   id: string;
@@ -70,7 +71,7 @@ export const useInterests = () => {
       setMutualInterests(mutual);
 
     } catch (error) {
-      console.error('Error fetching interests:', error);
+      logger.error('Error fetching interests:', error);
       toast.error('Failed to load interests');
     } finally {
       setLoading(false);
@@ -136,7 +137,7 @@ export const useInterests = () => {
       toast.success('Interest added successfully!');
       return { success: true, interest: data };
     } catch (error: any) {
-      console.error('Error adding interest:', error);
+      logger.error('Error adding interest:', error);
       toast.error('Failed to add interest');
       return { success: false, error: error.message };
     }
@@ -161,7 +162,7 @@ export const useInterests = () => {
       toast.success('Interest removed successfully!');
       return { success: true };
     } catch (error: any) {
-      console.error('Error removing interest:', error);
+      logger.error('Error removing interest:', error);
       toast.error('Failed to remove interest');
       return { success: false, error: error.message };
     }
@@ -190,7 +191,7 @@ export const useInterests = () => {
       toast.success('Interest sent successfully!');
       return { success: true, interest: data };
     } catch (error: any) {
-      console.error('Error sending interest:', error);
+      logger.error('Error sending interest:', error);
       toast.error('Failed to send interest');
       return { success: false, error: error.message };
     }
@@ -216,7 +217,7 @@ export const useInterests = () => {
       toast.success(`Interest ${response} successfully!`);
       return { success: true, interest: data };
     } catch (error: any) {
-      console.error('Error responding to interest:', error);
+      logger.error('Error responding to interest:', error);
       toast.error('Failed to respond to interest');
       return { success: false, error: error.message };
     }

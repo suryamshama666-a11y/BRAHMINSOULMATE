@@ -1,12 +1,50 @@
 import express from 'express';
 import { supabase } from '../config/supabase';
-import { authMiddleware, AuthenticatedRequest } from '../middleware/auth';
+import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { asyncHandler } from '../utils/asyncHandler';
 import { profileViewLimiter } from '../middleware/rateLimiter';
+import { preventHardDelete } from '../middleware/softDelete';
 import { z } from 'zod';
 import { redis } from '../config/redis';
+import { logger } from '../utils/logger';
 
 const router = express.Router();
+
+/**
+ * Filter profile fields based on user permissions to prevent
+ * excessive TypeScript generic instantiation depth issues.
+ */
+function filterProfileFields(profile: any, showPrivate: boolean) {
+  if (!profile) return null;
+  
+  const publicFields = [
+    'id', 'first_name', 'last_name', 'display_name', 'age', 'gender', 'height', 'weight',
+    'marital_status', 'religion', 'caste', 'subcaste', 'gotra', 'mother_tongue', 'languages_known',
+    'education_level', 'education_details', 'occupation', 'company_name', 'annual_income',
+    'family_type', 'siblings', 'family_location', 'rashi', 'nakshatra', 'manglik',
+    'about_me', 'partner_preferences', 'hobbies', 'profile_visibility', 'verified',
+    'subscription_type', 'profile_picture_url', 'gallery_images', 'created_at', 'updated_at',
+    'last_active', 'profile_completion', 'verification_status', 'community'
+  ];
+  
+  const privateFields = [
+    'user_id', 'email', 'phone', 'bio', 'interests', 'notification_preferences', 'account_status'
+  ];
+  
+  const allowedFields = showPrivate ? [...publicFields, ...privateFields] : publicFields;
+  
+  const filtered: any = {};
+  for (const key of allowedFields) {
+    if (key in profile) {
+      filtered[key] = profile[key];
+    }
+  }
+  
+  return filtered;
+}
+
+// ✅ NEW: Prevent hard deletes on profiles
+router.use(preventHardDelete);
 
 // Validation schema for profile update
 const updateProfileSchema = z.object({
@@ -51,13 +89,14 @@ function sanitizeLikeInput(input: string): string {
 }
 
 // Get own profile - Returns full data
-router.get('/me', authMiddleware, asyncHandler(async (req: AuthenticatedRequest, res) => {
+router.get('/me', authMiddleware, asyncHandler(async (req: AuthRequest, res) => {
   const userId = req.user?.id;
   
   const { data, error } = await supabase
     .from('profiles')
-    .select('*')
+    .select('id, user_id, first_name, last_name, display_name, email, phone, age, gender, height, weight, marital_status, religion, caste, subcaste, gotra, mother_tongue, languages_known, education_level, education_details, occupation, company_name, annual_income, city, state, country, family_type, siblings, family_location, rashi, nakshatra, manglik, about_me, bio, partner_preferences, hobbies, interests, profile_visibility, verified, subscription_type, profile_picture_url, gallery_images, created_at, updated_at, last_active, profile_completion, notification_preferences, name_visibility, community, verification_status, account_status')
     .eq('user_id', userId)
+    .is('deleted_at', null)
     .single();
 
   if (error) {
@@ -71,7 +110,7 @@ router.get('/me', authMiddleware, asyncHandler(async (req: AuthenticatedRequest,
 }));
 
 // Get profile - with rate limiting and field restriction
-router.get('/:id', profileViewLimiter, authMiddleware, asyncHandler(async (req: AuthenticatedRequest, res) => {
+router.get('/:id', profileViewLimiter, authMiddleware, asyncHandler(async (req: AuthRequest, res) => {
   const { id } = req.params;
   const currentUserId = req.user?.id;
   
@@ -89,6 +128,7 @@ router.get('/:id', profileViewLimiter, authMiddleware, asyncHandler(async (req: 
     .from('profiles')
     .select('user_id, role')
     .eq('id', id)
+    .is('deleted_at', null)  // ✅ NEW: Filter out deleted profiles
     .single();
 
   if (checkError) {
@@ -101,30 +141,43 @@ router.get('/:id', profileViewLimiter, authMiddleware, asyncHandler(async (req: 
   const isOwner = profileCheck.user_id === currentUserId;
   const isAdmin = req.user?.role === 'admin';
 
-  // If owner or admin, return all fields. Otherwise, restrict to public fields.
-  const selectFields = (isOwner || isAdmin) ? '*' : `
+  // If owner or admin, return full safe field list. Otherwise, restrict to public fields.
+  const FULL_SAFE_FIELDS = `
+    id, user_id, first_name, last_name, display_name, email, phone, age, gender, height, weight,
+    marital_status, religion, caste, subcaste, gotra, mother_tongue, languages_known,
+    education_level, education_details, occupation, company_name, annual_income,
+    city, state, country, family_type, siblings, family_location, rashi, nakshatra, manglik,
+    about_me, bio, partner_preferences, hobbies, interests, profile_visibility, verified,
+    subscription_type, profile_picture_url, gallery_images, created_at, updated_at,
+    last_active, profile_completion, notification_preferences, verification_status, community, account_status
+  `;
+  const PUBLIC_FIELDS = `
     id, first_name, last_name, display_name, age, gender, height, weight,
     marital_status, religion, caste, subcaste, gotra, mother_tongue, languages_known,
     education_level, education_details, occupation, company_name, annual_income,
     family_type, siblings, family_location, rashi, nakshatra, manglik,
     about_me, partner_preferences, hobbies, profile_visibility, verified,
     subscription_type, profile_picture_url, gallery_images, created_at, updated_at,
-    last_active, profile_completion_percentage, verification_status
+    last_active, profile_completion, verification_status, community
   `;
+  const selectFields = (isOwner || isAdmin) ? FULL_SAFE_FIELDS : PUBLIC_FIELDS;
 
   const { data: profile, error: fetchError } = await supabase
     .from('profiles')
-    .select(selectFields)
+    .select('*')
     .eq('id', id)
+    .is('deleted_at', null)
     .single();
 
   if (fetchError) throw fetchError;
   
-  res.json({ success: true, profile });
+  // Apply field filtering manually based on permissions
+  const resultProfile = profile ? filterProfileFields(profile, isOwner || isAdmin) : null;
+  res.json({ success: true, profile: resultProfile });
 }));
 
 // Update profile - with validation
-router.put('/', authMiddleware, asyncHandler(async (req: AuthenticatedRequest, res) => {
+router.put('/', authMiddleware, asyncHandler(async (req: AuthRequest, res) => {
   const userId = req.user?.id;
   
   if (!userId) {
@@ -186,10 +239,10 @@ router.put('/', authMiddleware, asyncHandler(async (req: AuthenticatedRequest, r
       const keys = await redis.keys(cachePrefix);
       if (keys.length > 0) {
         await redis.del(...keys);
-        console.log(`[Cache] Invalidated ${keys.length} recommendation keys for user ${userId}`);
+        logger.info(`[Cache] Invalidated ${keys.length} recommendation keys for user ${userId}`);
       }
     } catch (cacheErr) {
-      console.error('[Redis Cache Invalidation Error]:', cacheErr);
+      logger.error('[Redis Cache Invalidation Error]:', cacheErr);
     }
   }
   
@@ -197,7 +250,7 @@ router.put('/', authMiddleware, asyncHandler(async (req: AuthenticatedRequest, r
 }));
 
 // Search profiles - with authorization, validation and sanitized inputs
-router.get('/search/all', authMiddleware, profileViewLimiter, asyncHandler(async (req: AuthenticatedRequest, res) => {
+router.get('/search/all', authMiddleware, profileViewLimiter, asyncHandler(async (req: AuthRequest, res) => {
   // Validate query parameters
   const validation = searchSchema.safeParse(req.query);
   
@@ -221,7 +274,8 @@ router.get('/search/all', authMiddleware, profileViewLimiter, asyncHandler(async
       subscription_type, profile_picture_url, gallery_images, created_at, updated_at,
       last_active, profile_completion_percentage, verification_status
     `)
-    .eq('caste', 'Brahmin'); // Strictly Brahmin-only platform
+    .eq('caste', 'Brahmin') // Strictly Brahmin-only platform
+    .is('deleted_at', null);  // ✅ NEW: Filter out deleted profiles
 
   if (gender) query = query.eq('gender', gender);
   
@@ -244,7 +298,7 @@ router.get('/search/all', authMiddleware, profileViewLimiter, asyncHandler(async
     query = query.eq('religion', sanitizedReligion);
   }
 
-  const { data: profiles, error } = await query.limit(limit);
+  const { data: profiles, error } = await (query.limit(limit) as any);
 
   if (error) throw error;
   

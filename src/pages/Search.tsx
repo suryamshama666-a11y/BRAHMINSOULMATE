@@ -14,6 +14,7 @@ import { Search as SearchIcon, Filter, Loader2, ChevronDown, ChevronUp, Save, Ma
 import { toast } from 'sonner';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import LocationSearch from '@/components/search/LocationSearch';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
@@ -246,40 +247,90 @@ export default function Search() {
     { id: '1', name: oppositeGender === 'female' ? 'Priya Sharma' : 'Raj Sharma', age: 26, gender: oppositeGender, height: 165, location: 'Mumbai, Maharashtra', education: 'MBA', profession: 'Software Engineer', religion: 'Hindu', caste: 'Brahmin', gotra: 'Bharadwaja', subscription_type: 'premium', profile_picture: 'https://randomuser.me/api/portraits/women/1.jpg' },
     { id: '2', name: oppositeGender === 'female' ? 'Anjali Patel' : 'Arjun Patel', age: 28, gender: oppositeGender, height: 162, location: 'Bangalore, Karnataka', education: 'M.Tech', profession: 'Data Scientist', religion: 'Hindu', caste: 'Brahmin', gotra: 'Kashyapa', subscription_type: 'premium', profile_picture: 'https://randomuser.me/api/portraits/women/2.jpg' },
     { id: '3', name: oppositeGender === 'female' ? 'Kavya Iyer' : 'Karthik Iyer', age: 25, gender: oppositeGender, height: 160, location: 'Chennai, Tamil Nadu', education: 'CA', profession: 'Chartered Accountant', religion: 'Hindu', caste: 'Brahmin', gotra: 'Atri', subscription_type: 'free', profile_picture: `https://randomuser.me/api/portraits/${oppositeGender === 'female' ? 'women' : 'men'}/3.jpg` },
-    { id: '4', name: oppositeGender === 'female' ? 'Rohini Gupta' : 'Rohit Gupta', age: 30, gender: oppositeGender, height: 175, location: 'Delhi, NCR', education: 'MBA', profession: 'Marketing Manager', religion: 'Hindu', caste: 'Brahmin', gotra: 'Vasishtha', subscription_type: 'premium', profile_picture: `https://randomuser.me/api/portraits/${oppositeGender === 'female' ? 'women' : 'men'}/4.jpg` },
-    { id: '5', name: oppositeGender === 'female' ? 'Vidya Singh' : 'Vikram Singh', age: 29, gender: oppositeGender, height: 178, location: 'Jaipur, Rajasthan', education: 'B.Tech', profession: 'Software Developer', religion: 'Hindu', caste: 'Brahmin', gotra: 'Gautama', subscription_type: 'premium', profile_picture: `https://randomuser.me/api/portraits/${oppositeGender === 'female' ? 'women' : 'men'}/5.jpg` },
-    { id: '6', name: oppositeGender === 'female' ? 'Deepika Nair' : 'Deepak Nair', age: 27, gender: oppositeGender, height: 164, location: 'Kochi, Kerala', education: 'MBBS', profession: 'Doctor', religion: 'Hindu', caste: 'Brahmin', gotra: 'Jamadagni', subscription_type: 'premium', profile_picture: `https://randomuser.me/api/portraits/${oppositeGender === 'female' ? 'women' : 'men'}/6.jpg` },
   ], [oppositeGender]);
 
-  const loadProfiles = useCallback(() => {
+  /**
+   * Fetch profiles from the real backend API.
+   * Falls back to mock data only if the backend is unreachable.
+   */
+  const fetchProfilesFromAPI = useCallback(async (filters?: Record<string, unknown>) => {
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error('Please log in to search profiles');
+        setProfiles(mockProfiles);
+        setTotal(mockProfiles.length);
+        setLoading(false);
+        return;
+      }
+
+      const params = new URLSearchParams();
+      params.set('gender', oppositeGender);
+      params.set('min_age', String(filters?.minAge ?? ageRange[0]));
+      params.set('max_age', String(filters?.maxAge ?? ageRange[1]));
+      params.set('limit', '50');
+      if (filters?.city) params.set('city', String(filters.city));
+
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${apiUrl}/api/profile/search/all?${params.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Search API returned ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.profiles) {
+        // Transform backend profile format to Search component format
+        const transformed: SearchProfile[] = data.profiles.map((p: Record<string, unknown>) => ({
+          id: p.id as string,
+          name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Profile',
+          age: (p.age as number) || 25,
+          gender: (p.gender as string) || oppositeGender,
+          height: (p.height as number) || 165,
+          location: `${p.city || ''}, ${p.state || ''}`.replace(/^, |, $/g, '') || 'India',
+          education: (p.education_level as string) || 'Not specified',
+          profession: (p.occupation as string) || 'Professional',
+          religion: (p.religion as string) || 'Hindu',
+          caste: (p.caste as string) || 'Brahmin',
+          gotra: (p.gotra as string) || '',
+          subscription_type: (p.subscription_type as string) || 'free',
+          profile_picture: (p.profile_picture_url as string) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
+        }));
+        setProfiles(transformed);
+        setTotal(data.count || transformed.length);
+      } else {
+        // Fallback to mock data if API returns empty
+        setProfiles(mockProfiles);
+        setTotal(mockProfiles.length);
+      }
+    } catch (error) {
+      console.error('Search API error, falling back to demo data:', error);
       setProfiles(mockProfiles);
       setTotal(mockProfiles.length);
+      toast.error('Using demo profiles — backend unavailable');
+    } finally {
       setLoading(false);
-    }, 500);
-  }, [mockProfiles]);
+    }
+  }, [oppositeGender, ageRange, mockProfiles]);
 
+  // Load profiles on mount
   useEffect(() => {
-    loadProfiles();
-  }, [loadProfiles]);
+    fetchProfilesFromAPI();
+  }, [fetchProfilesFromAPI]);
 
   const searchProfiles = () => {
-    setLoading(true);
-    
-    setTimeout(() => {
-      let filtered = [...mockProfiles];
-      filtered = filtered.filter(p => p.age >= ageRange[0] && p.age <= ageRange[1]);
-      filtered = filtered.filter(p => p.height >= heightRange[0] && p.height <= heightRange[1]);
-      if (verifiedOnly) filtered = filtered.filter(p => p.subscription_type === 'premium');
-      if (withPhotosOnly) filtered = filtered.filter(p => p.profile_picture);
-      if (selectedGotras.length > 0) filtered = filtered.filter(p => selectedGotras.includes(p.gotra));
-      
-      setProfiles(filtered);
-      setTotal(filtered.length);
-      setLoading(false);
-      toast.success(`Found ${filtered.length} matching profiles`);
-    }, 500);
+    fetchProfilesFromAPI({
+      minAge: ageRange[0],
+      maxAge: ageRange[1],
+      city: selectedCountries.length > 0 ? selectedCountries[0] : undefined,
+    });
   };
 
   const resetFilters = () => {
@@ -300,8 +351,7 @@ export default function Search() {
     setIncomeRange('');
     setManglikStatus('any');
     setSelectedRashi('');
-    setProfiles(mockProfiles);
-    setTotal(mockProfiles.length);
+    fetchProfilesFromAPI();
   };
 
   const handleLocationSearch = (params: { location: string; distance: number; useCurrentLocation: boolean }) => {

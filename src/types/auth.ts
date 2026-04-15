@@ -5,6 +5,7 @@ export interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
   subscription: UserSubscription | null;
+  isAuthenticated: boolean;
   isPremium: boolean;
   loading: boolean;
   error: AuthError | null;

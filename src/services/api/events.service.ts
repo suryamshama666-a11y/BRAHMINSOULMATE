@@ -39,8 +39,8 @@ class EventsService {
     const { data, error } = await supabase
       .from('events')
       .select('*')
-      .gte('date', new Date().toISOString())
-      .order('date', { ascending: true });
+      .gte('event_date', new Date().toISOString())
+      .order('event_date', { ascending: true });
 
     if (error) throw error;
 
@@ -136,7 +136,8 @@ class EventsService {
     }
 
     // Check if event date has passed
-    if (new Date(event.date) < new Date()) {
+    const eventDate = (event as any).event_date || (event as any).date;
+    if (new Date(eventDate) < new Date()) {
       throw new Error('Cannot register for past events');
     }
 

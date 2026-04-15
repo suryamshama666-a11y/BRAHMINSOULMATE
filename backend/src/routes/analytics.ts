@@ -1,9 +1,10 @@
 import express from 'express';
 import { supabase } from '../config/supabase';
-import { authMiddleware, AuthenticatedRequest } from '../middleware/auth';
+import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { adminMiddleware } from '../middleware/admin';
 import { asyncHandler } from '../utils/asyncHandler';
 import { apiLimiter } from '../middleware/rateLimiter';
+import { logger } from '../utils/logger';
 
 const router = express.Router();
 
@@ -52,7 +53,7 @@ router.post('/track', apiLimiter, asyncHandler(async (req, res) => {
     });
   } catch (error) {
     // Don't fail loudly - analytics shouldn't break the app
-    console.error('Analytics tracking error:', error);
+    logger.error('Analytics tracking error:', error);
     res.json({
       success: true,
       tracked: 0

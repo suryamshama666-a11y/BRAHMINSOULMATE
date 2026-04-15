@@ -3,6 +3,7 @@
  */
 
 import { supabase } from '../config/supabase';
+import { logger } from '../utils/logger';
 
 export class SmartNotifications {
   private static DAILY_LIMIT = 3;
@@ -125,7 +126,7 @@ export class SmartNotifications {
 
       return true;
     } catch (error) {
-      console.error('Error sending notification:', error);
+      logger.error('Error sending notification:', error);
       return false;
     }
   }

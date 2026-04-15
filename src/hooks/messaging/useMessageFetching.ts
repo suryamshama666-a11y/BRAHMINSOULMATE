@@ -29,8 +29,7 @@ export const useMessageFetching = () => {
         receiver_id: msg.receiver_id,
         content: msg.content,
         message_type: (msg.message_type as RealTimeMessage['message_type']) || 'text',
-        media_url: msg.media_url || undefined,
-        read_at: msg.read_at || undefined,
+        media_url: msg.attachment_url || undefined,
         created_at: msg.created_at
       }));
       

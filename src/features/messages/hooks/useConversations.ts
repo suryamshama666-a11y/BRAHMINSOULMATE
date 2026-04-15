@@ -237,7 +237,7 @@ export function useConversations() {
           .from('shortlists')
           .select('*')
           .eq('user_id', user.id)
-          .eq('target_profile_id', partnerId)
+          .eq('shortlist_user_id', partnerId)
           .maybeSingle();
 
         if (checkError) throw checkError;

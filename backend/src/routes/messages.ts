@@ -2,6 +2,7 @@ import express from 'express';
 import { supabase } from '../config/supabase';
 import { authMiddleware } from '../middleware/auth';
 import { messageLimiter } from '../middleware/rateLimiter';
+import { softDelete, filterDeleted } from '../middleware/softDelete';
 
 const router = express.Router();
 
@@ -21,7 +22,7 @@ interface Conversation {
 router.post('/send', authMiddleware, messageLimiter, async (req, res) => {
   try {
     const senderId = req.user?.id;
-    const { receiverId, content, type = 'text' } = req.body;
+    const { receiverId, content, type = 'text', attachmentUrl = null } = req.body;
     
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -47,7 +48,8 @@ router.post('/send', authMiddleware, messageLimiter, async (req, res) => {
         sender_id: senderId,
         receiver_id: receiverId,
         content,
-        type,
+        message_type: type,
+        attachment_url: attachmentUrl,
         read: false
       })
       .select()
@@ -82,6 +84,7 @@ router.get('/conversation/:userId', authMiddleware, async (req, res) => {
       .from('messages')
       .select('*')
       .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${currentUserId})`)
+      .is('deleted_at', null)  // ✅ NEW: Filter out deleted messages
       .order('created_at', { ascending: true })
       .limit(limit);
 
@@ -93,7 +96,8 @@ router.get('/conversation/:userId', authMiddleware, async (req, res) => {
       .update({ read: true })
       .eq('sender_id', userId)
       .eq('receiver_id', currentUserId)
-      .eq('read', false);
+      .eq('read', false)
+      .is('deleted_at', null);  // ✅ NEW: Only update non-deleted messages
 
     res.json({ success: true, messages: data });
   } catch (error) {
@@ -109,8 +113,9 @@ router.get('/conversations', authMiddleware, async (req, res) => {
     // 1. Get all unique conversation partners in one call
     const { data: partnersData, error: partnersError } = await supabase
       .from('messages')
-      .select('sender_id, receiver_id, created_at, content, type, read')
+      .select('sender_id, receiver_id, created_at, content, message_type, read')
       .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+      .is('deleted_at', null)  // ✅ NEW: Filter out deleted messages
       .order('created_at', { ascending: false });
 
     if (partnersError) throw partnersError;
@@ -191,14 +196,27 @@ router.delete('/:messageId', authMiddleware, async (req, res) => {
     const userId = req.user?.id;
     const { messageId } = req.params;
 
-    const { error } = await supabase
+    // SECURITY FIX: Verify ownership BEFORE delete (was reversed - IDOR vulnerability)
+    const { data: message, error: fetchError } = await supabase
       .from('messages')
-      .delete()
+      .select('id, sender_id')
       .eq('id', messageId)
-      .eq('sender_id', userId);
+      .is('deleted_at', null)
+      .single();
 
+    if (fetchError || !message) {
+      return res.status(404).json({ success: false, error: 'Message not found' });
+    }
+
+    if (message.sender_id !== userId) {
+      return res.status(403).json({ success: false, error: 'You can only delete your own messages' });
+    }
+
+    // Now safe to soft delete — ownership verified
+    const { error } = await softDelete('messages', messageId);
     if (error) throw error;
-    res.json({ success: true });
+
+    res.json({ success: true, message: 'Message deleted' });
   } catch (error) {
     res.status(500).json({ success: false, error: getErrorMessage(error) });
   }

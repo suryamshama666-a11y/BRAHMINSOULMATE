@@ -57,11 +57,12 @@ export const EnhancedChatPanel: React.FC<EnhancedChatPanelProps> = ({
 
   useEffect(() => {
     // Load reactions for all messages
-    const messageIds = conversationMessages.map(msg => msg.id);
-    if (messageIds.length > 0) {
-      loadConversationReactions(messageIds);
-    }
-  }, [conversationMessages, loadConversationReactions]);
+    // TODO: Implement reaction loading
+    // const messageIds = conversationMessages.map(msg => msg.id);
+    // if (messageIds.length > 0) {
+    //   loadConversationReactions(messageIds);
+    // }
+  }, [conversationMessages]);
 
   useEffect(() => {
     // Mark messages as read when viewing conversation

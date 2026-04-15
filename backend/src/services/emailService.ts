@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { supabase } from '../config/supabase';
+import { logger } from '../utils/logger';
 
 interface EmailTemplate {
   subject: string;
@@ -45,7 +46,7 @@ class EmailService {
       
       return true;
     } catch (error) {
-      console.error('Email sending failed:', error);
+      logger.error('Email sending failed:', error);
       return false;
     }
   }
@@ -344,7 +345,7 @@ class EmailService {
           sent_at: new Date().toISOString()
         });
     } catch (error) {
-      console.error('Failed to log email:', error);
+      logger.error('Failed to log email:', error);
     }
   }
 }

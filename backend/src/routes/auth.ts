@@ -3,6 +3,7 @@ import { supabase } from '../config/supabase';
 import { asyncHandler } from '../utils/asyncHandler';
 import { authLimiter } from '../middleware/rateLimiter';
 import { z } from 'zod';
+import { logger } from '../utils/logger';
 
 const router = express.Router();
 
@@ -51,36 +52,11 @@ router.post('/register', authLimiter, asyncHandler(async (req: Request, res: Res
 
   if (error) throw error;
 
-  if (data.user) {
-    try {
-      // Create an initial profile record for the new user
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          user_id: data.user.id,
-          first_name: name.split(' ')[0],
-          last_name: name.split(' ').slice(1).join(' ') || '',
-          display_name: name,
-          email: email,
-          role: 'user', // Default role
-          account_status: 'active',
-          profile_completion: 10 // Basic progress for name/email
-        });
+  if (error) throw error;
 
-      if (profileError) {
-        // If profile creation fails, we should ideally rollback the Auth user
-        // But since Supabase doesn't support distributed transactions easily here,
-        // we'll log it and let the user try to 'complete' their profile later or cleanup
-        console.error('Profile creation failed for user:', data.user.id, profileError);
-        // Optionally: delete the auth user to allow retry
-        await supabase.auth.admin.deleteUser(data.user.id);
-        return res.status(500).json({ success: false, error: 'Failed to create user profile. Please try again.' });
-      }
-    } catch (err) {
-      console.error('Unexpected error during profile creation:', err);
-      return res.status(500).json({ success: false, error: 'An unexpected error occurred. Please try again.' });
-    }
-  }
+  // Note: Profile creation is handled automatically and securely by the robust
+  // `handle_new_user` database trigger running on `auth.users` insert.
+  
   
   res.status(201).json({ 
     success: true, 

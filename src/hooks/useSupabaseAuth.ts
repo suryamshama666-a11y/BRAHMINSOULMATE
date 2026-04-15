@@ -54,7 +54,7 @@ export const useSupabaseAuth = () => {
         });
       })
       .catch((error) => {
-        console.error('Failed to get session:', error);
+        logger.error('Failed to get session:', error);
         setAuthState({
           user: null,
           session: null,
@@ -88,7 +88,7 @@ export const useSupabaseAuth = () => {
 
       return { user: data.user, error: null };
     } catch (error: any) {
-      console.error('Sign up error:', error);
+      logger.error('Sign up error:', error);
       return { user: null, error: error.message };
     }
   };
@@ -103,7 +103,7 @@ export const useSupabaseAuth = () => {
       if (error) throw error;
       return { user: data.user, error: null };
     } catch (error: any) {
-      console.error('Sign in error:', error);
+      logger.error('Sign in error:', error);
       return { user: null, error: error.message };
     }
   };
@@ -113,7 +113,7 @@ export const useSupabaseAuth = () => {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     } catch (error: any) {
-      console.error('Sign out error:', error);
+      logger.error('Sign out error:', error);
       toast.error('Error signing out');
     }
   };
@@ -128,7 +128,7 @@ export const useSupabaseAuth = () => {
       toast.success('Password reset email sent');
       return { error: null };
     } catch (error: any) {
-      console.error('Reset password error:', error);
+      logger.error('Reset password error:', error);
       return { error: error.message };
     }
   };

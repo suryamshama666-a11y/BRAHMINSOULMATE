@@ -32,11 +32,9 @@ class MessagesService {
         sender_id: user.id,
         receiver_id: receiverId,
         content,
-        status: 'sent',
         message_type: 'text',
-        media_url: null,
-        read_at: null
-      } as unknown as Database['public']['Tables']['messages']['Insert'])
+        attachment_url: null,
+      } as any)
       .select()
       .single();
 
@@ -88,7 +86,7 @@ class MessagesService {
         });
       }
 
-      if (msg.receiver_id === user.id && msg.status !== 'read') {
+      if (msg.receiver_id === user.id && !msg.read_at) {
         const conv = conversationsMap.get(partnerId)!;
         conv.unread_count++;
       }
@@ -105,12 +103,11 @@ class MessagesService {
     const { error } = await supabase
       .from('messages')
       .update({
-        status: 'read',
         read_at: new Date().toISOString()
       })
       .eq('sender_id', otherUserId)
       .eq('receiver_id', user.id)
-      .neq('status', 'read');
+      .is('read_at', null);
 
     if (error) throw error;
   }
@@ -199,7 +196,7 @@ class MessagesService {
       .from('messages')
       .select('*', { count: 'exact', head: true })
       .eq('receiver_id', user.id)
-      .neq('status', 'read');
+      .is('read_at', null);
 
     if (error) throw error;
     return count || 0;

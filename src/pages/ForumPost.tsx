@@ -230,7 +230,7 @@ export default function ForumPost() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-3">
-                      <UserAvatar userId={reply.author_id} size="sm" showName />
+                      <UserAvatar userId={reply.user_id} size="sm" showName />
                       <p className="text-xs text-gray-500">
                         {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
                       </p>
@@ -269,7 +269,7 @@ export default function ForumPost() {
                   <CardContent className="p-3">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center space-x-2">
-                        <UserAvatar userId={nestedReply.author_id} size="sm" showName />
+                        <UserAvatar userId={nestedReply.user_id} size="sm" showName />
                         <p className="text-xs text-gray-500">
                           {formatDistanceToNow(new Date(nestedReply.created_at), { addSuffix: true })}
                         </p>

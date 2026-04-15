@@ -16,6 +16,7 @@ interface ChatHeaderProps {
   onBack?: () => void;
   onPhoneCall?: () => void;
   onVideoCall?: () => void;
+  onViewProfile?: () => void;
 }
 
 // Extended user profile interface

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as Sentry from '@sentry/node';
+import { logger } from '../utils/logger';
 
 interface AppError extends Error {
   statusCode?: number;
@@ -13,21 +14,22 @@ export const errorHandler = (
 ) => {
   const statusCode = err.statusCode || 500;
   
-  // Capture the error in Sentry
+  // Capture the error in Sentry (without PII from request body)
   if (statusCode >= 500) {
     Sentry.captureException(err, {
       extra: {
         url: req.originalUrl,
         method: req.method,
-        body: req.body,
-        params: req.params,
-        query: req.query,
+        correlationId: (req as any).correlationId,
+        // SECURITY: Never send req.body to Sentry — may contain passwords, PII, payment data
+        queryKeys: Object.keys(req.query || {}),
+        paramKeys: Object.keys(req.params || {}),
       }
     });
   }
 
   // Log to console for local monitoring
-  console.error(`[SERVER ERROR] ${req.method} ${req.originalUrl}:`, err);
+  logger.error(`[SERVER ERROR] ${req.method} ${req.originalUrl}:`, err);
 
   // Mask sensitive messages in production
   let message = err.message || 'Internal Server Error';

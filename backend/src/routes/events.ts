@@ -1,8 +1,12 @@
 import express from 'express';
 import { supabase } from '../config/supabase';
 import { authMiddleware } from '../middleware/auth';
+import { preventHardDelete } from '../middleware/softDelete';
 
 const router = express.Router();
+
+// ✅ NEW: Prevent hard deletes on events
+router.use(preventHardDelete);
 
 // Helper function to get error message
 const getErrorMessage = (error: unknown): string => {
@@ -14,8 +18,9 @@ router.get('/', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('events')
-      .select('*')
+      .select('id, title, description, event_date, capacity, location, image_url, created_at')
       .gte('event_date', new Date().toISOString())
+      .is('deleted_at', null)  // ✅ NEW: Filter out deleted events
       .order('event_date', { ascending: true });
 
     if (error) throw error;

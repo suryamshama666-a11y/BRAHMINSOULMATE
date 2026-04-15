@@ -21,13 +21,13 @@ type PhotoManagerProps = {
   maxPhotos?: number;
 };
 
-export default function PhotoManager({ 
-  photos, 
-  onUpload, 
-  onDelete, 
-  onSetProfilePicture, 
-  _onReorder,
-  maxPhotos = 10 
+export default function PhotoManager({
+  photos,
+  onUpload,
+  onDelete,
+  onSetProfilePicture,
+  onReorder,
+  maxPhotos = 10
 }: PhotoManagerProps) {
   const [_draggedPhoto, _setDraggedPhoto] = useState<string | null>(null);
 

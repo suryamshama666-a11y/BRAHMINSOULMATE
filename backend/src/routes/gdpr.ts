@@ -5,16 +5,17 @@
 
 import express from 'express';
 import { supabase } from '../config/supabase';
-import { authMiddleware, AuthenticatedRequest } from '../middleware/auth';
+import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { asyncHandler } from '../utils/asyncHandler';
 import { apiLimiter } from '../middleware/rateLimiter';
+import { logger } from '../utils/logger';
 
 const router = express.Router();
 
 /**
  * Export user data (GDPR Right to Data Portability)
  */
-router.get('/export-data', authMiddleware, apiLimiter, asyncHandler(async (req: AuthenticatedRequest, res) => {
+router.get('/export-data', authMiddleware, apiLimiter, asyncHandler(async (req: AuthRequest, res) => {
   const userId = req.user?.id;
 
   if (!userId) {
@@ -25,14 +26,14 @@ router.get('/export-data', authMiddleware, apiLimiter, asyncHandler(async (req: 
   }
 
   try {
-    // Collect all user data from various tables
+    // Collect all user data from various tables — explicit fields only, no SELECT *
     const [profile, messages, matches, favorites, subscriptions, notifications] = await Promise.all([
-      supabase.from('profiles').select('*').eq('user_id', userId).single(),
-      supabase.from('messages').select('*').or(`sender_id.eq.${userId},receiver_id.eq.${userId}`),
-      supabase.from('matches').select('*').or(`user1_id.eq.${userId},user2_id.eq.${userId}`),
-      supabase.from('favorites').select('*').eq('user_id', userId),
-      supabase.from('subscriptions').select('*').eq('user_id', userId),
-      supabase.from('notifications').select('*').eq('user_id', userId)
+      supabase.from('profiles').select('id, first_name, last_name, email, age, gender, city, state, country, education_level, occupation, gotra, community, bio, interests, languages, created_at').eq('user_id', userId).single(),
+      supabase.from('messages').select('id, content, created_at, read').or(`sender_id.eq.${userId},receiver_id.eq.${userId}`),
+      supabase.from('matches').select('id, status, created_at').or(`user1_id.eq.${userId},user2_id.eq.${userId}`),
+      supabase.from('favorites').select('id, favorited_user_id, created_at').eq('user_id', userId),
+      supabase.from('subscriptions').select('id, plan, status, current_period_start, current_period_end, created_at').eq('user_id', userId),
+      supabase.from('notifications').select('id, type, title, message, read, created_at').eq('user_id', userId)
     ]);
 
     const userData = {
@@ -51,7 +52,7 @@ router.get('/export-data', authMiddleware, apiLimiter, asyncHandler(async (req: 
       data: userData
     });
   } catch (error) {
-    console.error('Data export error:', error);
+    logger.error('Data export error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to export data'
@@ -62,7 +63,7 @@ router.get('/export-data', authMiddleware, apiLimiter, asyncHandler(async (req: 
 /**
  * Delete user account (GDPR Right to Erasure)
  */
-router.delete('/delete-account', authMiddleware, apiLimiter, asyncHandler(async (req: AuthenticatedRequest, res) => {
+router.delete('/delete-account', authMiddleware, apiLimiter, asyncHandler(async (req: AuthRequest, res) => {
   const userId = req.user?.id;
 
   if (!userId) {
@@ -92,7 +93,7 @@ router.delete('/delete-account', authMiddleware, apiLimiter, asyncHandler(async 
       message: 'Account deleted successfully'
     });
   } catch (error) {
-    console.error('Account deletion error:', error);
+    logger.error('Account deletion error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to delete account'
@@ -131,7 +132,7 @@ router.post('/request-deletion', apiLimiter, asyncHandler(async (req, res) => {
       message: 'Deletion request received. Our team will review it shortly.'
     });
   } catch (error) {
-    console.error('Deletion request error:', error);
+    logger.error('Deletion request error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to process deletion request'

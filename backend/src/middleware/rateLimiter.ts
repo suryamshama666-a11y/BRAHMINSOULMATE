@@ -65,7 +65,7 @@ export const interestLimiter = rateLimit({
 // General API rate limiter
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 500, // Increased for general usage
+  max: 100, // Strictly limited global API usage
   message: 'Too many requests, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
@@ -75,7 +75,7 @@ export const apiLimiter = rateLimit({
 // Strict rate limiter for profile views (prevent scraping)
 export const profileViewLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 100, // 100 views per minute
+  max: 10, // Strictly limited to 10 views per minute to prevent scraping
   message: 'Too many profile views, please slow down',
   standardHeaders: true,
   legacyHeaders: false,

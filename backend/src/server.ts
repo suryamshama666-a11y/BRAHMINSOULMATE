@@ -10,6 +10,15 @@ import cookieParser from "cookie-parser";
 import * as Sentry from "@sentry/node";
 import { nodeProfilingIntegration } from "@sentry/profiling-node";
 import { scrubPII } from "./utils/scrub";
+import { logger } from "./utils/logger";
+
+// Load environment variables from .env.local first, then .env
+dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
+dotenv.config();
+
+// Debug: Log environment variable status (without exposing values)
+console.log('[ENV] SUPABASE_URL:', process.env.SUPABASE_URL ? '✅ SET' : '❌ NOT SET');
+console.log('[ENV] SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? '✅ SET' : '❌ NOT SET');
 
 // Import routes
 import authRoutes from "./routes/auth";
@@ -32,12 +41,17 @@ import healthRoutes from './routes/health';
 // Import middleware
 import { errorHandler } from "./middleware/errorHandler";
 import { sanitizeInput } from "./middleware/sanitize";
+import { csrfProtection, setCsrfToken } from "./middleware/csrf";
+import { requestLogger } from "./middleware/requestLogger";
+import { apiVersioning } from "./middleware/apiVersioning";
+import { preventHardDelete } from "./middleware/softDelete";
 
 // Import config
 import { supabase } from "./config/supabase";
 
 // Import services
 import { cronService } from "./services/cron.service";
+import { circuitBreakerService } from "./services/circuitBreaker";
 
 // Database health check
 const checkDatabaseHealth = async (): Promise<boolean> => {
@@ -46,7 +60,7 @@ const checkDatabaseHealth = async (): Promise<boolean> => {
     const { data, error } = await supabase.rpc('ping');
     return !error;
   } catch (error) {
-    console.error('❌ Database health check failed:', error);
+    logger.error('❌ Database health check failed:', error);
     return false;
   }
 };
@@ -56,21 +70,35 @@ const PORT = process.env.PORT || 3001;
 
 // Environment validation for production safety
 function validateEnvironment() {
-  const requiredVars = [
-    'VITE_SUPABASE_URL',
-    'VITE_SUPABASE_ANON_KEY',
-    'SUPABASE_SERVICE_ROLE_KEY',
-    'RAZORPAY_KEY_ID',
-    'RAZORPAY_KEY_SECRET',
-  ];
+  // Check if we're in mock mode (missing Supabase credentials)
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const isMockMode = !supabaseUrl || !supabaseKey;
 
-  const missing = requiredVars.filter(varName => !process.env[varName]);
+  if (isMockMode) {
+    logger.warn('⚠️  Running in MOCK MODE - Supabase credentials not configured');
+    logger.warn('💡 Some features will be limited. Set up Supabase credentials for full functionality.');
+    return;
+  }
 
-  if (missing.length > 0) {
-    console.error('❌ CRITICAL: Missing required environment variables:');
-    missing.forEach(varName => console.error(`   - ${varName}`));
-    console.error('\n💡 Check your .env file and ensure all required variables are set.');
-    process.exit(1);
+  // In production mode, validate all required vars
+  if (process.env.NODE_ENV === 'production') {
+    const requiredVars = [
+      'VITE_SUPABASE_URL',
+      'VITE_SUPABASE_ANON_KEY',
+      'SUPABASE_SERVICE_ROLE_KEY',
+      'RAZORPAY_KEY_ID',
+      'RAZORPAY_KEY_SECRET',
+    ];
+
+    const missing = requiredVars.filter(varName => !process.env[varName]);
+
+    if (missing.length > 0) {
+      logger.error('❌ CRITICAL: Missing required environment variables for production:');
+      missing.forEach(varName => logger.error(`   - ${varName}`));
+      logger.error('\n💡 Check your .env file and ensure all required variables are set.');
+      process.exit(1);
+    }
   }
 
   // Additional validation for URLs
@@ -78,12 +106,12 @@ function validateEnvironment() {
   for (const varName of urlVars) {
     const value = process.env[varName];
     if (value && !value.startsWith('http')) {
-      console.error(`❌ CRITICAL: ${varName} must be a valid URL starting with http/https`);
+      logger.error(`❌ CRITICAL: ${varName} must be a valid URL starting with http/https`);
       process.exit(1);
     }
   }
 
-  console.log('✅ Environment validation passed');
+  logger.info('✅ Environment validation passed');
 }
 
 // Validate environment on startup (skip in test mode)
@@ -142,6 +170,19 @@ app.use(
 );
 
 app.use(cookieParser());
+
+// ✅ NEW: CSRF Protection
+app.use(setCsrfToken);
+app.use(csrfProtection);
+
+// ✅ NEW: Request Correlation IDs
+app.use(requestLogger);
+
+// ✅ NEW: API Versioning
+app.use(apiVersioning);
+
+// ✅ NEW: Soft Delete Prevention
+app.use(preventHardDelete);
 
 // CORS configuration
 const allowedOrigins = [
@@ -229,6 +270,11 @@ app.get("/health", async (req, res) => {
   res.status(health.status === "OK" ? 200 : (health.status === "DEGRADED" ? 206 : 500)).json(health);
 });
 
+// ✅ NEW: Circuit Breaker Status Endpoint
+app.get("/health/circuit-breakers", (req, res) => {
+  res.json(circuitBreakerService.getSummary());
+});
+
 // Readiness probe (checks basic envs and CORS origin)
 app.get("/ready", (req, res) => {
   const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8080";
@@ -292,7 +338,7 @@ app.use(errorHandler);
 let shutdownPromise: Promise<void> | null = null;
 
 const shutdown = async () => {
-  console.log("🔄 Shutting down gracefully...");
+  logger.info("🔄 Shutting down gracefully...");
   
   if (shutdownPromise) {
     await shutdownPromise;
@@ -305,7 +351,7 @@ const shutdown = async () => {
     
     // Give time for existing requests to complete
     setTimeout(() => {
-      console.log("⏰ Shutdown timeout - forcing exit");
+      logger.warn("⏰ Shutdown timeout - forcing exit");
       resolve();
     }, 30000); // 30 second timeout
   });
@@ -313,7 +359,7 @@ const shutdown = async () => {
   shutdownPromise = shutdown;
   await shutdownPromise;
   
-  console.log("✅ Shutdown complete");
+  logger.info("✅ Shutdown complete");
   process.exit(0);
 };
 
@@ -324,9 +370,9 @@ process.on("SIGQUIT", shutdown);
 // Only start server if not in test environment
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📱 Environment: ${process.env.NODE_ENV || "development"}`);
-    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+    logger.info(`🚀 Server running on port ${PORT}`);
+    logger.info(`📱 Environment: ${process.env.NODE_ENV || "development"}`);
+    logger.info(`🔗 Health check: http://localhost:${PORT}/health`);
 
     // Start cron jobs
     cronService.start();

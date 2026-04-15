@@ -16,7 +16,7 @@ router.post('/:id/approve', authMiddleware, adminMiddleware, async (req, res) =>
     const { id } = req.params;
     const { error } = await supabase
       .from('success_stories')
-      .update({ approved: true })
+      .update({ status: 'approved', approved_at: new Date().toISOString() })
       .eq('id', id);
 
     if (error) throw error;
@@ -48,7 +48,7 @@ router.get('/', async (req, res) => {
     const { data, error } = await supabase
       .from('success_stories')
       .select('*')
-      .eq('approved', true)
+      .eq('status', 'approved')
       .order('created_at', { ascending: false });
 
     if (error) throw error;

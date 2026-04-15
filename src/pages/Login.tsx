@@ -82,8 +82,8 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-orange-50 via-rose-50 to-amber-50">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <div className="min-h-screen w-full flex items-start sm:items-center justify-center pt-[100px] pb-4 sm:py-8 px-3 sm:px-4 relative bg-gradient-to-br from-orange-50 via-rose-50 to-amber-50">
+      <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-gradient-to-br from-orange-200/40 to-rose-200/40 rounded-full blur-3xl" />
         <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-gradient-to-br from-amber-200/40 to-orange-200/40 rounded-full blur-3xl" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-rose-100/30 to-orange-100/30 rounded-full blur-3xl" />
@@ -99,20 +99,20 @@ const Login = () => {
         </svg>
       </div>
       
-      <Card className="w-full max-w-md border-2 border-primary/20 shadow-2xl relative z-10 backdrop-blur-sm bg-white/90">
-        <CardHeader className="text-center bg-gradient-to-r from-orange-50 to-rose-50 border-b border-primary/20">
-          <div className="flex items-center justify-center mb-4">
-            <Heart className="h-8 w-8 text-primary mr-2" />
-            <h1 className="text-2xl font-serif font-bold text-primary">
+      <Card className="w-full max-w-md border-2 border-primary/20 shadow-2xl relative z-10 backdrop-blur-sm bg-white/90 my-2 sm:my-4 -mt-16 sm:mt-4">
+        <CardHeader className="text-center bg-gradient-to-r from-orange-50 to-rose-50 border-b border-primary/20 py-3 sm:py-4 md:py-6">
+          <div className="flex items-center justify-center mb-2 sm:mb-3">
+            <Heart className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-primary mr-1.5 sm:mr-2 flex-shrink-0" />
+            <h1 className="text-base sm:text-lg md:text-2xl font-serif font-bold text-primary">
               BrahminSoulmate
             </h1>
           </div>
-          <CardTitle className="text-red-700">Welcome Back</CardTitle>
-          <p className="text-gray-600">Sign in to continue your journey</p>
+          <CardTitle className="text-red-700 text-lg sm:text-xl md:text-2xl">Welcome Back</CardTitle>
+          <p className="text-xs sm:text-sm md:text-base text-gray-600">Sign in to continue your journey</p>
         </CardHeader>
         
-        <CardContent className="p-6">
-          <form onSubmit={handleEmailLogin} className="space-y-6">
+        <CardContent className="p-3 sm:p-4 md:p-6">
+          <form onSubmit={handleEmailLogin} className="space-y-3 sm:space-y-4 md:space-y-6">
             <FormField label="Email" required>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -160,43 +160,43 @@ const Login = () => {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-red-600 text-white hover:bg-red-700 shadow-lg transform hover:scale-105 transition-all duration-300"
+              className="w-full bg-red-600 text-white hover:bg-red-700 shadow-lg transform hover:scale-105 transition-all duration-300 py-2.5 sm:py-3 md:py-4 text-sm sm:text-base"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
 
-          <div className="mt-6">
+          <div className="mt-3 sm:mt-4 md:mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300"></div>
               </div>
-              <div className="relative flex justify-center text-sm">
+              <div className="relative flex justify-center text-xs sm:text-sm">
                 <span className="px-2 bg-white text-gray-500">Or continue with</span>
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-4">
+            <div className="mt-3 sm:mt-4 md:mt-6 grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
               <Button
                 type="button"
                 onClick={handleGoogleLogin}
                 disabled={googleLoading}
                 variant="outline"
-                className="w-full border-red-200 hover:bg-red-50 transform hover:scale-105 transition-all duration-300"
+                className="w-full border-red-200 hover:bg-red-50 transform hover:scale-105 transition-all duration-300 text-xs sm:text-sm py-2 h-auto"
               >
                 {googleLoading ? (
                   <div className="flex items-center justify-center">
-                    <div className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin mr-2"></div>
-                    <span>Connecting...</span>
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin mr-1 sm:mr-2"></div>
+                    <span className="hidden sm:inline">Connecting...</span>
                   </div>
                 ) : (
                   <>
                     <img
                       src="/google.svg"
                       alt="Google"
-                      className="w-5 h-5 mr-2"
+                      className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 mr-1 sm:mr-2"
                     />
-                    Google
+                    <span>Google</span>
                   </>
                 )}
               </Button>
@@ -206,29 +206,29 @@ const Login = () => {
                 onClick={handleFacebookLogin}
                 disabled={facebookLoading}
                 variant="outline"
-                className="w-full border-red-200 hover:bg-red-50 transform hover:scale-105 transition-all duration-300"
+                className="w-full border-red-200 hover:bg-red-50 transform hover:scale-105 transition-all duration-300 text-xs sm:text-sm py-2 h-auto"
               >
                 {facebookLoading ? (
                   <div className="flex items-center justify-center">
-                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
-                    <span>Connecting...</span>
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-1 sm:mr-2"></div>
+                    <span className="hidden sm:inline">Connecting...</span>
                   </div>
                 ) : (
                   <>
                     <img
                       src="/facebook.svg"
                       alt="Facebook"
-                      className="w-5 h-5 mr-2"
+                      className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 mr-1 sm:mr-2"
                     />
-                    Facebook
+                    <span>Facebook</span>
                   </>
                 )}
               </Button>
             </div>
           </div>
 
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
+          <div className="mt-3 sm:mt-4 md:mt-6 text-center pb-1 sm:pb-2">
+            <p className="text-xs sm:text-sm md:text-base text-gray-600">
               Don't have an account?{' '}
               <Link
                 to="/signup"

@@ -115,7 +115,7 @@ class InterestsService {
     const { data } = await supabase
       .from('connections')
       .select('id')
-      .or(`and(user1_id.eq.${userId1},user2_id.eq.${userId2}),and(user1_id.eq.${userId2},user2_id.eq.${userId1})`)
+      .or(`and(user_id_1.eq.${userId1},user_id_2.eq.${userId2}),and(user_id_1.eq.${userId2},user_id_2.eq.${userId1})`)
       .eq('status', 'connected')
       .single();
 
@@ -130,7 +130,7 @@ class InterestsService {
     const { data, error } = await supabase
       .from('connections')
       .select('*')
-      .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+      .or(`user_id_1.eq.${user.id},user_id_2.eq.${user.id}`)
       .eq('status', 'connected');
 
     if (error) throw error;

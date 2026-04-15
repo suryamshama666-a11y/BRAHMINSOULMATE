@@ -1,21 +1,24 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
+import { logger } from '../utils/logger';
 
-dotenv.config();
-
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+// Note: Environment variables are loaded in server.ts before this module is imported
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.warn('Supabase environment variables are missing in backend');
-}
-
-// Create a mock client for testing when credentials are not available
+// Create a mock client for local development when credentials are not available
 const createMockClient = (): SupabaseClient => {
-  // Return a minimal mock that won't throw on instantiation
-  return createClient('https://mock.supabase.co', 'mock-key-mock-key-mock-key-mock-key');
+  logger.warn('⚠️  Using MOCK Supabase client (no credentials configured)');
+  logger.warn('💡 Database operations will fail gracefully. Configure Supabase for full functionality.');
+  
+  // Create a mock client with a valid URL format
+  // This client will fail on actual operations but won't crash on initialization
+  return createClient(
+    'https://placeholder.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDUxOTI4MDAsImV4cCI6MTk2MDc2ODgwMH0.placeholder'
+  );
 };
 
+// Try to create real client if credentials exist
 export const supabase = (supabaseUrl && supabaseServiceKey)
   ? createClient(supabaseUrl, supabaseServiceKey)
   : createMockClient();

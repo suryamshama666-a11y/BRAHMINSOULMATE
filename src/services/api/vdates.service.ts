@@ -13,8 +13,8 @@ export interface VDate {
   rating_1?: number;
   rating_2?: number;
   created_at: string;
-  user1?: { user_id: string; name: string; images: string[] };
-  user2?: { user_id: string; name: string; images: string[] };
+  user1?: { user_id: string; first_name?: string; last_name?: string; display_name?: string; profile_picture_url?: string };
+  user2?: { user_id: string; first_name?: string; last_name?: string; display_name?: string; profile_picture_url?: string };
 }
 
 export interface VDateFeedback {
@@ -217,8 +217,8 @@ class VDatesService {
       .from('vdates')
       .select(`
         *,
-        user1:profiles!vdates_user_id_1_fkey(user_id, name, images),
-        user2:profiles!vdates_user_id_2_fkey(user_id, name, images)
+        user1:profiles!vdates_user_id_1_fkey(user_id, first_name, last_name, display_name, profile_picture_url),
+        user2:profiles!vdates_user_id_2_fkey(user_id, first_name, last_name, display_name, profile_picture_url)
       `)
       .or(`user_id_1.eq.${user.id},user_id_2.eq.${user.id}`)
       .order('scheduled_time', { ascending: true });
@@ -242,8 +242,8 @@ class VDatesService {
       .from('vdates')
       .select(`
         *,
-        user1:profiles!vdates_user_id_1_fkey(user_id, name, images),
-        user2:profiles!vdates_user_id_2_fkey(user_id, name, images)
+        user1:profiles!vdates_user_id_1_fkey(user_id, first_name, last_name, display_name, profile_picture_url),
+        user2:profiles!vdates_user_id_2_fkey(user_id, first_name, last_name, display_name, profile_picture_url)
       `)
       .or(`user_id_1.eq.${user.id},user_id_2.eq.${user.id}`)
       .eq('status', 'scheduled')
@@ -615,8 +615,8 @@ class VDatesService {
       .from('connections')
       .select(`
         *,
-        user1:profiles!connections_user_id_1_fkey(user_id, name, images),
-        user2:profiles!connections_user_id_2_fkey(user_id, name, images)
+        user1:profiles!connections_user_id_1_fkey(user_id, first_name, last_name, display_name, profile_picture_url),
+        user2:profiles!connections_user_id_2_fkey(user_id, first_name, last_name, display_name, profile_picture_url)
       `)
       .or(`user_id_1.eq.${user.id},user_id_2.eq.${user.id}`)
       .eq('status', 'active');

@@ -95,108 +95,92 @@ const Dashboard = () => {
     });
   };
 
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      if (!user?.id) {
-        setLoading(false);
-        return;
-      }
-      
-      try {
-        setLoading(true);
+  // Use React Query for data fetching (Fixes H2 and H8: caching, parallel deduped fetching)
+  const userGender = profile?.gender || 'male';
+  const oppositeGender = userGender === 'male' ? 'female' : 'male';
 
-        const userGender = profile?.gender || 'male';
-        const oppositeGender = userGender === 'male' ? 'female' : 'male';
+  const { data: dashboardData, isLoading: isLoadingQuery } = useQuery({
+    queryKey: ['dashboardData', user?.id, oppositeGender],
+    queryFn: async () => {
+      if (!user?.id) throw new Error('Not authenticated');
 
-        // Fetch real stats in parallel
-        const [profileViewsRes, interestsRes, messagesRes, vdatesRes] = await Promise.all([
-          supabase.from('profile_views').select('id', { count: 'exact', head: true }).eq('viewed_id', user.id),
-          supabase.from('interests').select('id', { count: 'exact', head: true }).eq('sender_id', user.id),
-          supabase.from('messages').select('id', { count: 'exact', head: true }).or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`),
-          supabase.from('vdates').select('id', { count: 'exact', head: true }).or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`),
-        ]);
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
-        setStats({
+      const [profileViewsRes, interestsRes, messagesRes, vdatesRes, onlineRes, newRes, matchesRes] = await Promise.all([
+        supabase.from('profile_views').select('id', { count: 'exact', head: true }).eq('viewed_id', user.id),
+        supabase.from('interests').select('id', { count: 'exact', head: true }).eq('sender_id', user.id),
+        supabase.from('messages').select('id', { count: 'exact', head: true }).or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`),
+        supabase.from('vdates').select('id', { count: 'exact', head: true }).or(`user_id_1.eq.${user.id},user_id_2.eq.${user.id}`),
+        supabase.from('profiles').select('id, first_name, gender, city, state, occupation, profile_picture_url, subscription_type, gotra, community, height').eq('gender', oppositeGender).gt('last_active', oneHourAgo).order('last_active', { ascending: false }).limit(20),
+        supabase.from('profiles').select('id, first_name, gender, city, state, occupation, profile_picture_url, subscription_type, gotra, community, height').eq('gender', oppositeGender).order('created_at', { ascending: false }).limit(4),
+        supabase.from('profiles').select('id, first_name, gender, city, state, occupation, profile_picture_url, subscription_type, gotra, community, height').eq('gender', oppositeGender).limit(4),
+      ]);
+
+      return {
+        stats: {
           profileViews: profileViewsRes.count ?? 0,
           interestsSent: interestsRes.count ?? 0,
           messageCount: messagesRes.count ?? 0,
           vDatesCount: vdatesRes.count ?? 0,
-        });
+        },
+        online: onlineRes.data || [],
+        newMembers: newRes.data || [],
+        recommended: matchesRes.data || []
+      };
+    },
+    enabled: !!user?.id && !!profile,
+    staleTime: 60 * 1000, // cache for 1 minute
+  });
 
-        // Fetch online members (active in last 60 mins)
-        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-        const { data: onlineData } = await supabase
-          .from('profiles')
-          .select('*')
-            .eq('gender', oppositeGender)
-            .gt('last_active', oneHourAgo)
-            .order('last_active', { ascending: false })
-            .limit(20);
+  useEffect(() => {
+    if (dashboardData) {
+      setStats(dashboardData.stats);
+      
+      const transformProfile = (p: any): MemberProfile => {
+        const formatHeight = (height: any): string => {
+          if (!height) return "160 cm";
+          if (typeof height === 'number') return `${height} cm`;
+          if (!isNaN(Number(height))) return `${height} cm`;
+          return height;
+        };
 
-        // Fetch new members
-        const { data: newData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('gender', oppositeGender)
-          .order('created_at', { ascending: false })
-          .limit(4);
+        return {
+          id: p.id,
+          name: p.first_name || (oppositeGender === 'female' ? 'Female Profile' : 'Male Profile'),
+          age: p.age || 25,
+          gender: p.gender || oppositeGender,
+          location: `${p.city || 'Mumbai'}, ${p.state || 'Maharashtra'}`,
+          profession: p.occupation || 'Professional',
+          avatarUrl: p.profile_picture_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
+          subscription_type: p.subscription_type || 'free',
+          gotra: p.gotra || 'Bharadwaja Gotra',
+          community: p.community || 'Brahmin',
+          height: formatHeight(p.height),
+          matchPercentage: 85,
+          lastSeen: 'Active now'
+        };
+      };
 
-        // Fetch recommended matches
-        const { data: matchesData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('gender', oppositeGender)
-          .limit(4);
+      const mockOnline = getMockOnlineProfiles(oppositeGender);
+      const onlineProfilesToUse = dashboardData.online.length > 0 ? dashboardData.online : mockOnline;
+      setOnlineMembers(onlineProfilesToUse.map(p => transformProfile(p)));
+      
+      const mockNew = getMockNewProfiles(oppositeGender);
+      const newProfilesToUse = dashboardData.newMembers.length > 0 ? dashboardData.newMembers : mockNew;
+      setNewMembers(newProfilesToUse.map(p => transformProfile(p)));
+      
+      const mockRecommended = getMockRecommendedProfiles(oppositeGender);
+      const recommendedProfilesToUse = dashboardData.recommended.length > 0 ? dashboardData.recommended : mockRecommended;
+      setRecommendedMatches(recommendedProfilesToUse.map(p => transformProfile(p)));
+      
+      setLoading(false);
+    }
+  }, [dashboardData, oppositeGender]);
 
-          const transformProfile = (p: RawProfile): MemberProfile => {
-            const formatHeight = (height: number | string | undefined): string => {
-              if (!height) return "160 cm";
-              if (typeof height === 'number') return `${height} cm`;
-              if (!isNaN(Number(height))) return `${height} cm`;
-              return height;
-            };
+  // Loading state mapping
+  const isActuallyLoading = loading || isLoadingQuery || !dashboardData;
 
-            return {
-              id: p.id,
-              name: p.first_name || (oppositeGender === 'female' ? 'Female Profile' : 'Male Profile'),
-              age: p.age || 25,
-              gender: p.gender || oppositeGender,
-              location: `${p.city || 'Mumbai'}, ${p.state || 'Maharashtra'}`,
-              profession: p.occupation || 'Professional',
-              avatarUrl: p.profile_picture_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
-              subscription_type: p.subscription_type || 'free',
-              gotra: p.gotra || 'Bharadwaja Gotra',
-              community: p.community || 'Brahmin',
-              height: formatHeight(p.height),
-              matchPercentage: 85,
-              lastSeen: 'Active now'
-            };
-          };
-  
-          // Use mock data as fallback if no real data from database
-          const mockOnline = getMockOnlineProfiles(oppositeGender);
-          const onlineProfilesToUse = onlineData && onlineData.length > 0 ? onlineData : mockOnline;
-          setOnlineMembers(onlineProfilesToUse.map((p) => transformProfile(p as RawProfile)));
-          
-          const mockNew = getMockNewProfiles(oppositeGender);
-          const newProfilesToUse = newData && newData.length > 0 ? newData : mockNew;
-          setNewMembers(newProfilesToUse.map(p => transformProfile(p as RawProfile)));
-          
-          const mockRecommended = getMockRecommendedProfiles(oppositeGender);
-          const recommendedProfilesToUse = matchesData && matchesData.length > 0 ? matchesData : mockRecommended;
-          setRecommendedMatches(recommendedProfilesToUse.map(p => transformProfile(p as RawProfile)));
-
-      } catch (error) {
-        console.error('Error loading dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadDashboardData();
-  }, [user?.id, profile?.gender]);
-
-  if (loading) {
+  if (isActuallyLoading) {
     return (
       <div className="min-h-screen bg-white flex flex-col font-sans">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">

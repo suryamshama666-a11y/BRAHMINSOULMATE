@@ -19,8 +19,10 @@ export const useForumPostActions = () => {
       const { data, error } = await supabase
         .from('forum_posts')
         .insert({
-          category_id: categoryId,
+          user_id: user.id,
           author_id: user.id,
+          category_id: categoryId,
+          category: '', // Need to get category name
           title,
           content
         })

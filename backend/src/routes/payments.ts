@@ -6,6 +6,8 @@ import { authMiddleware } from '../middleware/auth';
 import { paymentLimiter } from '../middleware/rateLimiter';
 import { asyncHandler } from '../utils/asyncHandler';
 import * as Sentry from '@sentry/node';
+import { paymentCircuitBreaker } from '../services/circuitBreaker';
+import { logger } from '../utils/logger';
 
 const router = express.Router();
 
@@ -38,7 +40,7 @@ async function processSuccessfulPayment(orderId: string, paymentId: string, amou
     .single();
 
   if (existingPayment) {
-    console.log(`[Payment] Idempotency check: Payment ${paymentId} already processed.`);
+    logger.info(`[Payment] Idempotency check: Payment ${paymentId} already processed.`);
     return { success: true, already_processed: true };
   }
 
@@ -59,11 +61,11 @@ async function processSuccessfulPayment(orderId: string, paymentId: string, amou
     });
 
     if (rpcError) {
-      console.error('[Payment RPC Error]:', rpcError);
+      logger.error('[Payment RPC Error]:', rpcError);
       throw rpcError;
     }
   } catch (error) {
-    console.error('[Payment Processing Error]:', error);
+    logger.error('[Payment Processing Error]:', error);
     // Manual fallback if RPC isn't set up yet
     const { error: payErr } = await supabase.from('payments').insert({
       user_id: userId, order_id: orderId, payment_id: paymentId,
@@ -92,14 +94,29 @@ router.post('/create-order', authMiddleware, paymentLimiter, asyncHandler(async 
   if (!PLANS[plan_id]) return res.status(400).json({ success: false, error: 'Invalid plan' });
 
   const planDetails = PLANS[plan_id];
-  const order = await razorpay.orders.create({
-    amount: planDetails.price,
-    currency: currency || 'INR',
-    receipt: `order_${userId}_${Date.now()}`,
-    notes: { userId, plan: plan_id }
-  });
+  
+  try {
+    // ✅ NEW: Wrap with circuit breaker
+    const order = await paymentCircuitBreaker.execute(() =>
+      razorpay.orders.create({
+        amount: planDetails.price,
+        currency: currency || 'INR',
+        receipt: `order_${userId}_${Date.now()}`,
+        notes: { userId, plan: plan_id }
+      })
+    );
 
-  res.json(order);
+    res.json(order);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Circuit breaker is OPEN')) {
+      return res.status(503).json({
+        success: false,
+        error: 'Payment service temporarily unavailable',
+        retryAfter: 60
+      });
+    }
+    throw error;
+  }
 }));
 
 // Verify payment (Client-side trigger)
@@ -116,19 +133,34 @@ router.post('/verify', authMiddleware, paymentLimiter, asyncHandler(async (req, 
     return res.status(400).json({ success: false, error: 'Invalid signature' });
   }
 
-  const order = await razorpay.orders.fetch(razorpay_order_id);
-  const plan = order.notes?.plan as string;
+  try {
+    // ✅ NEW: Wrap with circuit breaker
+    const order = await paymentCircuitBreaker.execute(() =>
+      razorpay.orders.fetch(razorpay_order_id)
+    );
+    
+    const plan = order.notes?.plan as string;
 
-  const result = await processSuccessfulPayment(
-    razorpay_order_id,
-    razorpay_payment_id,
-    order.amount as number,
-    order.currency as string,
-    plan,
-    userId!
-  );
+    const result = await processSuccessfulPayment(
+      razorpay_order_id,
+      razorpay_payment_id,
+      order.amount as number,
+      order.currency as string,
+      plan,
+      userId!
+    );
 
-  res.json(result);
+    res.json(result);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Circuit breaker is OPEN')) {
+      return res.status(503).json({
+        success: false,
+        error: 'Payment service temporarily unavailable',
+        retryAfter: 60
+      });
+    }
+    throw error;
+  }
 }));
 
 // Webhook for Razorpay (Server-to-Server trigger)
@@ -147,7 +179,7 @@ router.post('/webhook', asyncHandler(async (req, res) => {
     .digest('hex');
 
   if (expectedSignature !== signature) {
-    console.error('[Webhook] Invalid signature');
+    logger.error('[Webhook] Invalid signature');
     return res.status(400).send('Invalid signature');
   }
 
@@ -169,9 +201,9 @@ router.post('/webhook', asyncHandler(async (req, res) => {
         plan,
         userId
       );
-      console.log(`[Webhook] Payment ${paymentId} processed successfully for user ${userId}`);
+      logger.info(`[Webhook] Payment ${paymentId} processed successfully for user ${userId}`);
     } catch (err) {
-      console.error(`[Webhook] Error processing payment ${paymentId}:`, err);
+      logger.error(`[Webhook] Error processing payment ${paymentId}:`, err);
       Sentry.captureException(err);
       return res.status(500).send('Processing failed');
     }
@@ -213,7 +245,7 @@ router.get('/history', authMiddleware, asyncHandler(async (req, res) => {
   const userId = req.user?.id;
   const { data, error } = await supabase
     .from('payments')
-    .select('*')
+    .select('id, amount, currency, status, plan, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 

@@ -1,16 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabase } from '../config/supabase';
+import { logger } from '../utils/logger';
 
 class CronService {
   private intervals: NodeJS.Timeout[] = [];
 
   // Start all cron jobs
   start() {
-    console.log('🕐 Starting cron jobs...');
+    logger.info('🕐 Starting cron jobs...');
     
     // Process V-Date reminders every 5 minutes
     this.intervals.push(
@@ -25,12 +21,12 @@ class CronService {
       setInterval(() => this.checkMissedVDates(), 10 * 60 * 1000)
     );
 
-    console.log('✅ Cron jobs started');
+    logger.info('✅ Cron jobs started');
   }
 
   // Stop all cron jobs
   stop() {
-    console.log('🛑 Stopping cron jobs...');
+    logger.info('🛑 Stopping cron jobs...');
     this.intervals.forEach(interval => clearInterval(interval));
     this.intervals = [];
   }
@@ -48,7 +44,7 @@ class CronService {
         .lte('reminder_time', now);
 
       if (fetchError) {
-        console.error('Error fetching reminders:', fetchError);
+        logger.error('Error fetching reminders:', fetchError);
         return;
       }
 
@@ -56,7 +52,7 @@ class CronService {
         return;
       }
 
-      console.log(`📬 Processing ${pendingReminders.length} V-Date reminders...`);
+      logger.info(`📬 Processing ${pendingReminders.length} V-Date reminders...`);
 
       for (const reminder of pendingReminders) {
         try {
@@ -129,13 +125,13 @@ class CronService {
             .update({ sent: true })
             .eq('id', reminder.id);
 
-          console.log(`✅ Sent ${reminder.reminder_type} reminder for V-Date ${reminder.vdate_id}`);
+          logger.info(`✅ Sent ${reminder.reminder_type} reminder for V-Date ${reminder.vdate_id}`);
         } catch (err) {
-          console.error(`Error processing reminder ${reminder.id}:`, err);
+          logger.error(`Error processing reminder ${reminder.id}:`, err);
         }
       }
     } catch (error) {
-      console.error('Error in processVDateReminders:', error);
+      logger.error('Error in processVDateReminders:', error);
     }
   }
 
@@ -152,7 +148,7 @@ class CronService {
         .lt('scheduled_time', new Date(now.getTime() - 60 * 60 * 1000).toISOString()); // 1 hour past scheduled time
 
       if (error) {
-        console.error('Error checking missed V-Dates:', error);
+        logger.error('Error checking missed V-Dates:', error);
         return;
       }
 
@@ -160,7 +156,7 @@ class CronService {
         return;
       }
 
-      console.log(`⚠️ Found ${missedVDates.length} missed V-Dates`);
+      logger.warn(`⚠️ Found ${missedVDates.length} missed V-Dates`);
 
       for (const vdate of missedVDates) {
         // Check if the V-Date end time has passed
@@ -196,11 +192,11 @@ class CronService {
 
           await supabase.from('notifications').insert(notifications);
 
-          console.log(`📛 Marked V-Date ${vdate.id} as missed`);
+          logger.info(`📛 Marked V-Date ${vdate.id} as missed`);
         }
       }
     } catch (error) {
-      console.error('Error in checkMissedVDates:', error);
+      logger.error('Error in checkMissedVDates:', error);
     }
   }
 }

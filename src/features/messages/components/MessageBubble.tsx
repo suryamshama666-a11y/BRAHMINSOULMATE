@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 interface MessageBubbleProps {
   message: Message & { reactions?: MessageReaction[]; updated_at?: string | null };
   isOwnMessage: boolean;
+  reactions?: MessageReaction[];
   searchQuery?: string;
   onAddReaction?: (emoji: string) => void;
   onRemoveReaction?: (emoji: string) => void;

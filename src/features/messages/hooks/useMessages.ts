@@ -354,9 +354,8 @@ export function useMessages(conversationId?: string) {
         const idList = messageIds.split(',');
         const { error } = await supabase
           .from('messages')
-          .update({ 
-            read_at: new Date().toISOString(),
-            status: 'read'
+          .update({
+            read: true
           })
           .in('id', idList)
           .eq('receiver_id', user.id);

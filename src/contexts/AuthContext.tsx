@@ -25,23 +25,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         .single();
       
       if (profileError) {
-        if (profileError.code === 'PGRST116') {
-          const { data: { user: authUser } } = await supabase.auth.getUser();
-          const { data: newProfile, error: createError } = await (supabase as any)
-            .from('profiles')
-            .insert({
-              user_id: userId,
-              email: authUser?.email || '',
-              name: `${authUser?.user_metadata?.first_name || authUser?.email?.split('@')[0] || 'User'} ${authUser?.user_metadata?.last_name || ''}`.trim(),
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
-            .select()
-            .single();
-
-          if (!createError && newProfile) {
-            setProfile(newProfile as UserProfile);
-          }
+        if (profileError.code !== 'PGRST116') {
+          console.error('Error fetching profile:', profileError);
         }
       } else if (profileData) {
         setProfile(profileData as any);
@@ -129,21 +114,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
 
     if (error) throw error;
-
-    if (data.user) {
-      const { error: profileError } = await (supabase as any).from('profiles').insert({
-        user_id: data.user.id,
-        email: email,
-        name: `${options?.firstName || email.split('@')[0]} ${options?.lastName || ''}`.trim(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
-
-      if (profileError) {
-        console.error('Profile creation failed:', profileError);
-        // Don't throw here as auth was successful
-      }
-    }
+    
+    // Note: Profile creation is now securely handled by a database trigger 
+    // (`handle_new_user`) that fires automatically on `auth.users` insert.
+    // This prevents client-side race conditions and RLS privilege violations.
   };
 
   const signIn = async (email: string, password: string) => {
@@ -179,20 +153,45 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     toast.success('Profile updated');
   };
 
+  /**
+   * Initiate subscription upgrade via backend payment flow.
+   * SECURITY: Never insert subscription records directly from the client.
+   * The backend payment verification endpoint handles subscription activation
+   * only after confirmed payment from Razorpay.
+   */
   const upgradeSubscription = async (planId: string) => {
     if (!user) return;
-    const { error } = await supabase
-      .from('user_subscriptions')
-      .insert({
-        user_id: user.id,
-        plan_id: planId,
-        start_date: new Date().toISOString(),
-        end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'active',
+    
+    // Get the session token for authenticated API call
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      toast.error('Please log in again to upgrade');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/payments/create-order`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({ planId }),
       });
-    if (error) throw error;
-    await fetchUserData(user.id);
-    toast.success('Subscription upgraded');
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to create order');
+      }
+
+      // Return the order data for the payment component to process
+      return data;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Upgrade failed';
+      toast.error(message);
+      throw err;
+    }
   };
 
   const setNameVisibility = async (visible: boolean) => {
@@ -240,6 +239,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const isPremium = subscription?.status === 'active';
+  const isAuthenticated = !!user;
 
   return (
     <AuthContext.Provider
@@ -247,6 +247,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           user,
           profile,
           subscription,
+          isAuthenticated,
           isPremium,
           loading,
           error,

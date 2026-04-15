@@ -31,13 +31,11 @@ export const useMessageSending = () => {
       if (error) throw error;
       
       const newMessage: RealTimeMessage = {
-        id: data.id,
         sender_id: data.sender_id,
         receiver_id: data.receiver_id,
         content: data.content,
         message_type: (data.message_type as RealTimeMessage['message_type']) || 'text',
-        media_url: data.media_url || undefined,
-        read_at: data.read_at || undefined,
+        media_url: data.attachment_url || undefined,
         created_at: data.created_at
       };
       

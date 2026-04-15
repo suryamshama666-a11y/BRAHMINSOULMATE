@@ -4,6 +4,7 @@ import { authMiddleware } from '../middleware/auth';
 import { interestLimiter } from '../middleware/rateLimiter';
 import { redis } from '../config/redis';
 import * as Sentry from '@sentry/node';
+import { logger } from '../utils/logger';
 
 const router = express.Router();
 
@@ -18,7 +19,9 @@ interface MatchProfile {
   education_level?: number;
   gotra?: string;
   rashi?: string;
+  horoscope?: any;
   gender?: string;
+  manglik_status?: string;
 }
 
 // Calculate compatibility score (0-100)
@@ -108,16 +111,16 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
           });
         }
       } catch (cacheErr) {
-        console.error('[Redis Cache Error]:', cacheErr);
+        logger.error('[Redis Cache Error]:', cacheErr);
         Sentry.captureException(cacheErr);
         // Fall through to DB query
       }
     }
 
-    // 2. Fetch User Profile
+    // 2. Fetch User Profile — only fields needed for compatibility calculation
     const { data: userProfile, error: profileError } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, user_id, first_name, last_name, display_name, age, height, city, state, country, education_level, gotra, gender, preferences, verified, community, horoscope')
       .eq('user_id', userId)
       .single();
 
@@ -127,7 +130,7 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
     const targetGender = userProfile.gender === 'male' ? 'female' : 'male';
     let query = supabase
       .from('profiles')
-      .select('id, user_id, first_name, last_name, display_name, age, height, city, state, country, education_level, gotra, rashi, gender, verified, profile_picture_url')
+      .select('id, user_id, first_name, last_name, display_name, age, height, city, state, country, education_level, gotra, gender, verified, profile_picture_url, horoscope')
       .eq('gender', targetGender)
       .eq('verified', true)
       .is('deleted_at', null)
@@ -141,10 +144,17 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
     if (error) throw error;
 
     // 4. Compatibility Calc
-    const matchesWithScores = profiles.map(profile => ({
-      ...profile,
-      compatibility_score: calculateCompatibility(userProfile as MatchProfile, profile as MatchProfile)
-    }));
+    const matchesWithScores = profiles.map(profile => {
+      const p = profile as any;
+      const rashi = p.horoscope?.rashi || p.rashi;
+      return {
+        ...profile,
+        compatibility_score: calculateCompatibility(
+          { ...userProfile, rashi: (userProfile as any).horoscope?.rashi } as MatchProfile, 
+          { ...profile, rashi } as MatchProfile
+        )
+      };
+    });
 
     const topMatches = matchesWithScores
       .sort((a, b) => b.compatibility_score - a.compatibility_score)
@@ -157,7 +167,7 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
 
     res.json({ success: true, matches: topMatches, from_cache: false });
   } catch (error) {
-    console.error('[Recommendations Error]:', error);
+    logger.error('[Recommendations Error]:', error);
     Sentry.captureException(error);
     res.status(500).json({ success: false, error: 'Failed to fetch recommendations' });
   }
@@ -268,7 +278,7 @@ router.post('/interest/:id/respond', authMiddleware, async (req, res) => {
     // Verify interest belongs to user
     const { data: interest, error: fetchError } = await supabase
       .from('interests')
-      .select('*')
+      .select('id, sender_id, receiver_id, status')
       .eq('id', id)
       .eq('receiver_id', userId)
       .single();

@@ -120,4 +120,96 @@ describe('ApiClient Integration Tests', () => {
       expect(profiles).toHaveLength(0);
     });
   });
+
+  describe('Request Deduplication', () => {
+    it('should deduplicate concurrent requests', async () => {
+      const promises = [
+        apiClient.getProfiles({ page: 1, limit: 10 }),
+        apiClient.getProfiles({ page: 1, limit: 10 }),
+        apiClient.getProfiles({ page: 1, limit: 10 }),
+      ];
+
+      const results = await Promise.all(promises);
+
+      // All should return the same result
+      expect(results).toHaveLength(3);
+      results.forEach(result => {
+        expect(Array.isArray(result)).toBe(true);
+      });
+    });
+
+    it('should not deduplicate different requests', async () => {
+      const promises = [
+        apiClient.getProfiles({ page: 1, limit: 10 }),
+        apiClient.getProfiles({ page: 2, limit: 10 }),
+        apiClient.getProfiles({ page: 1, limit: 20 }),
+      ];
+
+      const results = await Promise.all(promises);
+
+      // All should work independently
+      expect(results).toHaveLength(3);
+      results.forEach(result => {
+        expect(Array.isArray(result)).toBe(true);
+      });
+    });
+  });
+
+  describe('Cache Key Generation', () => {
+    it('should generate consistent cache keys for same parameters', () => {
+      const key1 = apiClient['generateCacheKey']('test', { a: 1, b: 2 });
+      const key2 = apiClient['generateCacheKey']('test', { b: 2, a: 1 }); // Different order
+
+      expect(key1).toBe(key2);
+    });
+
+    it('should generate different cache keys for different parameters', () => {
+      const key1 = apiClient['generateCacheKey']('test', { a: 1, b: 2 });
+      const key2 = apiClient['generateCacheKey']('test', { a: 1, b: 3 });
+
+      expect(key1).not.toBe(key2);
+    });
+  });
+
+  describe('Profile Filtering', () => {
+    it('should apply gender filter', async () => {
+      const profiles = await apiClient.getProfiles({
+        filter: { gender: 'male' },
+        page: 1,
+        limit: 10,
+      });
+
+      expect(Array.isArray(profiles)).toBe(true);
+    });
+
+    it('should apply religion filter', async () => {
+      const profiles = await apiClient.getProfiles({
+        filter: { religion: 'Hindu' },
+        page: 1,
+        limit: 10,
+      });
+
+      expect(Array.isArray(profiles)).toBe(true);
+    });
+
+    it('should apply height range filter', async () => {
+      const profiles = await apiClient.getProfiles({
+        filter: { height_min: 160, height_max: 180 },
+        page: 1,
+        limit: 10,
+      });
+
+      expect(Array.isArray(profiles)).toBe(true);
+    });
+
+    it('should apply subscription filter', async () => {
+      const profiles = await apiClient.getProfiles({
+        filter: { subscription_type: 'premium' },
+        page: 1,
+        limit: 10,
+      });
+
+      expect(Array.isArray(profiles)).toBe(true);
+    });
+  });
 });

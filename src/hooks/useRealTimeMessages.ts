@@ -60,7 +60,7 @@ export const useRealTimeMessages = ({
       if (error) throw error;
       setMessages(data || []);
     } catch (error) {
-      console.error('Error loading messages:', error);
+      logger.error('Error loading messages:', error);
       // Silently retry on network error if online
       if (navigator.onLine) {
          setTimeout(loadMessages, 3000);
@@ -83,7 +83,7 @@ export const useRealTimeMessages = ({
       setUnreadCount(count || 0);
       return count || 0;
     } catch (error) {
-      console.error('Error getting unread count:', error);
+      logger.error('Error getting unread count:', error);
       return 0;
     }
   }, [userId]);
@@ -108,7 +108,7 @@ export const useRealTimeMessages = ({
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Error sending message:', error);
+      logger.error('Error sending message:', error);
       toast.error('Failed to send message');
       return null;
     }
@@ -129,7 +129,7 @@ export const useRealTimeMessages = ({
       ));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
-      console.error('Error marking message as read:', error);
+      logger.error('Error marking message as read:', error);
     }
   }, []);
 
@@ -146,7 +146,7 @@ export const useRealTimeMessages = ({
           payload: { userId, isTyping, timestamp: Date.now() }
         });
     } catch (error) {
-      console.error('Error sending typing indicator:', error);
+      logger.error('Error sending typing indicator:', error);
     }
   }, [userId, conversationUserId]);
 
@@ -163,7 +163,7 @@ export const useRealTimeMessages = ({
       setMessages(prev => prev.filter(msg => msg.id !== messageId));
       toast.success('Message deleted');
     } catch (error) {
-      console.error('Error deleting message:', error);
+      logger.error('Error deleting message:', error);
       toast.error('Failed to delete message');
     }
   }, []);
@@ -186,7 +186,7 @@ export const useRealTimeMessages = ({
       ));
       toast.success('Message updated');
     } catch (error) {
-      console.error('Error editing message:', error);
+      logger.error('Error editing message:', error);
       toast.error('Failed to edit message');
     }
   }, []);

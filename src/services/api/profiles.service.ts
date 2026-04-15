@@ -6,14 +6,22 @@ export class ProfilesService {
    * Get profile by ID (uses backend to enforce privacy rules)
    */
   static async getProfile(userId: string): Promise<APIResponse<UserProfile>> {
-    return backendCall<UserProfile>(`profile/${userId}`);
+    const result = await backendCall<UserProfile>(`profile/${userId}`);
+    if (result.data) {
+      result.data = this.mapToUserProfile(result.data) as any;
+    }
+    return result;
   }
 
   /**
    * Get current user's profile
    */
   static async getCurrentProfile(): Promise<APIResponse<UserProfile>> {
-    return backendCall<UserProfile>('profile/me');
+    const result = await backendCall<UserProfile>('profile/me');
+    if (result.data) {
+      result.data = this.mapToUserProfile(result.data) as any;
+    }
+    return result;
   }
 
   /**
@@ -61,6 +69,32 @@ export class ProfilesService {
   }
 
   /**
+   * Helper to map database response to UserProfile
+   */
+  private static mapToUserProfile(row: any): UserProfile | null {
+    if (!row) return null;
+    
+    // Create base object
+    const profile: any = { ...row };
+
+    // Explicitly parse JSON fields if they are strings (Supabase might return them as strings or objects)
+    const jsonFields = ['location', 'education', 'employment', 'family', 'preferences', 'horoscope', 'privacy_settings'];
+    
+    jsonFields.forEach(field => {
+      if (row[field]) {
+        try {
+          profile[field] = typeof row[field] === 'string' ? JSON.parse(row[field]) : row[field];
+        } catch (e) {
+          console.error(`Failed to parse ${field}:`, e);
+          profile[field] = row[field];
+        }
+      }
+    });
+
+    return profile as unknown as UserProfile;
+  }
+
+  /**
    * Get multiple profiles by IDs
    */
   static async getProfiles(userIds: string[]): Promise<APIResponse<UserProfile[]>> {
@@ -70,7 +104,10 @@ export class ProfilesService {
         .select('*')
         .in('user_id', userIds);
 
-      return { data, error };
+      return { 
+        data: (data || []).map(row => this.mapToUserProfile(row)).filter((p): p is UserProfile => p !== null), 
+        error 
+      };
     });
   }
 
@@ -93,7 +130,11 @@ export class ProfilesService {
     if (filters.religion) params.append('religion', filters.religion);
     if (filters.limit) params.append('limit', filters.limit.toString());
 
-    return backendCall<UserProfile[]>(`profile/search/all?${params.toString()}`);
+    const result = await backendCall<UserProfile[]>(`profile/search/all?${params.toString()}`);
+    if (result.data) {
+      result.data = (result.data as any[]).map(p => this.mapToUserProfile(p)).filter((p): p is UserProfile => p !== null);
+    }
+    return result;
   }
 
   /**
@@ -111,7 +152,10 @@ export class ProfilesService {
         .order('last_active', { ascending: false })
         .limit(limit);
 
-      return { data: data as UserProfile[], error };
+      return { 
+        data: (data || []).map(row => this.mapToUserProfile(row)).filter((p): p is UserProfile => p !== null), 
+        error 
+      };
     });
   }
 
@@ -127,7 +171,10 @@ export class ProfilesService {
         .order('created_at', { ascending: false })
         .limit(limit);
 
-      return { data: data as UserProfile[], error };
+      return { 
+        data: (data || []).map(row => this.mapToUserProfile(row)).filter((p): p is UserProfile => p !== null), 
+        error 
+      };
     });
   }
 
