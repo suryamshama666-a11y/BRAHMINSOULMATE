@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 const ResetPassword = () => {
-  const [setAccessToken] = useState('');
+  const [accessToken, setAccessToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [showResetForm, setShowResetForm] = useState(false);
   const [loading, setLoading] = useState(false);

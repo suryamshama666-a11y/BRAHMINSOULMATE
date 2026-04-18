@@ -5,28 +5,23 @@ import { matchingService } from '@/services/api/matching.service';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useVDateScheduling } from './hooks/useVDateScheduling';
-
-interface Profile {
-  user_id: string;
-  full_name: string;
-  profile_picture?: string;
-}
+import { Profile } from '@/types/profile';
 
 const transformServiceVDate = (v: ServiceVDate): LocalVDate => ({
   id: v.id,
-  participantIds: [v.user_id_1, v.user_id_2],
-  initiatorId: v.user_id_1,
-  date: v.scheduled_time.split('T')[0],
-  time: v.scheduled_time.split('T')[1]?.substring(0, 5) || '00:00',
+  participantIds: [v.organizer_id, v.participant_id],
+  initiatorId: v.organizer_id,
+  date: (v.scheduled_time || v.scheduled_at).split('T')[0],
+  time: (v.scheduled_time || v.scheduled_at).split('T')[1]?.substring(0, 5) || '00:00',
   type: 'video',
-  status: v.status === 'scheduled' ? 'confirmed' : v.status === 'missed' ? 'cancelled' : v.status,
-  title: 'V-Date',
-  duration: v.duration,
-  meetingLink: v.room_name ? `https://meet.jit.si/${v.room_name}` : undefined,
+  status: v.status === 'scheduled' ? 'confirmed' : v.status === 'missed' ? 'cancelled' : v.status as any,
+  title: v.title || 'V-Date',
+  duration: v.duration || v.duration_minutes || 30,
+  meetingLink: v.meeting_url || (v.room_name ? `https://meet.jit.si/${v.room_name}` : undefined),
   createdAt: new Date(v.created_at),
   updatedAt: new Date(v.created_at),
-  feedback: v.rating_1 || v.rating_2 ? [{
-    userId: v.user_id_1,
+  feedback: (v.rating_1 || v.rating_2) ? [{
+    userId: isNaN(Number(v.organizer_id)) ? v.organizer_id : v.organizer_id,
     rating: v.rating_1 || v.rating_2 || 0,
     comment: v.feedback_1 || v.feedback_2,
     wouldMeetAgain: true,
@@ -53,25 +48,46 @@ export const useVDates = () => {
       }
       setCurrentUserId(user.id);
 
-      const [allVDates, matchesData] = await Promise.all([
+      const [allVDates, matchesRes] = await Promise.all([
         vdatesService.getMyVDates(),
         matchingService.getMatches(user.id)
       ]);
 
+      const matchesData = matchesRes.data || [];
+
       setVDates(allVDates.map(transformServiceVDate));
       
       setProfiles(matchesData
-        .filter(m => m.profile)
-        .map(m => ({
-          id: m.profile.user_id,
-          user_id: m.profile.user_id,
-          full_name: m.profile.full_name,
-          profile_picture: m.profile.profile_picture
-        })));
+        .filter(m => m.user_profile)
+        .map(m => {
+          const p = m.user_profile!;
+          return {
+            id: p.user_id,
+            userId: p.user_id,
+            name: `${p.first_name || ''} ${p.last_name || ''}`.trim(),
+            age: p.age || 0,
+            gender: (p.gender === 'male' || p.gender === 'female') ? p.gender : 'male' as const,
+            maritalStatus: (p.marital_status || 'Never Married') as 'Never Married' | 'Widowed' | 'Divorced' | 'Separated' | 'Awaiting Divorce',
+            height: typeof p.height === 'number' ? p.height : parseInt(String(p.height)) || 0,
+            location: {
+              city: p.city || 'Unknown',
+              state: p.state || '',
+              country: 'India'
+            },
+            about: p.bio || '',
+            images: p.profile_picture ? [p.profile_picture] : [],
+            education: p.education_level ? [{ degree: p.education_level, institution: '', year: new Date().getFullYear() }] : [],
+            employment: { profession: p.occupation || '', company: '', position: '', income: '' },
+            family: {},
+            createdAt: new Date(),
+            isVerified: !!p.verified
+          } as Profile;
+        }));
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to load V-Dates:', error);
-      toast.error(error.message || 'Failed to load V-Dates');
+      const message = error instanceof Error ? error.message : 'Failed to load V-Dates';
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -111,8 +127,9 @@ export const useVDates = () => {
       toast.success('V-Date scheduled successfully!');
       scheduling.resetSelection();
       await loadData();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to schedule V-Date');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to schedule V-Date';
+      toast.error(message);
     }
   };
 
@@ -142,7 +159,7 @@ export const useVDates = () => {
         return;
       }
 
-      await vdatesService.startVDate(vdateId);
+      await vdatesService.updateStatus(vdateId, 'completed');
       
       if (vdate.meetingLink) {
         window.open(vdate.meetingLink, '_blank');

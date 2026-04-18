@@ -4,6 +4,7 @@
  */
 
 import { supabase, apiCall, APIResponse, getCurrentUserId, ErrorCode, APIError } from './base';
+import { extractStorageFilePath } from '@/config/storage';
 
 export class StorageService {
   private static readonly PHOTOS_BUCKET = 'profile-photos';
@@ -157,8 +158,10 @@ export class StorageService {
     return apiCall(async () => {
       try {
         // Extract file path from URL
-        const urlParts = photoUrl.split('/');
-        const fileName = urlParts.slice(-2).join('/'); // userId/filename
+        const fileName = extractStorageFilePath(photoUrl);
+        if (!fileName) {
+          throw new Error('Invalid photo URL format');
+        }
 
         const { error } = await supabase.storage
           .from(this.PHOTOS_BUCKET)

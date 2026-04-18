@@ -1,7 +1,6 @@
 import express from 'express';
 import { supabase } from '../config/supabase';
-import { authMiddleware, AuthRequest } from '../middleware/auth';
-import { adminMiddleware } from '../middleware/admin';
+import { authMiddleware, AuthRequest, adminMiddleware } from '../middleware/auth';
 import { asyncHandler } from '../utils/asyncHandler';
 import { apiLimiter } from '../middleware/rateLimiter';
 import { logger } from '../utils/logger';

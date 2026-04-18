@@ -9,12 +9,6 @@ import { CreditCard, Landmark, IndianRupee, Smartphone, ShieldCheck, Zap } from 
 import { toast } from 'sonner';
 import { backendCall } from '@/services/api/base';
 
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
-
 interface PaymentFormProps {
   planName: string;
   planPrice: number;
@@ -114,7 +108,7 @@ export default function PaymentForm({ planName, planPrice, onSuccess, onCancel }
         name: 'Brahmin Soulmate Connect',
         description: `${planName} Subscription`,
         order_id: orderData.id,
-        handler: async function (handlerResponse: any) {
+        handler: async function (handlerResponse: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) {
           try {
             // Verify payment on backend using centralized helper
             const verifyResponse = await backendCall<{ success: boolean }>('payments/verify', {
@@ -153,8 +147,8 @@ export default function PaymentForm({ planName, planPrice, onSuccess, onCancel }
         },
       };
 
-      const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', function (response: any) {
+      const rzp = new window.Razorpay!(options);
+      rzp.on('payment.failed', function (response: { error: { description: string } }) {
         toast.error(`Payment failed: ${response.error.description}`);
         setIsProcessing(false);
       });

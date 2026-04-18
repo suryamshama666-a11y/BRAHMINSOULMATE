@@ -3,6 +3,7 @@
  * Prevents cascading failures when external services are down
  */
 import { Request, Response, NextFunction } from 'express';
+import { CircuitBreakerStatus } from '../types/domain';
 
 export interface CircuitBreakerConfig {
   failureThreshold: number;
@@ -20,9 +21,9 @@ export interface CircuitState {
 export class CircuitBreaker {
   private config: CircuitBreakerConfig;
   private state: CircuitState;
-  private fallbackResponse?: any;
+  private fallbackResponse?: unknown;
 
-  constructor(config: CircuitBreakerConfig, fallbackResponse?: any) {
+  constructor(config: CircuitBreakerConfig, fallbackResponse?: unknown) {
     this.config = config;
     this.fallbackResponse = fallbackResponse;
     this.state = {
@@ -116,13 +117,7 @@ export class CircuitBreaker {
   /**
    * Get circuit breaker status for monitoring
    */
-  getStatus(): {
-    state: string;
-    failures: number;
-    lastFailureTime: number;
-    timeSinceLastFailure: number;
-    isHealthy: boolean;
-  } {
+  getStatus(): CircuitBreakerStatus {
     const now = Date.now();
     const timeSinceLastFailure = now - this.state.lastFailureTime;
     
@@ -186,8 +181,8 @@ export class CircuitBreakerService {
     this.breakers.set(name, circuitBreaker);
   }
 
-  getStatus(): Record<string, any> {
-    const status: Record<string, any> = {};
+  getStatus(): Record<string, CircuitBreakerStatus> {
+    const status: Record<string, CircuitBreakerStatus> = {};
     
     this.breakers.forEach((breaker, name) => {
       status[name] = breaker.getStatus();

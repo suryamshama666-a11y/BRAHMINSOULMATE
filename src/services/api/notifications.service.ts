@@ -31,14 +31,14 @@ class NotificationsService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('notifications')
       .select(`
         *,
         sender:sender_id (
           user_id,
           full_name,
-          profile_picture
+          profile_picture_url
         )
       `)
       .eq('user_id', user.id)
@@ -46,7 +46,7 @@ class NotificationsService {
       .limit(limit);
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as Notification[];
   }
 
   // Get unread count
@@ -54,7 +54,7 @@ class NotificationsService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const { count, error } = await supabase
+    const { count, error } = await (supabase as any)
       .from('notifications')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
@@ -69,7 +69,7 @@ class NotificationsService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('notifications')
       .update({ read: true })
       .eq('id', notificationId)
@@ -83,7 +83,7 @@ class NotificationsService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('notifications')
       .update({ read: true })
       .eq('user_id', user.id)
@@ -97,7 +97,7 @@ class NotificationsService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('notifications')
       .delete()
       .eq('id', notificationId)
@@ -115,7 +115,7 @@ class NotificationsService {
     actionUrl?: string,
     senderId?: string
   ): Promise<void> {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('notifications')
       .insert({
         user_id: userId,
@@ -138,15 +138,14 @@ class NotificationsService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('notification_preferences')
       .select('*')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') throw error;
+    if (error) throw error;
 
-    // Return defaults if not found
     return data || {
       email_enabled: true,
       sms_enabled: false,
@@ -165,7 +164,7 @@ class NotificationsService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('notification_preferences')
       .upsert({
         user_id: user.id,
@@ -183,43 +182,37 @@ class NotificationsService {
     message: string
   ): Promise<void> {
     try {
-      // Get user preferences
-      const { data: prefs } = await supabase
+      const { data: prefs } = await (supabase as any)
         .from('notification_preferences')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (!prefs) return;
 
-      // Check if this notification type is enabled
       const typeEnabled = this.isNotificationTypeEnabled(type, prefs);
       if (!typeEnabled) return;
 
-      // Get user email and phone
-      const { data: profile } = await supabase
+      const { data: profile } = await (supabase as any)
         .from('profiles')
-        .select('email, phone')
+        .select('email, phone_number')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (!profile) return;
 
-      // Send email if enabled
       if (prefs.email_enabled && profile.email) {
         await this.sendEmail(profile.email, title, message, type);
       }
 
-      // Send SMS if enabled
-      if (prefs.sms_enabled && profile.phone) {
-        await this.sendSMS(profile.phone, message);
+      if (prefs.sms_enabled && profile.phone_number) {
+        await this.sendSMS(profile.phone_number, message);
       }
     } catch (error) {
       console.error('Failed to send external notification:', error);
     }
   }
 
-  // Check if notification type is enabled
   private isNotificationTypeEnabled(type: string, prefs: any): boolean {
     const typeMap: Record<string, string> = {
       'interest_received': 'interest_received',
@@ -237,7 +230,6 @@ class NotificationsService {
     return prefKey ? prefs[prefKey] !== false : true;
   }
 
-  // Send email notification
   private async sendEmail(
     email: string,
     subject: string,
@@ -245,61 +237,47 @@ class NotificationsService {
     type: string
   ): Promise<void> {
     try {
-      // Call backend email service
+      const session = (await supabase.auth.getSession()).data.session;
       const response = await fetch('/api/notifications/email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          'Authorization': `Bearer ${session?.access_token}`
         },
-        body: JSON.stringify({
-          to: email,
-          subject,
-          message,
-          type
-        })
+        body: JSON.stringify({ to: email, subject, message, type })
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to send email');
-      }
+      if (!response.ok) throw new Error('Failed to send email');
     } catch (error) {
       console.error('Email send failed:', error);
     }
   }
 
-  // Send SMS notification
   private async sendSMS(phone: string, message: string): Promise<void> {
     try {
-      // Call backend SMS service
+      const session = (await supabase.auth.getSession()).data.session;
       const response = await fetch('/api/notifications/sms', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          'Authorization': `Bearer ${session?.access_token}`
         },
-        body: JSON.stringify({
-          to: phone,
-          message
-        })
+        body: JSON.stringify({ to: phone, message })
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to send SMS');
-      }
+      if (!response.ok) throw new Error('Failed to send SMS');
     } catch (error) {
       console.error('SMS send failed:', error);
     }
   }
 
-  // Subscribe to real-time notifications
   subscribeToNotifications(callback: (notification: Notification) => void): () => void {
-    const userPromise = supabase.auth.getUser();
-
-    userPromise.then(({ data: { user } }) => {
+    let channel: any;
+    
+    supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
 
-      const channel = supabase
+      channel = (supabase as any)
         .channel(`notifications:${user.id}`)
         .on(
           'postgres_changes',
@@ -309,16 +287,15 @@ class NotificationsService {
             table: 'notifications',
             filter: `user_id=eq.${user.id}`
           },
-          async (payload) => {
-            // Fetch sender details if present
+          async (payload: any) => {
             let notification = payload.new as Notification;
             
             if (notification.sender_id) {
-              const { data: sender } = await supabase
+              const { data: sender } = await (supabase as any)
                 .from('profiles')
-                .select('user_id, full_name, profile_picture')
+                .select('user_id, full_name, profile_picture_url')
                 .eq('user_id', notification.sender_id)
-                .single();
+                .maybeSingle();
 
               notification = { ...notification, sender };
             }
@@ -327,14 +304,13 @@ class NotificationsService {
           }
         )
         .subscribe();
-
-      return () => channel.unsubscribe();
     });
 
-    return () => {};
+    return () => {
+      if (channel) channel.unsubscribe();
+    };
   }
 
-  // Notification templates
   static templates = {
     interestReceived: (senderName: string) => ({
       title: 'New Interest Received',

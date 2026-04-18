@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from './useSupabaseAuth';
@@ -37,7 +36,7 @@ export const useInterests = () => {
     setLoading(true);
     try {
       // Fetch user's own interests
-      const { data: userInterests, error: interestError } = await supabase
+      const { data: userInterests, error: interestError } = await (supabase as any)
         .from('user_interests')
         .select('*')
         .eq('user_id', user.id);
@@ -46,7 +45,7 @@ export const useInterests = () => {
       setInterests(userInterests || []);
 
       // Fetch sent interest exchanges
-      const { data: sent, error: sentError } = await supabase
+      const { data: sent, error: sentError } = await (supabase as any)
         .from('interest_exchanges')
         .select('*')
         .eq('sender_id', user.id);
@@ -55,7 +54,7 @@ export const useInterests = () => {
       setSentInterests(sent || []);
 
       // Fetch received interest exchanges
-      const { data: received, error: receivedError } = await supabase
+      const { data: received, error: receivedError } = await (supabase as any)
         .from('interest_exchanges')
         .select('*')
         .eq('receiver_id', user.id);
@@ -65,8 +64,8 @@ export const useInterests = () => {
 
       // Filter mutual interests (where status is accepted)
       const mutual = [
-        ...(sent || []).filter(i => i.status === 'accepted'),
-        ...(received || []).filter(i => i.status === 'accepted')
+        ...(sent || []).filter((i: any) => i.status === 'accepted'),
+        ...(received || []).filter((i: any) => i.status === 'accepted')
       ];
       setMutualInterests(mutual);
 
@@ -121,7 +120,7 @@ export const useInterests = () => {
     }
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('user_interests')
         .insert({
           user_id: user.id,
@@ -150,7 +149,7 @@ export const useInterests = () => {
     }
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('user_interests')
         .delete()
         .eq('id', interestId)
@@ -175,7 +174,7 @@ export const useInterests = () => {
     }
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('interest_exchanges')
         .insert({
           sender_id: user.id,
@@ -204,7 +203,7 @@ export const useInterests = () => {
     }
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('interest_exchanges')
         .update({ status: response, updated_at: new Date().toISOString() })
         .eq('id', interestId)

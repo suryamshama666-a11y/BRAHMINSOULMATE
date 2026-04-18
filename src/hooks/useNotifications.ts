@@ -26,7 +26,7 @@ export const useNotifications = () => {
     queryKey: ['notifications', user?.id],
     queryFn: async () => {
       if (!user) return [];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('notifications')
         .select('*')
         .eq('user_id', user.id)
@@ -83,7 +83,10 @@ export const useNotifications = () => {
       const { error } = await supabase.from('notifications').update({ read: true }).eq('id', notificationId);
       if (error) throw error;
       refetch();
-    } catch (error) { console.error(error); }
+    } catch (error) {
+      logger.error('Failed to mark notification as read:', error);
+      toast.error('Failed to update notification');
+    }
   };
 
   return {

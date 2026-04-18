@@ -20,7 +20,7 @@ export const errorHandler = (
       extra: {
         url: req.originalUrl,
         method: req.method,
-        correlationId: (req as any).correlationId,
+        correlationId: req.correlationId,
         // SECURITY: Never send req.body to Sentry — may contain passwords, PII, payment data
         queryKeys: Object.keys(req.query || {}),
         paramKeys: Object.keys(req.params || {}),

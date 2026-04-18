@@ -19,10 +19,11 @@ const Messages = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch conversations
-  const { data: conversations = [], isLoading } = useQuery({
+  const { data: conversations = [], isLoading } = useQuery<any[]>({
     queryKey: ['conversations', user?.id],
     queryFn: async () => {
-      return await messagesService.getConversations();
+      const result = await messagesService.getConversations();
+      return result.data || [];
     },
     enabled: !!user?.id,
     refetchInterval: 5000 

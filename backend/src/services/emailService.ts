@@ -28,7 +28,6 @@ class EmailService {
     });
   }
 
-  // Send email
   async sendEmail(emailData: EmailData): Promise<boolean> {
     try {
       const mailOptions = {
@@ -40,10 +39,7 @@ class EmailService {
       };
 
       await this.transporter.sendMail(mailOptions);
-      
-      // Log email in database
       await this.logEmail(emailData);
-      
       return true;
     } catch (error) {
       logger.error('Email sending failed:', error);
@@ -51,7 +47,6 @@ class EmailService {
     }
   }
 
-  // Welcome email for new users
   async sendWelcomeEmail(userEmail: string, userName: string): Promise<boolean> {
     const template = this.getWelcomeTemplate(userName);
     return this.sendEmail({
@@ -62,7 +57,6 @@ class EmailService {
     });
   }
 
-  // Email verification
   async sendVerificationEmail(userEmail: string, verificationToken: string): Promise<boolean> {
     const template = this.getVerificationTemplate(verificationToken);
     return this.sendEmail({
@@ -73,7 +67,6 @@ class EmailService {
     });
   }
 
-  // Password reset email
   async sendPasswordResetEmail(userEmail: string, resetToken: string): Promise<boolean> {
     const template = this.getPasswordResetTemplate(resetToken);
     return this.sendEmail({
@@ -84,7 +77,6 @@ class EmailService {
     });
   }
 
-  // Interest received notification
   async sendInterestNotification(userEmail: string, senderName: string): Promise<boolean> {
     const template = this.getInterestNotificationTemplate(senderName);
     return this.sendEmail({
@@ -95,7 +87,6 @@ class EmailService {
     });
   }
 
-  // Message notification
   async sendMessageNotification(userEmail: string, senderName: string): Promise<boolean> {
     const template = this.getMessageNotificationTemplate(senderName);
     return this.sendEmail({
@@ -106,7 +97,6 @@ class EmailService {
     });
   }
 
-  // Subscription confirmation
   async sendSubscriptionConfirmation(userEmail: string, planName: string, expiryDate: Date): Promise<boolean> {
     const template = this.getSubscriptionTemplate(planName, expiryDate);
     return this.sendEmail({
@@ -117,7 +107,6 @@ class EmailService {
     });
   }
 
-  // V-Date reminder
   async sendVDateReminder(userEmail: string, partnerName: string, dateTime: Date): Promise<boolean> {
     const template = this.getVDateReminderTemplate(partnerName, dateTime);
     return this.sendEmail({
@@ -128,7 +117,6 @@ class EmailService {
     });
   }
 
-  // Email templates
   private getWelcomeTemplate(userName: string): EmailTemplate {
     return {
       subject: 'Welcome to Brahmin Soulmate Connect! 🎉',
@@ -333,7 +321,6 @@ class EmailService {
     };
   }
 
-  // Log email in database
   private async logEmail(emailData: EmailData): Promise<void> {
     try {
       await supabase

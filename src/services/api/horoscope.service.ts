@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { extractStorageFilePath } from '@/config/storage';
 
 export interface Horoscope {
   id: string;
@@ -81,15 +82,15 @@ class HoroscopeService {
     if (!user) throw new Error('Not authenticated');
 
     // Check if horoscope exists
-    const { data: existing } = await supabase
+    const { data: existing } = await (supabase as any)
       .from('horoscope_details')
       .select('*')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       // Update existing
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('horoscope_details')
         .update(horoscopeData)
         .eq('user_id', user.id)
@@ -100,7 +101,7 @@ class HoroscopeService {
       return data;
     } else {
       // Insert new
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('horoscope_details')
         .insert({
           ...horoscopeData,
@@ -160,11 +161,11 @@ class HoroscopeService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('horoscope_details')
       .select('*')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (error && error.code !== 'PGRST116') throw error;
     return data;
@@ -190,11 +191,11 @@ class HoroscopeService {
       return null; // No permission to view
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('horoscope_details')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (error && error.code !== 'PGRST116') throw error;
     return data;
@@ -313,23 +314,23 @@ class HoroscopeService {
 
   // Check if users are connected
   private async checkConnection(userId1: string, userId2: string): Promise<boolean> {
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from('connections')
       .select('id')
       .or(`and(user_id_1.eq.${userId1},user_id_2.eq.${userId2}),and(user_id_1.eq.${userId2},user_id_2.eq.${userId1})`)
       .eq('status', 'connected')
-      .single();
+      .maybeSingle();
 
     return !!data;
   }
 
   // Check premium status
   private async checkPremiumStatus(userId: string): Promise<boolean> {
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from('profiles')
       .select('subscription_type, subscription_end_date')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (!data) return false;
     if (data.subscription_type === 'free') return false;
@@ -352,16 +353,16 @@ class HoroscopeService {
     
     if (horoscope?.horoscope_file_url) {
       // Extract file path and delete from storage
-      const urlParts = horoscope.horoscope_file_url.split('/');
-      const filePath = urlParts.slice(-2).join('/');
-      
-      await supabase.storage
-        .from(this.BUCKET_NAME)
-        .remove([filePath]);
+      const filePath = extractStorageFilePath(horoscope.horoscope_file_url);
+      if (filePath) {
+        await supabase.storage
+          .from(this.BUCKET_NAME)
+          .remove([filePath]);
+      }
     }
 
     // Delete from database
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('horoscope_details')
       .delete()
       .eq('user_id', user.id);

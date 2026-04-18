@@ -1,21 +1,16 @@
 import express from 'express';
 import { supabase } from '../config/supabase';
 import twilio from 'twilio';
-import { authMiddleware } from '../middleware/auth';
-import { adminMiddleware } from '../middleware/admin';
+import { authMiddleware, adminMiddleware } from '../middleware/auth';
 import { communicationLimiter } from '../middleware/rateLimiter';
 import { preventHardDelete } from '../middleware/softDelete';
 import { logger } from '../utils/logger';
+import { getErrorMessage, createSuccessResponse, createErrorResponse } from '../utils/errorHelpers';
 
 const router = express.Router();
 
 // ✅ NEW: Prevent hard deletes on notifications
 router.use(preventHardDelete);
-
-// Helper function to get error message
-const getErrorMessage = (error: unknown): string => {
-  return error instanceof Error ? error.message : 'Unknown error';
-};
 
 // SendGrid mail interface
 interface SendGridMail {

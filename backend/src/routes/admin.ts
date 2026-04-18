@@ -1,7 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { supabase } from '../config/supabase';
-import { authMiddleware, AuthRequest } from '../middleware/auth';
-import { adminMiddleware } from '../middleware/admin';
+import { authMiddleware, AuthRequest, adminMiddleware } from '../middleware/auth';
 import { z } from 'zod';
 
 const router = express.Router();

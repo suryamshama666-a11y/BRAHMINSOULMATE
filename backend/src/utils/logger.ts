@@ -3,20 +3,14 @@
  * Replaces console.log/warn/error with structured logging
  */
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+import { LogEntry } from '../types/domain';
 
-interface LogEntry {
-  timestamp: string;
-  level: LogLevel;
-  message: string;
-  data?: any;
-  correlationId?: string;
-}
+type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 class Logger {
   private isDevelopment = process.env.NODE_ENV !== 'production';
 
-  private formatLog(level: LogLevel, message: string, data?: any): LogEntry {
+  private formatLog(level: LogLevel, message: string, data?: Record<string, unknown>): LogEntry {
     return {
       timestamp: new Date().toISOString(),
       level,
@@ -50,24 +44,39 @@ class Logger {
     }
   }
 
-  debug(message: string, data?: any): void {
+  debug(message: string, data?: Record<string, unknown>): void {
     this.output(this.formatLog('debug', message, data));
   }
 
-  info(message: string, data?: any): void {
+  info(message: string, data?: Record<string, unknown>): void {
     this.output(this.formatLog('info', message, data));
   }
 
-  warn(message: string, data?: any): void {
+  warn(message: string, data?: Record<string, unknown>): void {
     this.output(this.formatLog('warn', message, data));
   }
 
-  error(message: string, data?: any): void {
-    this.output(this.formatLog('error', message, data));
+  error(message: string, data?: Record<string, unknown> | unknown): void {
+    // Convert unknown to a safe record format
+    let safeData: Record<string, unknown> | undefined;
+    if (data !== undefined) {
+      if (data instanceof Error) {
+        safeData = {
+          name: data.name,
+          message: data.message,
+          stack: data.stack,
+        };
+      } else if (typeof data === 'object' && data !== null) {
+        safeData = data as Record<string, unknown>;
+      } else {
+        safeData = { value: String(data) };
+      }
+    }
+    this.output(this.formatLog('error', message, safeData));
   }
 
   // Alias for console.log compatibility
-  log(message: string, data?: any): void {
+  log(message: string, data?: Record<string, unknown>): void {
     this.info(message, data);
   }
 }

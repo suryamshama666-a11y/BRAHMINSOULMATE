@@ -2,16 +2,12 @@ import express from 'express';
 import { supabase } from '../config/supabase';
 import { authMiddleware } from '../middleware/auth';
 import { preventHardDelete } from '../middleware/softDelete';
+import { getErrorMessage, createSuccessResponse, createErrorResponse } from '../utils/errorHelpers';
 
 const router = express.Router();
 
 // ✅ NEW: Prevent hard deletes on events
 router.use(preventHardDelete);
-
-// Helper function to get error message
-const getErrorMessage = (error: unknown): string => {
-  return error instanceof Error ? error.message : 'Unknown error';
-};
 
 // Get all events
 router.get('/', async (req, res) => {

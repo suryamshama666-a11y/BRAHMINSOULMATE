@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton, StatsCardSkeleton, AvatarSkeleton } from '@/components/ui/skeleton';
 import { getMockOnlineProfiles, getMockNewProfiles, getMockRecommendedProfiles } from '@/data/fixtures/mockProfiles';
+import { useQuery } from '@tanstack/react-query';
 
 // Type definitions
 interface MemberProfile {
@@ -107,7 +108,7 @@ const Dashboard = () => {
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
       const [profileViewsRes, interestsRes, messagesRes, vdatesRes, onlineRes, newRes, matchesRes] = await Promise.all([
-        supabase.from('profile_views').select('id', { count: 'exact', head: true }).eq('viewed_id', user.id),
+        (supabase as any).from('profile_views').select('id', { count: 'exact', head: true }).eq('viewed_id', user.id),
         supabase.from('interests').select('id', { count: 'exact', head: true }).eq('sender_id', user.id),
         supabase.from('messages').select('id', { count: 'exact', head: true }).or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`),
         supabase.from('vdates').select('id', { count: 'exact', head: true }).or(`user_id_1.eq.${user.id},user_id_2.eq.${user.id}`),
@@ -141,7 +142,7 @@ const Dashboard = () => {
           if (!height) return "160 cm";
           if (typeof height === 'number') return `${height} cm`;
           if (!isNaN(Number(height))) return `${height} cm`;
-          return height;
+          return height as string;
         };
 
         return {
@@ -163,15 +164,15 @@ const Dashboard = () => {
 
       const mockOnline = getMockOnlineProfiles(oppositeGender);
       const onlineProfilesToUse = dashboardData.online.length > 0 ? dashboardData.online : mockOnline;
-      setOnlineMembers(onlineProfilesToUse.map(p => transformProfile(p)));
+      setOnlineMembers(onlineProfilesToUse.map((p: any) => transformProfile(p)));
       
       const mockNew = getMockNewProfiles(oppositeGender);
       const newProfilesToUse = dashboardData.newMembers.length > 0 ? dashboardData.newMembers : mockNew;
-      setNewMembers(newProfilesToUse.map(p => transformProfile(p)));
+      setNewMembers(newProfilesToUse.map((p: any) => transformProfile(p)));
       
       const mockRecommended = getMockRecommendedProfiles(oppositeGender);
       const recommendedProfilesToUse = dashboardData.recommended.length > 0 ? dashboardData.recommended : mockRecommended;
-      setRecommendedMatches(recommendedProfilesToUse.map(p => transformProfile(p)));
+      setRecommendedMatches(recommendedProfilesToUse.map((p: any) => transformProfile(p)));
       
       setLoading(false);
     }

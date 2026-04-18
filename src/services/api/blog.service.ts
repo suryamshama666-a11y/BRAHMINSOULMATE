@@ -40,7 +40,7 @@ export const blogCategories = [
 class BlogService {
   // Get all published articles
   async getArticles(category?: string, limit: number = 20): Promise<BlogArticle[]> {
-    let query = supabase
+    let query = (supabase as any)
       .from('blog_articles')
       .select('*')
       .eq('is_published', true)
@@ -53,12 +53,12 @@ class BlogService {
 
     const { data, error } = await query;
     if (error) throw error;
-    return data || [];
+    return (data || []) as BlogArticle[];
   }
 
   // Get featured articles
   async getFeaturedArticles(limit: number = 3): Promise<BlogArticle[]> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('blog_articles')
       .select('*')
       .eq('is_published', true)
@@ -67,37 +67,33 @@ class BlogService {
       .limit(limit);
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as BlogArticle[];
   }
 
   // Get single article by slug
   async getArticleBySlug(slug: string): Promise<BlogArticle | null> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('blog_articles')
       .select('*')
       .eq('slug', slug)
       .eq('is_published', true)
-      .single();
+      .maybeSingle();
 
-    if (error) {
-      if (error.code === 'PGRST116') return null; // Not found
-      throw error;
-    }
+    if (error && error.code !== 'PGRST116') throw error;
+    if (!data) return null;
 
     // Increment view count
-    if (data) {
-      await supabase
-        .from('blog_articles')
-        .update({ views: (data.views || 0) + 1 })
-        .eq('id', data.id);
-    }
+    (supabase as any)
+      .from('blog_articles')
+      .update({ views: (data.views || 0) + 1 })
+      .eq('id', data.id);
 
-    return data;
+    return data as BlogArticle;
   }
 
   // Get active announcements
   async getAnnouncements(): Promise<Announcement[]> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('announcements')
       .select('*')
       .eq('is_active', true)
@@ -106,25 +102,22 @@ class BlogService {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as Announcement[];
   }
 
   // Get latest announcement (for banner display)
   async getLatestAnnouncement(): Promise<Announcement | null> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('announcements')
       .select('*')
       .eq('is_active', true)
       .or(`ends_at.is.null,ends_at.gt.${new Date().toISOString()}`)
       .order('priority', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (error) {
-      if (error.code === 'PGRST116') return null;
-      throw error;
-    }
-    return data;
+    if (error && error.code !== 'PGRST116') throw error;
+    return data as Announcement | null;
   }
 }
 

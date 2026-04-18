@@ -1,19 +1,30 @@
 import { supabase } from '@/lib/supabase';
-import { Database } from '@/types/supabase';
 
-type ForumPostRow = Database['public']['Tables']['forum_posts']['Row'];
-type ForumCommentRow = Database['public']['Tables']['forum_comments']['Row'];
-
-export interface ForumPost extends ForumPostRow {
-  user?: unknown;
+export interface ForumPost {
+  id: string;
+  user_id: string;
+  category: string;
+  title: string;
+  content: string;
+  view_count: number;
+  like_count: number;
+  is_locked: boolean;
+  created_at: string;
+  updated_at: string;
+  user?: any;
   comment_count?: number;
   is_liked?: boolean;
-  views?: number;
-  likes?: number;
 }
 
-export interface ForumComment extends ForumCommentRow {
-  user?: unknown;
+export interface ForumComment {
+  id: string;
+  post_id: string;
+  user_id: string;
+  content: string;
+  reply_count: number;
+  created_at: string;
+  updated_at: string;
+  user?: any;
 }
 
 export interface ForumReport {
@@ -61,7 +72,7 @@ class ForumService {
       throw new Error('Content must be between 10 and 5000 characters');
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('forum_posts')
       .insert({
         user_id: user.id,
@@ -71,12 +82,12 @@ class ForumService {
         view_count: 0,
         like_count: 0,
         is_locked: false
-      } as unknown as Database['public']['Tables']['forum_posts']['Insert'])
+      })
       .select()
       .single();
 
     if (error) throw error;
-    return data as unknown as ForumPost;
+    return data as ForumPost;
   }
 
   // Get all posts
@@ -85,9 +96,7 @@ class ForumService {
     sortBy: 'recent' | 'popular' | 'views' = 'recent',
     limit: number = 20
   ): Promise<ForumPost[]> {
-    const { data: { _user } } = await supabase.auth.getUser();
-
-    let query = supabase
+    let query = (supabase as any)
       .from('forum_posts')
       .select('*');
 
@@ -112,40 +121,37 @@ class ForumService {
     const { data, error } = await query;
     if (error) throw error;
 
-    return (data || []) as unknown as ForumPost[];
+    return (data || []) as ForumPost[];
   }
 
   // Get post by ID
   async getPost(postId: string): Promise<ForumPost | null> {
-    const { data: { _user } } = await supabase.auth.getUser();
-
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('forum_posts')
       .select('*')
       .eq('id', postId)
-      .single();
+      .maybeSingle();
 
     if (error && error.code !== 'PGRST116') throw error;
     if (!data) return null;
 
-    // Increment view count
-    await supabase
+    // Increment view count (fire and forget)
+    (supabase as any)
       .from('forum_posts')
       .update({ view_count: (data.view_count || 0) + 1 })
       .eq('id', postId);
 
     // Get comment count
-    const { count } = await supabase
+    const { count } = await (supabase as any)
       .from('forum_comments')
       .select('*', { count: 'exact', head: true })
       .eq('post_id', postId);
 
     return {
       ...data,
-      views: (data.view_count || 0) + 1,
       comment_count: count || 0,
       is_liked: false
-    } as unknown as ForumPost;
+    } as ForumPost;
   }
 
   // Update post
@@ -153,7 +159,7 @@ class ForumService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('forum_posts')
       .update({
         title,
@@ -171,7 +177,7 @@ class ForumService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('forum_posts')
       .delete()
       .eq('id', postId)
@@ -189,32 +195,32 @@ class ForumService {
       throw new Error('Comment must be between 1 and 1000 characters');
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('forum_comments')
       .insert({
         post_id: postId,
         user_id: user.id,
         content,
         reply_count: 0
-      } as unknown as Database['public']['Tables']['forum_comments']['Insert'])
+      })
       .select()
       .single();
 
     if (error) throw error;
 
-    return data as unknown as ForumComment;
+    return data as ForumComment;
   }
 
   // Get comments for post
   async getComments(postId: string): Promise<ForumComment[]> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('forum_comments')
       .select('*')
       .eq('post_id', postId)
       .order('created_at', { ascending: true });
 
     if (error) throw error;
-    return (data || []) as unknown as ForumComment[];
+    return (data || []) as ForumComment[];
   }
 
   // Delete comment
@@ -222,7 +228,7 @@ class ForumService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('forum_comments')
       .delete()
       .eq('id', commentId)
@@ -236,14 +242,14 @@ class ForumService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('forum_posts')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return (data || []) as unknown as ForumPost[];
+    return (data || []) as ForumPost[];
   }
 
   // Notify post author
@@ -257,34 +263,33 @@ class ForumService {
         ? 'Someone liked your forum post'
         : 'Someone commented on your forum post';
 
-      await supabase.from('notifications').insert({
+      await (supabase as any).from('notifications').insert({
         user_id: userId,
         type: `forum_${type}`,
         title: 'Forum Activity',
         message,
         action_url: `/community/posts/${postId}`,
         read: false
-      } as unknown as Database['public']['Tables']['notifications']['Insert']);
+      });
     } catch (error) {
-      console.error('Failed to notify post author:', error);
+      // Silently fail notification
     }
   }
 
-  // Notify admins of report
   private async notifyAdminsOfReport(
     contentType: string,
     contentId: string,
     reason: string
   ): Promise<void> {
     try {
-      const { data: admins } = await supabase
+      const { data: admins } = await (supabase as any)
         .from('profiles')
         .select('user_id')
         .eq('role', 'admin');
 
       if (!admins || admins.length === 0) return;
 
-      const notifications = admins.map(admin => ({
+      const notifications = admins.map((admin: any) => ({
         user_id: admin.user_id,
         type: 'forum_report',
         title: 'Content Reported',
@@ -293,9 +298,9 @@ class ForumService {
         read: false
       }));
 
-      await supabase.from('notifications').insert(notifications as unknown as Database['public']['Tables']['notifications']['Insert'][]);
+      await (supabase as any).from('notifications').insert(notifications);
     } catch (error) {
-      console.error('Failed to notify admins:', error);
+      // Silently fail admin notification
     }
   }
 }

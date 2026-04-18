@@ -3,13 +3,9 @@ import { supabase } from '../config/supabase';
 import { authMiddleware } from '../middleware/auth';
 import { messageLimiter } from '../middleware/rateLimiter';
 import { softDelete, filterDeleted } from '../middleware/softDelete';
+import { getErrorMessage, createSuccessResponse, createErrorResponse } from '../utils/errorHelpers';
 
 const router = express.Router();
-
-// Helper function to get error message
-const getErrorMessage = (error: unknown): string => {
-  return error instanceof Error ? error.message : 'Unknown error';
-};
 
 // Conversation type
 interface Conversation {

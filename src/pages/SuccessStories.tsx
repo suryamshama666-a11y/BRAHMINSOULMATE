@@ -23,8 +23,8 @@ export default function SuccessStories() {
       setStories([
         {
           id: '1',
-          user_id_1: 'user-1',
-          user_id_2: 'user-2',
+          user1_id: 'user-1',
+          user2_id: 'user-2',
           title: "Aditya & Priya",
           story: "We connected through BrahminSoulmate and instantly felt a deep connection. Our shared values and aspirations made it clear we were meant for each other.",
           marriage_date: "2023-12-15",
@@ -36,8 +36,8 @@ export default function SuccessStories() {
         },
         {
           id: '2',
-          user_id_1: 'user-3',
-          user_id_2: 'user-4',
+          user1_id: 'user-3',
+          user2_id: 'user-4',
           title: "Rahul & Sneha",
           story: "Thanks to the platform's advanced matching system, we found each other despite living in different cities. Our first video call lasted 3 hours!",
           marriage_date: "2023-11-20",
@@ -49,8 +49,8 @@ export default function SuccessStories() {
         },
         {
           id: '3',
-          user_id_1: 'user-5',
-          user_id_2: 'user-6',
+          user1_id: 'user-5',
+          user2_id: 'user-6',
           title: "Karthik & Divya",
           story: "The detailed profiles and horoscope matching feature helped us find our perfect match. We're grateful to BrahminSoulmate for bringing us together.",
           marriage_date: "2023-10-10",

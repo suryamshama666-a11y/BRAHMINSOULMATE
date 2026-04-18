@@ -7,11 +7,13 @@ export const useProfilePrivacy = () => {
 
   const blockUser = async (userId: string, reason: string) => {
     try {
-      const { data, error } = await supabase
+      const client: any = supabase;
+      const { data, error } = await client
         .from('blocked_users')
         .insert({
           blocked_user_id: userId,
           reason,
+
         })
         .select()
         .single();
@@ -30,13 +32,14 @@ export const useProfilePrivacy = () => {
 
   const reportUser = async (userId: string, reason: string, details: string) => {
     try {
-      const { data, error } = await supabase
+      const client: any = supabase;
+      const { data, error } = await client
         .from('user_reports')
         .insert({
           reported_user_id: userId,
           reason,
           details,
-        })
+        } as any)
         .select()
         .single();
 

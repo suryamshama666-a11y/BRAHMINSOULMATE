@@ -23,8 +23,8 @@ export const useVerification = () => {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('verification_requests' as any)
+      const { data, error } = await (supabase as any)
+        .from('verification_requests')
         .select('*')
         .eq('user_id', user.id)
         .single();

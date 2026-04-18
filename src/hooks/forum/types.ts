@@ -1,7 +1,7 @@
 
 export interface ForumPost {
   id: string;
-  category_id: string;
+  category_id: string | null;
   author_id: string;
   title: string;
   content: string;

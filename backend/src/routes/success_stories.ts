@@ -1,14 +1,9 @@
 import express from 'express';
 import { supabase } from '../config/supabase';
-import { authMiddleware } from '../middleware/auth';
-import { adminMiddleware } from '../middleware/admin';
+import { authMiddleware, adminMiddleware } from '../middleware/auth';
+import { getErrorMessage, createSuccessResponse, createErrorResponse } from '../utils/errorHelpers';
 
 const router = express.Router();
-
-// Helper function to get error message
-const getErrorMessage = (error: unknown): string => {
-  return error instanceof Error ? error.message : 'Unknown error';
-};
 
 // Admin: Approve a success story
 router.post('/:id/approve', authMiddleware, adminMiddleware, async (req, res) => {

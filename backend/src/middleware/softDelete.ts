@@ -5,6 +5,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { supabase } from '../config/supabase';
 import { logger } from '../utils/logger';
+import { SoftDeletable } from '../types/domain';
 
 // Tables that support soft delete
 export const SOFT_DELETE_TABLES = [
@@ -20,18 +21,16 @@ export const SOFT_DELETE_TABLES = [
   'success_stories'
 ];
 
-// Add deleted_at column to tables that don't have it
-export interface SoftDeletable {
-  deleted_at?: string | null;
-}
-
 /**
  * Soft delete a record instead of hard delete
  * @param table - The table name
  * @param id - The record ID
  * @returns The updated record with deleted_at set
  */
-export async function softDelete(table: string, id: string): Promise<{ data: unknown; error: unknown }> {
+export async function softDelete<T extends SoftDeletable>(
+  table: string,
+  id: string
+): Promise<{ data: T | null; error: unknown }> {
   if (!SOFT_DELETE_TABLES.includes(table)) {
     throw new Error(`Table ${table} does not support soft delete`);
   }
@@ -43,7 +42,7 @@ export async function softDelete(table: string, id: string): Promise<{ data: unk
     .select()
     .single();
 
-  return { data, error };
+  return { data: data as T | null, error };
 }
 
 /**
@@ -52,7 +51,11 @@ export async function softDelete(table: string, id: string): Promise<{ data: unk
  * @param id - The record ID
  * @param reason - Reason for permanent deletion (for audit)
  */
-export async function hardDelete(table: string, id: string, reason: string): Promise<{ data: unknown; error: unknown }> {
+export async function hardDelete<T extends SoftDeletable>(
+  table: string,
+  id: string,
+  reason: string
+): Promise<{ data: T | null; error: unknown }> {
   // Log the hard delete for audit purposes
   logger.warn(`[Hard Delete] Table: ${table}, ID: ${id}, Reason: ${reason}`);
 
@@ -63,7 +66,7 @@ export async function hardDelete(table: string, id: string, reason: string): Pro
     .select()
     .single();
 
-  return { data, error };
+  return { data: data as T | null, error };
 }
 
 /**
@@ -71,7 +74,10 @@ export async function hardDelete(table: string, id: string, reason: string): Pro
  * @param table - The table name
  * @param id - The record ID
  */
-export async function restoreRecord(table: string, id: string): Promise<{ data: unknown; error: unknown }> {
+export async function restoreRecord<T extends SoftDeletable>(
+  table: string,
+  id: string
+): Promise<{ data: T | null; error: unknown }> {
   if (!SOFT_DELETE_TABLES.includes(table)) {
     throw new Error(`Table ${table} does not support soft delete`);
   }
@@ -83,7 +89,7 @@ export async function restoreRecord(table: string, id: string): Promise<{ data: 
     .select()
     .single();
 
-  return { data, error };
+  return { data: data as T | null, error };
 }
 
 /**

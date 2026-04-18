@@ -22,6 +22,7 @@ import {
 import { Calendar, MapPin, Users, Plus, Pencil, Trash2, Eye, Loader2 } from 'lucide-react';
 import { eventsService, Event } from '@/services/api/events.service';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface EventFormData {
   title: string;
@@ -76,7 +77,7 @@ export function EventsManagementTab() {
           capacity: 150,
           participant_count: 45,
           created_at: new Date().toISOString()
-        },
+        } as any,
         {
           id: '2',
           title: "Virtual Matchmaking Session",
@@ -86,7 +87,7 @@ export function EventsManagementTab() {
           capacity: 100,
           participant_count: 32,
           created_at: new Date().toISOString()
-        }
+        } as any
       ]);
     } finally {
       setLoading(false);
@@ -125,7 +126,7 @@ export function EventsManagementTab() {
   };
 
   const handleSubmit = async () => {
-    if (!formData.title || !formData.event_date || !formData.location) {
+    if (!formData.title || !formData.date || !formData.location) {
       toast({ title: 'Error', description: 'Please fill all required fields', variant: 'destructive' });
       return;
     }

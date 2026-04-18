@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from './useSupabaseAuth';
 import { toast } from 'sonner';
 import { Database } from '@/types/supabase';
+import { logger } from '@/utils/logger';
 
 type ShortlistRow = Database['public']['Tables']['shortlists']['Row'];
 type InsertShortlist = Database['public']['Tables']['shortlists']['Insert'];
@@ -30,7 +31,7 @@ export const useShortlist = () => {
       toast.success('Added to shortlist');
       return { success: true, data: data as ShortlistRow };
     } catch (error) {
-      console.error('Error adding to shortlist:', error);
+      logger.error('Error adding to shortlist:', error);
       toast.error('Failed to add to shortlist');
       return { success: false, error };
     }

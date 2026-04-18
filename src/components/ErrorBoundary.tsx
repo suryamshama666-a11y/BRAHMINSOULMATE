@@ -35,17 +35,12 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-    console.error('Error caught by ErrorBoundary:', error, errorInfo);
-
-    // Log to production database logger
     logger.error('Critical Error caught by Page Boundary', error, { 
       stack: errorInfo.componentStack ?? undefined 
     });
 
-    // Call custom error handler if provided
     this.props.onError?.(error, errorInfo);
 
-    // Log to Sentry if available
     const sentry = (window as any).Sentry;
     if (sentry) {
       const eventId = sentry.captureException(error, {

@@ -29,12 +29,12 @@ export default function VoiceCallPage() {
     audioEnabled,
     callDuration,
     connectionQuality,
-    _participants,
-    _chatMessages,
-    _meetingUrl,
+    participants,
+    chatMessages,
+    meetingUrl,
     toggleAudio,
     endCall,
-    _sendChatMessage,
+    sendChatMessage,
     recordingEnabled,
     toggleRecording
   } = useVoiceCall(id!, profile);
@@ -129,6 +129,7 @@ export default function VoiceCallPage() {
               audioEnabled={audioEnabled}
               profile={profile}
               recordingEnabled={recordingEnabled}
+              meetingUrl={meetingUrl}
             />
 
             {/* Matrimonial Profile Overlay */}

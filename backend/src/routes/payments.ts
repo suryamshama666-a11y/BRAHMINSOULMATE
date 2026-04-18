@@ -13,8 +13,8 @@ const router = express.Router();
 
 // Initialize Razorpay
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || 'placeholder',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || 'placeholder'
+  key_id: process.env.RAZORPAY_KEY_ID || '',
+  key_secret: process.env.RAZORPAY_KEY_SECRET || ''
 });
 
 // Subscription plans
@@ -175,7 +175,7 @@ router.post('/webhook', asyncHandler(async (req, res) => {
 
   const expectedSignature = crypto
     .createHmac('sha256', secret)
-    .update((req as any).rawBody || '')
+    .update(req.rawBody || '')
     .digest('hex');
 
   if (expectedSignature !== signature) {

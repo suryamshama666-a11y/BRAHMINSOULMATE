@@ -5,6 +5,8 @@ import { AuthContextType } from '@/types/auth';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { isDevBypassMode, getDevUser, getDevProfile } from '@/config/dev';
+import { logger } from '@/utils/logger';
+import { mapToUserProfile } from '@/utils/profileUtils';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -26,18 +28,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       if (profileError) {
         if (profileError.code !== 'PGRST116') {
-          console.error('Error fetching profile:', profileError);
+          logger.error('Error fetching profile', profileError);
         }
       } else if (profileData) {
-        setProfile(profileData as any);
+        setProfile(mapToUserProfile(profileData));
       }
 
       const { data: subscriptionData, error: subError } = await supabase
-        .from('user_subscriptions')
-        .select('*, subscription_plans(*)')
+        .from('subscriptions')
+        .select(`
+          *,
+          plan:subscription_plans(*)
+        `)
         .eq('user_id', userId)
         .eq('status', 'active')
-        .order('end_date', { ascending: false })
+        .order('ends_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
@@ -45,7 +50,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setSubscription(subscriptionData as UserSubscription);
       }
     } catch (err) {
-      console.error('Error in fetchUserData:', err);
+      logger.error('Error in fetchUserData', err);
     }
   }, []);
 
@@ -72,13 +77,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
         }
       } catch (err) {
-        console.error('Auth initialization error:', err);
+        logger.error('Auth initialization error', err);
       } finally {
         setLoading(false);
       }
-    };
-
-    initAuth();
+    };    initAuth();
 
     const { data: { subscription: authListener } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
       if (isDevBypassMode()) return;
@@ -233,7 +236,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!user) return;
     const { error } = await supabase
       .from('profiles')
-      .update({ last_active: new Date().toISOString() })
+      .update({ 
+        last_active: new Date().toISOString() 
+      } as any)
       .eq('user_id', user.id);
     if (error) throw error;
   };

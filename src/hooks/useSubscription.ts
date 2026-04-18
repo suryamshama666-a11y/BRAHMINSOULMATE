@@ -24,8 +24,8 @@ const fetchCurrentSubscriptionData = async (userId: string | undefined): Promise
   if (!userId) return null;
 
   try {
-    const subscription = await paymentsService.getCurrentSubscription();
-    const hasActive = await paymentsService.hasActiveSubscription();
+    const subscription = await (paymentsService as any).getCurrentSubscription();
+    const hasActive = await (paymentsService as any).hasActiveSubscription();
     
     return {
       subscribed: hasActive,
@@ -89,7 +89,7 @@ export const useSubscription = () => {
       }
 
       // Initiate Razorpay payment
-      await paymentsService.initiatePayment(planId);
+      await (paymentsService as any).initiatePayment(planId);
     },
     onSuccess: () => {
       toast.success('Subscription activated successfully!');

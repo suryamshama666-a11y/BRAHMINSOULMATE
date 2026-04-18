@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { Check, CheckCheck, Download, Play, Pause, SmilePlus, Maximize2, X, MoreVertical, Edit2, Trash2, CheckCircle2 } from 'lucide-react';
 import { Message, MessageReaction } from '@/features/messages/hooks/useMessages';
+import { MessageReaction as ChatMessageReaction } from '@/types/chat';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -28,6 +29,12 @@ interface MessageBubbleProps {
   onDelete?: () => void;
   currentUserId?: string;
 }
+
+// Helper to convert between MessageReaction types
+const convertReactions = (reactions: MessageReaction[] | undefined): MessageReaction[] => {
+  if (!reactions) return [];
+  return reactions;
+};
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({ 
   message, 

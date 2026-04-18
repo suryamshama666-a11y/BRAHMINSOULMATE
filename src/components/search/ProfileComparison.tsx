@@ -29,10 +29,13 @@ export const ProfileComparison: React.FC<ProfileComparisonProps> = ({
     { label: 'Verified', key: 'isVerified', formatter: (val: boolean) => val ? 'Yes' : 'No' },
   ];
 
-  // Helper function to get attribute value
   const getAttributeValue = (profile: Profile, attr: { key: string, formatter?: (val: any) => string }) => {
     const value = profile[attr.key as keyof Profile];
-    return attr.formatter ? attr.formatter(value) : value;
+    if (attr.formatter) return attr.formatter(value);
+    if (value instanceof Date) return value.toLocaleDateString();
+    if (Array.isArray(value)) return value.join(', ');
+    if (typeof value === 'object' && value !== null) return JSON.stringify(value);
+    return value;
   };
 
   if (profiles.length === 0) {

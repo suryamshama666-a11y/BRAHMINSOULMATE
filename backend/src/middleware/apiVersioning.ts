@@ -11,7 +11,6 @@ export interface VersionedRequest extends Request {
 // Supported API versions
 export const SUPPORTED_VERSIONS = ['v1', 'v2'];
 export const DEFAULT_VERSION = 'v1';
-export const DEPRECATED_VERSIONS: string[] = []; // Versions scheduled for deprecation
 
 /**
  * API Versioning middleware
@@ -42,11 +41,6 @@ export function apiVersioning(req: VersionedRequest, res: Response, next: NextFu
     return;
   }
   
-  // Warn if using deprecated version
-  if (DEPRECATED_VERSIONS.includes(version)) {
-    res.setHeader('X-API-Deprecation-Warning', `API version ${version} is deprecated and will be removed on ${getDeprecationDate(version)}`);
-  }
-  
   // Attach version to request
   req.apiVersion = version;
   
@@ -58,35 +52,11 @@ export function apiVersioning(req: VersionedRequest, res: Response, next: NextFu
 }
 
 /**
- * Get deprecation date for a version
- */
-function getDeprecationDate(version: string): string {
-  // Return a date 3 months from now for deprecated versions
-  const date = new Date();
-  date.setMonth(date.getMonth() + 3);
-  return date.toISOString().split('T')[0];
-}
-
-/**
  * Version-aware response wrapper
  */
 export function versionedResponse<T>(req: VersionedRequest, res: Response, data: T): void {
   const version = req.apiVersion || DEFAULT_VERSION;
-  
-  // Transform response based on version if needed
-  const transformedData = transformForVersion(data, version);
-  
-  res.json(transformedData);
-}
-
-/**
- * Transform data based on API version
- * Add this logic as your API evolves
- */
-function transformForVersion<T>(data: T, version: string): T {
-  // Example: Add/remove fields based on version
-  // For now, return data as-is
-  return data;
+  res.json(data);
 }
 
 /**

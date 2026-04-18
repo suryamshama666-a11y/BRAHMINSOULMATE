@@ -3,7 +3,8 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { api } from '@/lib/api';
+import { ProfilesService } from '@/services/api/profiles.service';
+import { UserProfile } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
 import { OnlineStats } from './components/OnlineStats';
 import { OnlineSearchBar } from './components/OnlineSearchBar';
@@ -15,7 +16,7 @@ const _PROFILES_PER_PAGE = 9;
 
 const Online = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [profiles, setProfiles] = useState([]);
+  const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [_loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(9);
@@ -35,9 +36,10 @@ const Online = () => {
     const loadProfiles = async () => {
       try {
         setLoading(true);
-        const result = await api.getProfiles({ page: 1, limit: 20 });
-        const profilesData = Array.isArray(result) ? result : result.data || [];
-        setProfiles(profilesData);
+        const result = await ProfilesService.getOnlineProfiles(50);
+        if (result.data) {
+          setProfiles(result.data);
+        }
       } catch (error) {
         console.error('Error loading profiles:', error);
         setProfiles([]);
@@ -49,8 +51,8 @@ const Online = () => {
     loadProfiles();
   }, []);
 
-  // Filter to show only "online" users (simulate with even index profiles)
-  const onlineProfiles = profiles.filter((_, index) => index % 2 === 0);
+  // All profiles fetched from getOnlineProfiles are considered online
+  const onlineProfiles = profiles;
 
   const handleStartChat = (profileId: string, profileName: string) => {
     navigate(`/messages?conversation=${profileId}`);
@@ -103,10 +105,11 @@ const Online = () => {
     });
   };
 
-  const filteredProfiles = onlineProfiles.filter(profile =>
-    profile.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    profile.location.city.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProfiles = onlineProfiles.filter(profile => {
+    const searchMatch = profile.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const cityMatch = typeof profile.location !== 'string' && profile.location.city.toLowerCase().includes(searchTerm.toLowerCase());
+    return searchMatch || cityMatch;
+  });
 
     const totalPages = Math.ceil(filteredProfiles.length / itemsPerPage);
     const currentProfiles = filteredProfiles.slice(
@@ -156,7 +159,7 @@ const Online = () => {
               {currentProfiles.map((profile) => (
                 <OnlineProfileCard
                   key={profile.id}
-                  profile={profile}
+                  profile={profile as any}
                   onStartChat={handleStartChat}
                   onVideoCall={handleVideoCall}
                   onPhoneCall={handlePhoneCall}

@@ -44,7 +44,8 @@ export default function VideoCallPage() {
     toggleScreenShare,
     endCall,
     sendChatMessage,
-    changeBackground
+    changeBackground,
+    meetingUrl
   } = useVideoCall(id!, profile);
 
   const [showSettings, setShowSettings] = useState(false);

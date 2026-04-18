@@ -100,7 +100,7 @@ const calculateEducationCompatibility = (profile1: UserProfile, profile2: UserPr
   // Check for preference match if available
   if (profile1.preferences?.education_preference && 
       profile1.preferences.education_preference.some(pref => 
-        pref.toLowerCase() === profile2.education.level?.toLowerCase())) {
+        pref.toLowerCase() === profile2.education?.level?.toLowerCase())) {
     score += 0.2;
   }
   
@@ -113,30 +113,32 @@ const calculateEducationCompatibility = (profile1: UserProfile, profile2: UserPr
 const calculateLocationCompatibility = (profile1: UserProfile, profile2: UserProfile): number => {
   if (!profile1.location || !profile2.location) return 0.5;
   
+  const loc1 = profile1.location as any;
+  const loc2 = profile2.location as any;
   let score = 0;
   
   // Same city is best match
-  if (profile1.location.city && profile2.location.city && 
-      profile1.location.city.toLowerCase() === profile2.location.city.toLowerCase()) {
+  if (loc1.city && loc2.city && 
+      loc1.city.toLowerCase() === loc2.city.toLowerCase()) {
     score = 1;
   }
   // Same state is good match
-  else if (profile1.location.state && profile2.location.state && 
-           profile1.location.state.toLowerCase() === profile2.location.state.toLowerCase()) {
+  else if (loc1.state && loc2.state && 
+           loc1.state.toLowerCase() === loc2.state.toLowerCase()) {
     score = 0.7;
   }
   // Same country is minimum match
-  else if (profile1.location.country && profile2.location.country && 
-           profile1.location.country.toLowerCase() === profile2.location.country.toLowerCase()) {
+  else if (loc1.country && loc2.country && 
+           loc1.country.toLowerCase() === loc2.country.toLowerCase()) {
     score = 0.4;
   }
   
   // Check for location preference match
   if (profile1.preferences?.location_preference && 
       profile1.preferences.location_preference.some(loc => {
-        return loc.toLowerCase() === profile2.location.city?.toLowerCase() ||
-               loc.toLowerCase() === profile2.location.state?.toLowerCase() ||
-               loc.toLowerCase() === profile2.location.country?.toLowerCase();
+        return loc.toLowerCase() === loc2.city?.toLowerCase() ||
+               loc.toLowerCase() === loc2.state?.toLowerCase() ||
+               loc.toLowerCase() === loc2.country?.toLowerCase();
       })) {
     score += 0.3;
   }

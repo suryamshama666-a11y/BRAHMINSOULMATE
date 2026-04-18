@@ -4,45 +4,37 @@
 
 import { z } from 'zod';
 
-// UUID validation schema
 export const uuidSchema = z.string().uuid('Invalid UUID format');
 
-// Validate UUID
 export function isValidUUID(value: string): boolean {
   return uuidSchema.safeParse(value).success;
 }
 
-// Validate email
 export function isValidEmail(email: string): boolean {
   const emailSchema = z.string().email();
   return emailSchema.safeParse(email).success;
 }
 
-// Validate phone number (Indian and international formats)
 export function isValidPhone(phone: string): boolean {
-  // Remove spaces and dashes
   const cleaned = phone.replace(/[\s-]/g, '');
-  // Check if it's a valid phone number (10-15 digits, optionally starting with +)
   const phoneRegex = /^\+?[1-9]\d{9,14}$/;
   return phoneRegex.test(cleaned);
 }
 
-// Sanitize string input (remove potential XSS)
 export function sanitizeInput(input: string): string {
   return input
-    .replace(/<[^>]*>/g, '') // Remove all HTML tags
+    .replace(/<[^>]*>/g, '')
     .trim();
 }
 
 export function sanitizeString(input: string): string {
   return input
-    .replace(/[<>]/g, '') // Remove angle brackets
-    .replace(/javascript:/gi, '') // Remove javascript: protocol
-    .replace(/on\w+=/gi, '') // Remove event handlers
+    .replace(/[<>]/g, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+=/gi, '')
     .trim();
 }
 
-// Password validation
 export interface PasswordValidationResult {
   isValid: boolean;
   errors: string[];
@@ -73,7 +65,6 @@ export function validatePassword(password: string): PasswordValidationResult {
   };
 }
 
-// Validate analytics field names
 const ALLOWED_ANALYTICS_FIELDS = [
   'messages_sent',
   'interests_sent',
@@ -87,7 +78,6 @@ export function isValidAnalyticsField(field: string): field is typeof ALLOWED_AN
   return ALLOWED_ANALYTICS_FIELDS.includes(field as any);
 }
 
-// Validate and sanitize user ID for RPC calls
 export function validateUserId(userId: string): string {
   if (!isValidUUID(userId)) {
     throw new Error('Invalid user ID format');
@@ -95,7 +85,6 @@ export function validateUserId(userId: string): string {
   return userId;
 }
 
-// Validate analytics parameters
 export function validateAnalyticsParams(userId: string, field: string): { userId: string; field: string } {
   const validatedUserId = validateUserId(userId);
   

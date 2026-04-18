@@ -104,12 +104,21 @@ export const useAdvancedSearch = () => {
       if (error) throw error;
 
       // Production Matchmaking Logic: Fetch real compatibility scores
+      // Note: compatibility_scores table may not exist in schema, use fallback
       const profileIds = (data || []).map(p => p.user_id);
-      const { data: scoresData } = await supabase
-        .from('compatibility_scores')
-        .select('*')
-        .eq('user1_id', user.id)
-        .in('user2_id', profileIds);
+      let scoresData: Array<{ user1_id: string; user2_id: string; overall_score: number }> | null = null;
+      
+      try {
+        const scoresResponse = await (supabase as any)
+          .from('compatibility_scores')
+          .select('user1_id, user2_id, overall_score')
+          .eq('user1_id', user.id)
+          .in('user2_id', profileIds);
+        scoresData = scoresResponse.data;
+      } catch {
+        // Table doesn't exist, use fallback scoring
+        console.warn('compatibility_scores table not available, using fallback');
+      }
 
       const resultsWithScores = (data || []).map(profile => {
         const scoreRecord = scoresData?.find(s => s.user2_id === profile.user_id);
@@ -137,25 +146,26 @@ export const useAdvancedSearch = () => {
     }
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('saved_searches')
         .insert({
           user_id: user.id,
           name,
-          search_criteria: filters as any
+          search_criteria: filters
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      setSavedSearches(prev => [...prev, data as any]);
+      setSavedSearches(prev => [...prev, data as SavedSearch]);
       toast.success('Search saved successfully');
       return { success: true, data };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving search:', error);
       toast.error('Failed to save search');
-      return { success: false, error: error.message };
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: message };
     }
   };
 
@@ -163,14 +173,14 @@ export const useAdvancedSearch = () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('saved_searches')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setSavedSearches(data as any[]);
+      setSavedSearches((data || []) as SavedSearch[]);
     } catch (error) {
       console.error('Error loading saved searches:', error);
     }

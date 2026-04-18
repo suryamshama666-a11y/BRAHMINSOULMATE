@@ -27,8 +27,9 @@ export const useForumPostFetch = (categoryId?: string, searchTerm?: string) => {
       if (error) throw error;
 
       // Map the data to include the missing is_locked property
-      const mappedPosts: ForumPost[] = (data || []).map(post => ({
+      const mappedPosts: ForumPost[] = (data || []).map((post: any) => ({
         ...post,
+        category_id: post.category_id || '',
         is_locked: false // Default value since this column doesn't exist in DB
       }));
 

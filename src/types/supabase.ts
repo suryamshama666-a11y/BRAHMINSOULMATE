@@ -1086,6 +1086,147 @@ export interface Database {
         }
         Relationships: []
       }
+      follows: {
+        Row: {
+          id: string
+          follower_id: string
+          following_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          follower_id: string
+          following_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          follower_id?: string
+          following_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follows_follower_id_fkey"
+            columns: ["follower_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "follows_following_id_fkey"
+            columns: ["following_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          }
+        ]
+      }
+      community_groups: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          creator_id: string
+          is_private: boolean
+          member_count: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          creator_id: string
+          is_private?: boolean
+          member_count?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          creator_id?: string
+          is_private?: boolean
+          member_count?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_groups_creator_id_fkey"
+            columns: ["creator_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          }
+        ]
+      }
+      group_members: {
+        Row: {
+          id: string
+          group_id: string
+          user_id: string
+          role: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          group_id: string
+          user_id: string
+          role?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          group_id?: string
+          user_id?: string
+          role?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            referencedRelation: "community_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_members_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          }
+        ]
+      }
+      forum_categories: {
+        Row: {
+          id: string
+          name: string
+          description: string
+          icon: string
+          sort_order: number
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description: string
+          icon: string
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string
+          icon?: string
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

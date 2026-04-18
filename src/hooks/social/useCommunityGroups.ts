@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 export interface CommunityGroup {
   id: string;
   name: string;
-  description?: string;
+  description?: string | null;
   creator_id: string;
   is_private: boolean;
   member_count: number;

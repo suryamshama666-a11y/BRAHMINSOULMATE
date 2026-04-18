@@ -8,7 +8,7 @@ export interface UserActivity {
   id: string;
   user_id: string;
   activity_type: 'profile_update' | 'photo_upload' | 'post_created' | 'event_created' | 'group_joined';
-  activity_data?: any;
+  activity_data?: Record<string, unknown>;
   created_at: string;
 }
 
@@ -30,11 +30,11 @@ export const useUserActivities = () => {
       
       // Filter and map the data to ensure type safety
       const typedActivities: UserActivity[] = (data || [])
-        .filter(activity => 
+        .filter((activity: { activity_type: string }) => 
           ['profile_update', 'photo_upload', 'post_created', 'event_created', 'group_joined']
             .includes(activity.activity_type)
         )
-        .map(activity => ({
+        .map((activity: Record<string, unknown>) => ({
           ...activity,
           activity_type: activity.activity_type as UserActivity['activity_type']
         }));
@@ -50,7 +50,7 @@ export const useUserActivities = () => {
 
   const createActivity = async (
     activityType: UserActivity['activity_type'],
-    activityData?: any
+    activityData?: Record<string, unknown>
   ) => {
     if (!user) return { success: false };
 

@@ -55,7 +55,8 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
       event_date: eventDateTime.toISOString(),
       location: formData.location.trim() || undefined,
       max_participants: formData.max_participants ? parseInt(formData.max_participants) : undefined,
-      is_private: formData.is_private
+      is_private: formData.is_private,
+      event_type: 'community'
     });
     
     if (result.success) {

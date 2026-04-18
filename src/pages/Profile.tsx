@@ -31,7 +31,7 @@ const ProfilePage = () => {
     queryFn: async () => {
       // Check if we're in dev bypass mode and no ID provided
       if (!id && isDevBypassMode()) {
-        return getDevProfile();
+        return getDevProfile() as any;
       }
 
       if (!id) {
@@ -99,16 +99,16 @@ const ProfilePage = () => {
   const handleQuickAction = (action: string) => {
     switch(action) {
       case 'like':
-        toast.success(`You liked ${profile.name}'s profile!`);
+        toast.success(`You liked ${(profile as any).name || (profile as any).first_name || 'this'}'s profile!`);
         break;
       case 'message':
-        navigate(`/messages?partner=${profile.user_id || profile.id}`);
+        navigate(`/messages?partner=${(profile as any).user_id || (profile as any).id}`);
         break;
       case 'call':
-        navigate(`/call/${profile.id || profile.user_id}`);
+        navigate(`/call/${(profile as any).id || (profile as any).user_id}`);
         break;
       case 'video':
-        navigate(`/video-call/${profile.id || profile.user_id}`);
+        navigate(`/video-call/${(profile as any).id || (profile as any).user_id}`);
         break;
       case 'schedule':
         navigate('/v-dates');

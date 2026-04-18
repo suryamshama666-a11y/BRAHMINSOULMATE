@@ -7,8 +7,10 @@ const logToDatabase = async (message: string, stack?: string, context: any = {})
     const { data: { session } } = await supabase.auth.getSession();
     await (supabase.from('client_errors' as any) as any).insert({
       user_id: session?.user?.id || null,
-      message,
-      stack,
+      error_message: message,
+      error_stack: stack,
+      url: window.location.href,
+      user_agent: navigator.userAgent,
       context
     });
   } catch (err) {

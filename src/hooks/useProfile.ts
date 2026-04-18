@@ -17,7 +17,7 @@ export interface Profile {
   education: string;
   employment: string;
   bio: string;
-  profile_image: string;
+  profile_image?: string;
   images: string[];
   preferences: {
     age_range: [number, number];
@@ -28,7 +28,7 @@ export interface Profile {
     height_range: [number, number];
     education: string[];
   };
-  last_active: string;
+  // last_active: string;
 }
 
 /**
@@ -51,7 +51,7 @@ export const useProfile = (userId?: string) => {
         .single();
 
       if (error) throw error;
-      return data as Profile;
+      return data as unknown as Profile;
     },
     enabled: !!(userId || user?.id),
     gcTime: 1000 * 60 * 30, // 30 minutes
@@ -88,7 +88,7 @@ export const useProfile = (userId?: string) => {
           .insert({
             ...newProfile,
             user_id: user.id,
-            last_active: new Date().toISOString(),
+            // last_active: new Date().toISOString(),
           });
 
         if (error) throw error;
@@ -170,7 +170,7 @@ export const useProfile = (userId?: string) => {
       const { error } = await supabase
         .from('profiles')
         .update({
-          last_active: new Date().toISOString(),
+          // last_active: new Date().toISOString(),
         })
         .eq('user_id', user.id);
 

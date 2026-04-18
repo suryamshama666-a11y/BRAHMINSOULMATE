@@ -137,7 +137,7 @@ export const adminMiddleware = async (
     }
 
     // Set admin flag for downstream use
-    (req as any).isAdmin = true;
+    req.isAdmin = true;
 
     next();
   } catch (error) {

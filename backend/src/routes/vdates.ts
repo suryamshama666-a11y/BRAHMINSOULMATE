@@ -1,15 +1,11 @@
 import express from 'express';
 import { supabase } from '../config/supabase';
-import { RtcTokenBuilder, RtcRole } from 'agora-access-token';
+import { RtcTokenBuilder, RtcRole } from 'agora-token';
 import { authMiddleware } from '../middleware/auth';
 import { cronService } from '../services/cron.service';
+import { getErrorMessage, createSuccessResponse, createErrorResponse } from '../utils/errorHelpers';
 
 const router = express.Router();
-
-// Helper function to get error message
-const getErrorMessage = (error: unknown): string => {
-  return error instanceof Error ? error.message : 'Unknown error';
-};
 
 // Schedule V-Date
 router.post('/schedule', authMiddleware, async (req, res) => {
@@ -84,6 +80,7 @@ router.get('/:id/token', authMiddleware, async (req, res) => {
       channelName,
       uid,
       role,
+      privilegeExpiredTs,
       privilegeExpiredTs
     );
 

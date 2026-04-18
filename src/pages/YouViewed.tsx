@@ -185,7 +185,8 @@ const YouViewed = () => {
 
   const clearHistory = async () => {
     try {
-      await supabase
+      const client: any = supabase;
+      await client
         .from('profile_views')
         .delete()
         .eq('viewer_id', user?.id);

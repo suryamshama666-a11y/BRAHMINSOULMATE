@@ -386,7 +386,6 @@ export interface DatabaseUserSubscription {
   payment_id?: string;
 }
 
-// Type guards for runtime type checking
 export const isDatabaseProfile = (obj: unknown): obj is DatabaseProfile => {
   return typeof obj === 'object' && obj !== null && 'id' in obj && 'user_id' in obj;
 };

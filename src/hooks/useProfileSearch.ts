@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/types';
 import { findBestMatches } from '@/lib/matching-algorithm';
+import { mapToUserProfile } from '@/utils/profileUtils';
 
 export interface SearchFilters {
   age?: { min?: number; max?: number };
@@ -46,7 +47,7 @@ export function useProfileSearch(filters: SearchFilters = {}, currentProfile?: U
 
       try {
         // Start building query
-        let query = supabase.from('profiles').select('*');
+        let query = supabase.from('profiles').select('*', { count: 'exact' });
         
         // Apply filters
         if (age?.min) query = query.gte('age', age.min);
@@ -113,7 +114,8 @@ export function useProfileSearch(filters: SearchFilters = {}, currentProfile?: U
         
         if (error) throw error;
         
-        let processedData = data as UserProfile[];
+        // Map data to UserProfile correctly
+        let processedData: UserProfile[] = (data || []).map(row => mapToUserProfile(row));
         
         // Apply compatibility-based sorting if requested and we have current profile
         if (filters.sortBy === 'compatibility' && currentProfile) {
@@ -156,8 +158,10 @@ export function useRecommendedProfiles(currentProfile?: UserProfile, limit: numb
         
         // Basic matching criteria
         if (currentProfile.preferences?.age_range) {
-          query = query.gte('age', currentProfile.preferences.age_range.min)
-                       .lte('age', currentProfile.preferences.age_range.max);
+          // Fix: age_range might be an object or undefined in UserProfile
+          const ageRange = currentProfile.preferences.age_range as any;
+          if (ageRange?.min) query = query.gte('age', ageRange.min);
+          if (ageRange?.max) query = query.lte('age', ageRange.max);
         }
         
         if (currentProfile.religion) {
@@ -174,10 +178,12 @@ export function useRecommendedProfiles(currentProfile?: UserProfile, limit: numb
         
         if (error) throw error;
         
+        const candidates: UserProfile[] = (data || []).map(row => mapToUserProfile(row));
+        
         // Use matching algorithm to find best compatible profiles
         const bestMatches = findBestMatches(
           currentProfile, 
-          data as UserProfile[], 
+          candidates, 
           limit
         );
         
@@ -193,4 +199,4 @@ export function useRecommendedProfiles(currentProfile?: UserProfile, limit: numb
     staleTime: 1000 * 60 * 30, // 30 minutes
     enabled: !!currentProfile,
   });
-} 
+}

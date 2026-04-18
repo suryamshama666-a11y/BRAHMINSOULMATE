@@ -16,10 +16,6 @@ import { logger } from "./utils/logger";
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 dotenv.config();
 
-// Debug: Log environment variable status (without exposing values)
-console.log('[ENV] SUPABASE_URL:', process.env.SUPABASE_URL ? '✅ SET' : '❌ NOT SET');
-console.log('[ENV] SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? '✅ SET' : '❌ NOT SET');
-
 // Import routes
 import authRoutes from "./routes/auth";
 import profileRoutes from "./routes/profile";
@@ -132,10 +128,10 @@ if (process.env.SENTRY_DSN) {
     // PII Scrubbing
     beforeSend(event, hint) {
       if (event.request && event.request.data) {
-        event.request.data = scrubPII(event.request.data);
+        event.request.data = scrubPII(event.request.data) as Record<string, unknown>;
       }
       if (event.extra) {
-        event.extra = scrubPII(event.extra);
+        event.extra = scrubPII(event.extra) as Record<string, unknown>;
       }
       return event;
     },
@@ -221,7 +217,7 @@ app.use(limiter);
 // Body parsing middleware - with raw body capture for webhook signature verification
 app.use(express.json({ 
   limit: "2mb",
-  verify: (req: any, _res, buf) => {
+  verify: (req: Request, _res: Response, buf: Buffer) => {
     if (req.originalUrl?.includes('/webhook')) {
       req.rawBody = buf;
     }

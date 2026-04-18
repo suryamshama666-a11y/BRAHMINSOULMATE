@@ -3,13 +3,10 @@ import { supabase } from '../config/supabase';
 import { authMiddleware } from '../middleware/auth';
 import { profileViewLimiter } from '../middleware/rateLimiter';
 import { logger } from '../utils/logger';
+import { getErrorMessage, createSuccessResponse, createErrorResponse } from '../utils/errorHelpers';
+import { applyTimeFilter, TimeFilter } from '../utils/timeFilters';
 
 const router = express.Router();
-
-// Helper function to get error message
-const getErrorMessage = (error: unknown): string => {
-  return error instanceof Error ? error.message : 'Unknown error';
-};
 
 // Track profile view
 router.post('/', authMiddleware, profileViewLimiter, async (req, res) => {
@@ -64,7 +61,7 @@ router.post('/', authMiddleware, profileViewLimiter, async (req, res) => {
 router.get('/who-viewed-me', authMiddleware, async (req, res) => {
   try {
     const userId = req.user?.id;
-    const timeFilter = req.query.timeFilter as string || 'all';
+    const timeFilter = (req.query.timeFilter as TimeFilter) || 'all';
 
     let query = supabase
       .from('profile_views')
@@ -90,18 +87,8 @@ router.get('/who-viewed-me', authMiddleware, async (req, res) => {
       .eq('viewed_id', userId)
       .order('viewed_at', { ascending: false });
 
-    // Apply time filters
-    if (timeFilter === 'today') {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      query = query.gte('viewed_at', today.toISOString());
-    } else if (timeFilter === 'week') {
-      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      query = query.gte('viewed_at', weekAgo.toISOString());
-    } else if (timeFilter === 'month') {
-      const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      query = query.gte('viewed_at', monthAgo.toISOString());
-    }
+    // Apply time filter using centralized utility
+    query = applyTimeFilter(query, timeFilter, 'viewed_at');
 
     const { data, error } = await query;
 
@@ -118,7 +105,7 @@ router.get('/who-viewed-me', authMiddleware, async (req, res) => {
 router.get('/i-viewed', authMiddleware, async (req, res) => {
   try {
     const userId = req.user?.id;
-    const timeFilter = req.query.timeFilter as string || 'all';
+    const timeFilter = (req.query.timeFilter as TimeFilter) || 'all';
 
     let query = supabase
       .from('profile_views')
@@ -144,18 +131,8 @@ router.get('/i-viewed', authMiddleware, async (req, res) => {
       .eq('viewer_id', userId)
       .order('viewed_at', { ascending: false });
 
-    // Apply time filters
-    if (timeFilter === 'today') {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      query = query.gte('viewed_at', today.toISOString());
-    } else if (timeFilter === 'week') {
-      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      query = query.gte('viewed_at', weekAgo.toISOString());
-    } else if (timeFilter === 'month') {
-      const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      query = query.gte('viewed_at', monthAgo.toISOString());
-    }
+    // Apply time filter using centralized utility
+    query = applyTimeFilter(query, timeFilter, 'viewed_at');
 
     const { data, error } = await query;
 

@@ -70,7 +70,7 @@ export const EventCard: React.FC<EventCardProps> = ({
           <div className="flex items-center space-x-2 text-sm text-gray-600">
             <Users className="h-4 w-4" />
             <span>
-              {event.current_participants} attending
+              {event.current_participants ?? 0} attending
               {event.max_participants && ` (max ${event.max_participants})`}
             </span>
           </div>
@@ -102,9 +102,9 @@ export const EventCard: React.FC<EventCardProps> = ({
                     <Button
                       size="sm"
                       onClick={() => onJoin?.(event.id)}
-                      disabled={!!(event.max_participants && event.current_participants >= event.max_participants)}
+                      disabled={!!(event.max_participants && (event.current_participants ?? 0) >= event.max_participants)}
                     >
-                      {event.max_participants && event.current_participants >= event.max_participants
+                      {event.max_participants && (event.current_participants ?? 0) >= event.max_participants
                         ? 'Full'
                         : 'Join'}
                     </Button>

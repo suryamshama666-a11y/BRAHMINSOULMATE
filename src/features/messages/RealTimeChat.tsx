@@ -137,7 +137,6 @@ export default function RealTimeChat({
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
   
-  // Function to generate initials from name
   const getInitials = (name: string) => {
     return name
       .split(' ')

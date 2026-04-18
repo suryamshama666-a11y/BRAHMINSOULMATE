@@ -12,8 +12,11 @@ import { ChatHeader } from './components/ChatHeader';
 import { MessageBubble } from './components/MessageBubble';
 import { ChatInput } from './components/ChatInput';
 
+import { UserProfile } from '@/types/user';
+import { MessageReaction } from '@/features/messages/hooks/useMessages';
+
 interface EnhancedChatPanelProps {
-  conversationPartner: any;
+  conversationPartner: UserProfile | null;
   conversationMessages: EnhancedMessage[];
   userId?: string;
   onBack: () => void;
@@ -44,28 +47,10 @@ export const EnhancedChatPanel: React.FC<EnhancedChatPanelProps> = ({
   const typingUsers = getTypingUsers(conversationId);
 
   useEffect(() => {
-    // scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [conversationMessages]);
 
   useEffect(() => {
-    // Load reactions for all messages
-    // const messageIds = conversationMessages.map(msg => msg.id);
-    // if (messageIds.length > 0) {
-    //   loadConversationReactions(messageIds);
-    // }
-  }, [conversationMessages]);
-
-  useEffect(() => {
-    // Load reactions for all messages
-    // TODO: Implement reaction loading
-    // const messageIds = conversationMessages.map(msg => msg.id);
-    // if (messageIds.length > 0) {
-    //   loadConversationReactions(messageIds);
-    // }
-  }, [conversationMessages]);
-
-  useEffect(() => {
-    // Mark messages as read when viewing conversation
     conversationMessages
       .filter(msg => msg.receiver_id === userId && msg.status !== 'read')
       .forEach(msg => markAsRead(msg.id));
@@ -136,16 +121,13 @@ export const EnhancedChatPanel: React.FC<EnhancedChatPanelProps> = ({
   const _handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewMessage(e.target.value);
     
-    // Handle typing indicator
     if (e.target.value.trim()) {
       setTyping(conversationId, true);
       
-      // Clear existing timeout
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
       
-      // Set new timeout to stop typing after 3 seconds
       typingTimeoutRef.current = setTimeout(() => {
         setTyping(conversationId, false);
       }, 3000);
@@ -217,14 +199,36 @@ export const EnhancedChatPanel: React.FC<EnhancedChatPanelProps> = ({
 
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
-          {conversationMessages.map((message) => (
-            <MessageBubble
-              key={message.id}
-              message={message as any}
-              isOwnMessage={message.sender_id === userId}
-              reactions={reactions[message.id] || []}
-            />
-          ))}
+          {conversationMessages.map((message) => {
+            const messageReactions = reactions[message.id] || [];
+            const convertedReactions: MessageReaction[] = messageReactions.map(r => ({
+              id: r.id,
+              message_id: message.id,
+              user_id: r.users?.[0] || '',
+              emoji: r.emoji,
+              created_at: new Date().toISOString()
+            }));
+            
+            return (
+              <MessageBubble
+                key={message.id}
+                message={{
+                  id: message.id,
+                  content: message.content,
+                  created_at: message.created_at ?? null,
+                  media_url: message.media_url ?? null,
+                  message_type: message.message_type,
+                  read: true,
+                  receiver_id: message.receiver_id,
+                  sender_id: message.sender_id,
+                  status: message.status,
+                  reactions: convertedReactions
+                }}
+                isOwnMessage={message.sender_id === userId}
+                reactions={convertedReactions}
+              />
+            );
+          })}
           
           <TypingIndicator 
             typingUsers={typingUsers} 
@@ -240,8 +244,7 @@ export const EnhancedChatPanel: React.FC<EnhancedChatPanelProps> = ({
           await handleSendMessage();
         }}
         onUploadFile={async (file: File) => {
-          // Handle file upload
-          console.log('File upload:', file);
+          // File upload handling would be implemented here
         }}
         isRecording={false}
         setIsRecording={() => {}}

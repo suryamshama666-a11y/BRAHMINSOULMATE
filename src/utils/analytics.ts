@@ -7,7 +7,7 @@ import { logger } from './logger';
 
 interface AnalyticsEvent {
   event: string;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
   timestamp: string;
   userId?: string;
   sessionId: string;
@@ -26,7 +26,7 @@ export class Analytics {
   /**
    * Initialize analytics
    */
-  static init() {
+  static init(): void {
     this.sessionId = this.getOrCreateSessionId();
     this.startFlushInterval();
     
@@ -37,8 +37,12 @@ export class Analytics {
       script.src = `https://www.googletagmanager.com/gtag/js?id=${this.ga4Id}`;
       document.head.appendChild(script);
 
-      (window as any).dataLayer = (window as any).dataLayer || [];
-      const gtag = (...args: any[]) => (window as any).dataLayer.push(args);
+      window.dataLayer = window.dataLayer || [];
+      const gtag = (...args: unknown[]): void => {
+        if (window.dataLayer && Array.isArray(window.dataLayer)) {
+          window.dataLayer.push(args);
+        }
+      };
       gtag('js', new Date());
       gtag('config', this.ga4Id, {
         send_page_view: false, // We handle it manually
@@ -57,7 +61,7 @@ export class Analytics {
   /**
    * Track custom event
    */
-  static track(event: string, properties?: Record<string, any>) {
+  static track(event: string, properties?: Record<string, unknown>): void {
     if (!this.enabled) return;
 
     const eventData: AnalyticsEvent = {
@@ -66,7 +70,7 @@ export class Analytics {
         ...properties,
         screen_resolution: typeof window !== 'undefined' ? `${window.screen.width}x${window.screen.height}` : '',
         language: typeof navigator !== 'undefined' ? navigator.language : '',
-        platform: typeof navigator !== 'undefined' ? (navigator as any).platform : '',
+        platform: typeof navigator !== 'undefined' ? navigator.platform : '',
       },
       timestamp: new Date().toISOString(),
       userId: this.userId,
@@ -78,8 +82,8 @@ export class Analytics {
     this.eventQueue.push(eventData);
     
     // Also track in GA4 if available
-    if (this.ga4Id && (window as any).gtag) {
-      (window as any).gtag('event', event, {
+    if (this.ga4Id && typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', event, {
         ...eventData.properties,
         user_id: this.userId,
         session_id: this.sessionId,
@@ -98,7 +102,7 @@ export class Analytics {
   /**
    * Track page view
    */
-  static trackPageView(page: string) {
+  static trackPageView(page: string): void {
     this.track('page_view', { 
       page_path: page,
       page_title: document.title,
@@ -108,7 +112,7 @@ export class Analytics {
   /**
    * Track conversion
    */
-  static trackConversion(type: string, value?: number, metadata?: Record<string, any>) {
+  static trackConversion(type: string, value?: number, metadata?: Record<string, unknown>): void {
     this.track('conversion', {
       conversion_type: type,
       value,
@@ -117,7 +121,7 @@ export class Analytics {
     });
     
     // Special GA4 conversion events
-    if (this.ga4Id && (window as any).gtag) {
+    if (this.ga4Id && typeof window !== 'undefined' && window.gtag) {
       const gaEventMap: Record<string, string> = {
         'registration': 'sign_up',
         'payment_success': 'purchase',
@@ -125,7 +129,7 @@ export class Analytics {
       };
       
       const gaEventName = gaEventMap[type] || `conversion_${type}`;
-      (window as any).gtag('event', gaEventName, {
+      window.gtag('event', gaEventName, {
         value,
         currency: 'INR',
         ...metadata
@@ -136,7 +140,7 @@ export class Analytics {
   /**
    * Track error
    */
-  static trackError(error: Error, context?: any) {
+  static trackError(error: Error, context?: unknown): void {
     this.track('exception', {
       description: error.message,
       fatal: false,
@@ -147,10 +151,10 @@ export class Analytics {
   /**
    * Set user ID for cross-device tracking
    */
-  static setUserId(userId: string) {
+  static setUserId(userId: string): void {
     this.userId = userId;
-    if (this.ga4Id && (window as any).gtag) {
-      (window as any).gtag('config', this.ga4Id, {
+    if (this.ga4Id && typeof window !== 'undefined' && window.gtag) {
+      window.gtag('config', this.ga4Id, {
         'user_id': userId
       });
     }
@@ -159,18 +163,18 @@ export class Analytics {
   /**
    * Clear user ID
    */
-  static clearUserId() {
+  static clearUserId(): void {
     this.userId = undefined;
   }
 
   /**
    * Enable analytics (Consent given)
    */
-  static enable() {
+  static enable(): void {
     this.enabled = true;
     logger.info('Analytics enabled');
-    if (this.ga4Id && (window as any).gtag) {
-      (window as any).gtag('consent', 'update', {
+    if (this.ga4Id && typeof window !== 'undefined' && window.gtag) {
+      window.gtag('consent', 'update', {
         'analytics_storage': 'granted'
       });
     }
@@ -179,12 +183,12 @@ export class Analytics {
   /**
    * Disable analytics (Consent denied)
    */
-  static disable() {
+  static disable(): void {
     this.enabled = false;
     this.eventQueue = [];
     logger.info('Analytics disabled');
-    if (this.ga4Id && (window as any).gtag) {
-      (window as any).gtag('consent', 'update', {
+    if (this.ga4Id && typeof window !== 'undefined' && window.gtag) {
+      window.gtag('consent', 'update', {
         'analytics_storage': 'denied'
       });
     }
@@ -193,7 +197,7 @@ export class Analytics {
   /**
    * Flush events to server
    */
-  private static async flush() {
+  private static async flush(): Promise<void> {
     if (this.eventQueue.length === 0) return;
 
     const events = [...this.eventQueue];
@@ -202,8 +206,8 @@ export class Analytics {
     try {
       const { supabase } = await import('@/services/api/base');
       
-      const { error } = await (supabase
-        .from('analytics_events' as any)
+      const { error } = await (supabase as any)
+        .from('analytics_events')
         .insert(events.map(e => ({
           user_id: e.userId || null,
           event_name: e.event,
@@ -212,7 +216,7 @@ export class Analytics {
           session_id: e.sessionId,
           user_agent: e.userAgent,
           created_at: e.timestamp
-        }))) as any);
+        })));
 
       if (error) throw error;
     } catch (error) {
@@ -226,7 +230,7 @@ export class Analytics {
   /**
    * Start automatic flush interval
    */
-  private static startFlushInterval() {
+  private static startFlushInterval(): void {
     if (this.flushInterval) return;
     this.flushInterval = setInterval(() => {
       this.flush();

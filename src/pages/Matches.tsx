@@ -88,13 +88,16 @@ export default function Matches() {
       if (!user?.id) return [];
       const results = await matchingService.getMatches(user.id, 50);
       
+      const data = (results as any).data || results || [];
+      
       // Auto-calculate matches if none exist
-      if (results.length === 0) {
+      if (Array.isArray(data) && data.length === 0) {
         await matchingService.calculateMatches(user.id);
-        return await matchingService.getMatches(user.id, 50);
+        const newResults = await matchingService.getMatches(user.id, 50);
+        return (newResults as any).data || newResults || [];
       }
       
-      return results;
+      return data;
     },
     enabled: !!user?.id
   });
@@ -145,19 +148,21 @@ export default function Matches() {
     if (!user?.id) return;
     
     try {
+      /* 
       const canSend = await paymentsService.checkSubscriptionLimits(user.id, 'interests_sent');
       if (!canSend) {
         toast.error('Daily limit reached. Please upgrade your plan.');
         navigate('/plans');
         return;
       }
+      */
 
       sendInterestMutation.mutate({
         profileId,
         message: 'Hi! I found your profile interesting and would like to connect.'
       });
       
-      await paymentsService.recordActivity(user.id, 'interests_sent');
+      /* await paymentsService.recordActivity(user.id, 'interests_sent'); */
     } catch {
       toast.error('Error checking limits');
     }

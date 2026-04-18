@@ -55,6 +55,19 @@ export function extractFilenameFromUrl(url: string): string | null {
 }
 
 /**
+ * Extract storage file path (userId/filename) from URL
+ * Used for deleting files from storage
+ */
+export function extractStorageFilePath(url: string): string | null {
+  try {
+    const urlParts = url.split('/');
+    return urlParts.slice(-2).join('/');
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Extract user ID from storage path
  */
 export function extractUserIdFromPath(path: string): string | null {
@@ -152,6 +165,7 @@ export default {
   getStorageBucketUrl,
   getStorageFilePath,
   extractFilenameFromUrl,
+  extractStorageFilePath,
   extractUserIdFromPath,
   isAllowedFileType,
   isFileSizeValid,

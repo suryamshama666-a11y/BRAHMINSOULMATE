@@ -48,7 +48,7 @@ const Admin = () => {
   };
 
   const handleModerateUser = async (userId: string, action: 'suspend' | 'activate') => {
-    const success = await moderateUser(userId, action);
+    const success = await moderateUser(userId, action as any);
     if (success) {
       await loadData();
     }

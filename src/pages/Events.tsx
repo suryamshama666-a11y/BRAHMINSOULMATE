@@ -10,7 +10,7 @@ import { eventsService, Event, EventRegistration } from '@/services/api/events.s
 import { useToast } from '@/hooks/use-toast';
 
 export default function Events() {
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
   const [myRegistrations, setMyRegistrations] = useState<EventRegistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingRegistrations, setLoadingRegistrations] = useState(false);
@@ -144,10 +144,10 @@ export default function Events() {
     });
   };
 
-  const isEventFull = (event: Event) => (event.participant_count || 0) >= event.capacity;
+  const isEventFull = (event: any) => (event.participant_count || 0) >= (event.capacity || 100);
   const isVirtual = (location: string) => location.toLowerCase().includes('online') || location.toLowerCase().includes('virtual');
 
-  const EventCard = ({ event, showActions = true }: { event: Event; showActions?: boolean }) => (
+  const EventCard = ({ event, showActions = true }: { event: any; showActions?: boolean }) => (
     <Card className="hover:shadow-lg transition-shadow flex flex-col h-full">
       <CardHeader>
         <div className="flex items-center justify-between mb-2">

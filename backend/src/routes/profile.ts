@@ -7,6 +7,7 @@ import { preventHardDelete } from '../middleware/softDelete';
 import { z } from 'zod';
 import { redis } from '../config/redis';
 import { logger } from '../utils/logger';
+import { ProfileData } from '../types/domain';
 
 const router = express.Router();
 
@@ -14,7 +15,7 @@ const router = express.Router();
  * Filter profile fields based on user permissions to prevent
  * excessive TypeScript generic instantiation depth issues.
  */
-function filterProfileFields(profile: any, showPrivate: boolean) {
+function filterProfileFields(profile: ProfileData | null, showPrivate: boolean): Record<string, unknown> | null {
   if (!profile) return null;
   
   const publicFields = [
@@ -33,10 +34,10 @@ function filterProfileFields(profile: any, showPrivate: boolean) {
   
   const allowedFields = showPrivate ? [...publicFields, ...privateFields] : publicFields;
   
-  const filtered: any = {};
+  const filtered: Record<string, unknown> = {};
   for (const key of allowedFields) {
     if (key in profile) {
-      filtered[key] = profile[key];
+      filtered[key] = profile[key as keyof ProfileData];
     }
   }
   
@@ -298,7 +299,7 @@ router.get('/search/all', authMiddleware, profileViewLimiter, asyncHandler(async
     query = query.eq('religion', sanitizedReligion);
   }
 
-  const { data: profiles, error } = await (query.limit(limit) as any);
+  const { data: profiles, error } = await query.limit(limit);
 
   if (error) throw error;
   

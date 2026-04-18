@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { isDevBypassMode, getDevUser } from '@/config/dev';
 import { Database } from '@/types/supabase';
 
-type ProfileViewRow = Database['public']['Tables']['profile_views']['Row'];
+type ProfileViewRow = any; // Database['public']['Tables']['profile_views']['Row'] is missing
 
 export interface ProfileView extends ProfileViewRow {
   viewer?: unknown;
@@ -51,8 +51,8 @@ class ProfileViewsService {
     if (viewerId === viewedProfileId) return;
 
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const { data: recentView } = await supabase
-      .from('profile_views')
+    const { data: recentView } = await (supabase as any)
+      .from('profile_views' as any)
       .select('id')
       .eq('viewer_id', viewerId)
       .eq('viewed_profile_id', viewedProfileId)
@@ -61,13 +61,13 @@ class ProfileViewsService {
 
     if (recentView) return;
 
-    await supabase
-      .from('profile_views')
+    await (supabase as any)
+      .from('profile_views' as any)
       .insert({
         viewer_id: viewerId,
         viewed_profile_id: viewedProfileId,
         viewed_at: new Date().toISOString()
-      } as unknown as Database['public']['Tables']['profile_views']['Insert']);
+      });
   }
 
   async getWhoViewedMe(timeFilter: 'all' | 'today' | 'week' | 'month' = 'all'): Promise<ProfileView[]> {
@@ -75,8 +75,8 @@ class ProfileViewsService {
     if (!user) throw new Error('Not authenticated');
 
     try {
-      let query = supabase
-        .from('profile_views')
+      let query = (supabase as any)
+        .from('profile_views' as any)
         .select('*')
         .eq('viewed_profile_id', user.id)
         .order('viewed_at', { ascending: false });
@@ -107,8 +107,8 @@ class ProfileViewsService {
     if (!user) throw new Error('Not authenticated');
 
     try {
-      let query = supabase
-        .from('profile_views')
+      let query = (supabase as any)
+        .from('profile_views' as any)
         .select('*')
         .eq('viewer_id', user.id)
         .order('viewed_at', { ascending: false });
@@ -139,8 +139,8 @@ class ProfileViewsService {
     if (!user) return 0;
 
     try {
-      const { count } = await supabase
-        .from('profile_views')
+      const { count } = await (supabase as any)
+        .from('profile_views' as any)
         .select('*', { count: 'exact', head: true })
         .eq('viewed_profile_id', user.id);
 

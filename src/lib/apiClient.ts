@@ -17,7 +17,7 @@ class ApiClient {
   // Get authentication headers
   private async getAuthHeaders(): Promise<Record<string, string>> {
     const { data: { session } } = await supabase.auth.getSession();
-    const headers = { ...API_HEADERS };
+    const headers: Record<string, string> = { ...API_HEADERS };
     
     if (session?.access_token) {
       headers['Authorization'] = `Bearer ${session.access_token}`;
@@ -262,7 +262,7 @@ class ApiClient {
   clearCustomHeaders(): void {
     Object.keys(API_HEADERS).forEach(key => {
       if (!['Content-Type', 'Accept'].includes(key)) {
-        delete API_HEADERS[key];
+        delete (API_HEADERS as any)[key];
       }
     });
   }

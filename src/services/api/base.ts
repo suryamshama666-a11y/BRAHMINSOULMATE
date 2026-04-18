@@ -1,5 +1,7 @@
 import { env } from '@/config/env';
 import { supabase } from '@/integrations/supabase/client';
+export { supabase };
+import { APIError as IAPIError, APIResponse as IAPIResponse } from '@/types/errors';
 
 // Error codes enum
 export enum ErrorCode {
@@ -14,10 +16,10 @@ export enum ErrorCode {
   UNKNOWN_ERROR = 'UNKNOWN_ERROR'
 }
 
-// Custom API Error class
-export class APIError extends Error {
+// Custom API Error class implementing the interface
+export class APIError extends Error implements IAPIError {
   constructor(
-    public code: ErrorCode,
+    public code: string,
     public message: string,
     public statusCode: number,
     public details?: any
@@ -27,10 +29,15 @@ export class APIError extends Error {
   }
 }
 
+// Re-export the interface as well
+export type { IAPIResponse as APIResponse };
+
 // Error handler function
-export const handleAPIError = (error: any): APIError => {
+export const handleAPIError = (error: unknown): APIError => {
+  const err = error as any; // Temporary cast for checking properties safely
+  
   // Supabase specific errors
-  if (error.code === 'PGRST116') {
+  if (err?.code === 'PGRST116') {
     return new APIError(
       ErrorCode.NOT_FOUND,
       'Resource not found',
@@ -39,7 +46,7 @@ export const handleAPIError = (error: any): APIError => {
     );
   }
 
-  if (error.code === 'PGRST301') {
+  if (err?.code === 'PGRST301') {
     return new APIError(
       ErrorCode.PERMISSION_DENIED,
       'Permission denied',
@@ -48,7 +55,7 @@ export const handleAPIError = (error: any): APIError => {
     );
   }
 
-  if (error.message?.includes('JWT') || error.message?.includes('token')) {
+  if (err?.message?.includes('JWT') || err?.message?.includes('token')) {
     return new APIError(
       ErrorCode.AUTH_ERROR,
       'Authentication failed. Please login again.',
@@ -57,7 +64,7 @@ export const handleAPIError = (error: any): APIError => {
     );
   }
 
-  if (error.code?.startsWith('23')) {
+  if (err?.code?.startsWith('23')) {
     return new APIError(
       ErrorCode.DATABASE_ERROR,
       'Database operation failed',
@@ -67,7 +74,7 @@ export const handleAPIError = (error: any): APIError => {
   }
 
   // Network errors
-  if (error.message?.includes('fetch') || error.message?.includes('network')) {
+  if (err?.message?.includes('fetch') || err?.message?.includes('network')) {
     return new APIError(
       ErrorCode.NETWORK_ERROR,
       'Network error. Please check your connection.',
@@ -79,22 +86,16 @@ export const handleAPIError = (error: any): APIError => {
   // Default error
   return new APIError(
     ErrorCode.UNKNOWN_ERROR,
-    error.message || 'An unexpected error occurred',
+    err?.message || 'An unexpected error occurred',
     500,
     error
   );
 };
 
-// Base API response type
-export interface APIResponse<T> {
-  data: T | null;
-  error: APIError | null;
-}
-
 // Helper function to wrap API calls
 export async function apiCall<T>(
-  operation: () => Promise<{ data: T | null; error: any }>
-): Promise<APIResponse<T>> {
+  operation: () => Promise<{ data: T | null; error: unknown }>
+): Promise<IAPIResponse<T>> {
   try {
     const { data, error } = await operation();
     
@@ -117,6 +118,11 @@ export async function apiCall<T>(
   }
 }
 
+export async function getCurrentUserId(): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.user?.id || null;
+}
+
 /**
  * Enhanced helper for backend API calls
  * Handles authentication headers automatically
@@ -124,7 +130,7 @@ export async function apiCall<T>(
 export async function backendCall<T>(
   endpoint: string,
   options: RequestInit = {}
-): Promise<APIResponse<T>> {
+): Promise<IAPIResponse<T>> {
   try {
     // Get current session for JWT
     const { data: { session } } = await supabase.auth.getSession();
@@ -151,29 +157,19 @@ export async function backendCall<T>(
     const result = await response.json();
 
     if (!response.ok) {
-      // Create specific error based on status code
-      let code = ErrorCode.UNKNOWN_ERROR;
-      if (response.status === 401) code = ErrorCode.AUTH_ERROR;
-      if (response.status === 403) code = ErrorCode.PERMISSION_DENIED;
-      if (response.status === 404) code = ErrorCode.NOT_FOUND;
-      if (response.status === 400) code = ErrorCode.VALIDATION_ERROR;
-
       return {
         data: null,
         error: new APIError(
-          code,
-          result.error || 'API request failed',
+          result.error?.code || ErrorCode.UNKNOWN_ERROR,
+          result.error?.message || 'API request failed',
           response.status,
-          result
+          result.error?.details
         )
       };
     }
 
-    // Backend returns data in different shapes, normalize it
-    const data = result.profile || result.profiles || result.data || result;
-
     return {
-      data: data as T,
+      data: result.data || result,
       error: null
     };
   } catch (error) {
@@ -183,39 +179,3 @@ export async function backendCall<T>(
     };
   }
 }
-
-// Get current user ID
-export async function getCurrentUserId(): Promise<string | null> {
-  const { data: { user } } = await supabase.auth.getUser();
-  return user?.id || null;
-}
-
-// Check if user is authenticated
-export async function isAuthenticated(): Promise<boolean> {
-  const { data: { session } } = await supabase.auth.getSession();
-  return !!session;
-}
-
-// Retry logic for failed operations
-export async function retryOperation<T>(
-  operation: () => Promise<T>,
-  maxRetries: number = 3,
-  delay: number = 1000
-): Promise<T> {
-  let lastError: any;
-  
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      return await operation();
-    } catch (error) {
-      lastError = error;
-      if (i < maxRetries - 1) {
-        await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
-      }
-    }
-  }
-  
-  throw lastError;
-}
-
-export { supabase };

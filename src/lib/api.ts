@@ -199,7 +199,7 @@ class API {
         .from('profiles')
         .select('*')
         .neq('user_id', userId)
-        .eq('religion', currentProfile.religion)
+        .eq('religion', currentProfile.religion as string)
         .neq('gender', currentProfile.gender)
         .limit(20);
 
@@ -286,7 +286,8 @@ class API {
       const matchesCount: number = Array.isArray(matches) ? matches.length : 0;
 
       // Get profile views count
-      const { count: profileViewsCount } = await supabase
+      const client: any = supabase;
+      const { count: profileViewsCount } = await client
         .from('profile_views')
         .select('*', { count: 'exact', head: true })
         .eq('viewed_profile_id', userId);

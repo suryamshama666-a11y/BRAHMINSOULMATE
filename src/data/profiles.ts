@@ -18,10 +18,8 @@ export type {
   ProfilePreference
 } from '@/types/profile';
 
-// Direct export of profiles data
 export const profiles = profileData || [];
 
-// Simple function to get all profiles with proper error handling
 export const getAllProfiles = (): Profile[] => {
   try {
     if (!profileData || !Array.isArray(profileData)) {
@@ -35,7 +33,6 @@ export const getAllProfiles = (): Profile[] => {
   }
 };
 
-// Function to get profile by ID with proper error handling
 export const getProfileById = (id: string): Profile | undefined => {
   try {
     if (!profileData || !Array.isArray(profileData)) {
@@ -49,7 +46,6 @@ export const getProfileById = (id: string): Profile | undefined => {
   }
 };
 
-// Function to get filtered profiles with error handling
 export const getFilteredProfiles = (filter: any): Profile[] => {
   try {
     const allProfiles = getAllProfiles();

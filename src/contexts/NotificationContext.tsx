@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import type { Notification, NotificationContextType } from '@/types/index';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
@@ -31,7 +32,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         
         setNotifications(data as Notification[]);
       } catch (error) {
-        console.error('Error loading notifications:', error);
+        logger.error('Error loading notifications:', error);
       }
     };
     
@@ -81,7 +82,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       
       // Database trigger will handle real-time update
     } catch (error) {
-      console.error('Error adding notification:', error);
+      logger.error('Error adding notification:', error);
     }
   };
   
@@ -97,7 +98,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       
       setNotifications(prev => prev.filter(n => n.id !== id));
     } catch (error) {
-      console.error('Error removing notification:', error);
+      logger.error('Error removing notification:', error);
     }
   };
   
@@ -115,7 +116,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         prev.map(n => n.id === id ? { ...n, read: true } : n)
       );
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      logger.error('Error marking notification as read:', error);
     }
   };
   
@@ -133,7 +134,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       
       setNotifications([]);
     } catch (error) {
-      console.error('Error clearing notifications:', error);
+      logger.error('Error clearing notifications:', error);
     }
   };
   

@@ -1,89 +1,83 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Calendar,
+  Video,
+  Clock,
+  User,
+  Star,
+  AlertCircle,
+  CheckCircle2,
+  XCircle,
+  Users,
+  Info,
+  ChevronRight
+} from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Video, Clock, Users, AlertCircle, Star, X } from 'lucide-react';
-import Footer from '@/components/Footer';
-import { vdatesService, VDate } from '@/services/api/vdates.service';
-import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import { vdatesService } from '@/services/api/vdates.service';
+import { interestsService } from '@/services/api/interests.service';
 import { supabase } from '@/lib/supabase';
-import VideoCall from '@/components/vdates/VideoCall';
+import Footer from '@/components/Footer';
 
-interface ConnectedUser {
-  user_id: string;
-  full_name: string;
-  profile_photo_url?: string;
-}
-
-export default function VDates() {
+const VDates: React.FC = () => {
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<'overview' | 'schedule' | 'upcoming' | 'history'>('overview');
-  const [upcomingVDates, setUpcomingVDates] = useState<VDate[]>([]);
-  const [pastVDates, setPastVDates] = useState<VDate[]>([]);
-  const [connectedUsers, setConnectedUsers] = useState<ConnectedUser[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [connectedUsers, setConnectedUsers] = useState<any[]>([]);
+  const [upcomingVDates, setUpcomingVDates] = useState<any[]>([]);
+  const [vdateHistory, setVdateHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const { toast } = useToast();
+  const [feedbackModal, setFeedbackModal] = useState<{ vdateId: string; rating: number; feedback: string } | null>(null);
 
-  // Form state
-  const [selectedUser, setSelectedUser] = useState('');
-  const [scheduledTime, setScheduledTime] = useState('');
-  const [duration, setDuration] = useState(30);
-
-  // Video call state
-  const [activeCall, setActiveCall] = useState<{
-    vdate: VDate;
-    roomUrl: string;
-    roomName: string;
-  } | null>(null);
-
-  // Feedback modal state
-  const [feedbackModal, setFeedbackModal] = useState<{
-    vdate: VDate;
-    rating: number;
-    feedback: string;
-  } | null>(null);
+  // Form states
+  const [selectedUser, setSelectedUser] = useState<string>('');
+  const [scheduledTime, setScheduledTime] = useState<string>('');
+  const [duration, setDuration] = useState<number>(30);
 
   useEffect(() => {
-    loadData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchData();
   }, []);
 
-  const loadData = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
-      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-      
-      // Get user profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-      
-      setCurrentUser({ ...user, profile });
+      if (!user) return;
 
-      // Load connected users for scheduling
-      const connected = await vdatesService.getConnectedUsers();
-      setConnectedUsers(connected);
+      // Use any casting for connections query to handle schema drift
+      const { data: connections } = await (supabase as any)
+        .from('connections')
+        .select(`
+          *,
+          user1:user_id_1 (*),
+          user2:user_id_2 (*)
+        `)
+        .eq('status', 'connected');
 
-      // Load upcoming V-Dates
+      if (connections) {
+        const otherUsers = connections.map((conn: any) => {
+          const other = conn.user_id_1 === user.id ? conn.user2 : conn.user1;
+          return {
+            user_id: other?.user_id || other?.id,
+            full_name: other?.display_name || other?.first_name ? `${other?.first_name} ${other?.last_name || ''}` : 'User',
+            profile_photo_url: other?.profile_picture_url || other?.profile_photo_url || null
+          };
+        });
+        setConnectedUsers(otherUsers);
+      }
+
       const upcoming = await vdatesService.getUpcomingVDates();
       setUpcomingVDates(upcoming);
 
-      // Load all V-Dates and filter past ones
-      const allVDates = await vdatesService.getMyVDates();
-      const past = allVDates.filter(v => 
-        v.status === 'completed' || v.status === 'missed' || v.status === 'cancelled'
-      );
-      setPastVDates(past);
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to load V-Dates data',
-        variant: 'destructive'
-      });
+      const history = await vdatesService.getVDateHistory();
+      setVdateHistory(history);
+    } catch (error) {
+      console.error('Error fetching V-Date data:', error);
+      toast.error('Failed to load V-Date information');
     } finally {
       setLoading(false);
     }
@@ -91,184 +85,86 @@ export default function VDates() {
 
   const handleScheduleVDate = async () => {
     if (!selectedUser || !scheduledTime) {
-      toast({
-        title: 'Missing Information',
-        description: 'Please select a connection and date/time',
-        variant: 'destructive'
-      });
+      toast.error('Please select a user and time');
       return;
     }
 
     setSubmitting(true);
     try {
       await vdatesService.scheduleVDate(selectedUser, scheduledTime, duration);
-      toast({
-        title: 'Success',
-        description: 'V-Date scheduled successfully! Both of you will receive notifications.'
-      });
-      
+      toast.success('V-Date scheduled successfully!');
+      setActiveSection('upcoming');
+      fetchData();
       // Reset form
       setSelectedUser('');
       setScheduledTime('');
-      setDuration(30);
-      
-      // Reload data and go to upcoming
-      await loadData();
-      setActiveSection('upcoming');
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to schedule V-Date',
-        variant: 'destructive'
-      });
+      toast.error(error.message || 'Failed to schedule V-Date');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleJoinVDate = async (vdate: VDate) => {
-    try {
-      const { roomUrl, roomName } = await vdatesService.joinVDate(vdate.id);
-      setActiveCall({ vdate, roomUrl, roomName });
-      
-      toast({
-        title: 'Joining V-Date',
-        description: 'Connecting to video call...'
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to join V-Date',
-        variant: 'destructive'
-      });
-    }
-  };
-
-  const handleEndCall = async () => {
-    if (activeCall) {
-      try {
-        // Mark as completed
-        await vdatesService.completeVDate(activeCall.vdate.id);
-        
-        // Show feedback modal
-        setFeedbackModal({
-          vdate: activeCall.vdate,
-          rating: 0,
-          feedback: ''
-        });
-      } catch (error) {
-        console.error('Error completing V-Date:', error);
-      }
-    }
-    setActiveCall(null);
-    await loadData();
+  const handleJoinVDate = (vdateId: string) => {
+    navigate(`/vdate-call/${vdateId}`);
   };
 
   const handleSubmitFeedback = async () => {
-    if (!feedbackModal || feedbackModal.rating === 0) {
-      toast({
-        title: 'Please rate your experience',
-        description: 'Select a star rating before submitting',
-        variant: 'destructive'
-      });
-      return;
-    }
+    if (!feedbackModal || feedbackModal.rating === 0) return;
 
     try {
-      await vdatesService.submitFeedback(feedbackModal.vdate.id, {
-        rating: feedbackModal.rating,
-        feedback: feedbackModal.feedback
-      });
-      
-      toast({
-        title: 'Thank you!',
-        description: 'Your feedback has been submitted.'
-      });
-      
+      await vdatesService.submitFeedback(
+        feedbackModal.vdateId,
+        feedbackModal.rating,
+        feedbackModal.feedback
+      );
+      toast.success('Feedback submitted! Thank you.');
       setFeedbackModal(null);
-      await loadData();
+      fetchData();
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to submit feedback',
-        variant: 'destructive'
-      });
+      toast.error(error.message || 'Failed to submit feedback');
     }
   };
 
-  const handleCancelVDate = async (vdateId: string) => {
-    if (!confirm('Are you sure you want to cancel this V-Date?')) return;
-
-    try {
-      await vdatesService.cancelVDate(vdateId);
-      toast({
-        title: 'Success',
-        description: 'V-Date cancelled successfully'
-      });
-      await loadData();
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to cancel V-Date',
-        variant: 'destructive'
-      });
-    }
+  const getOtherUser = (vdate: any) => {
+    return vdate.otherUser;
   };
 
-  const getOtherUser = (vdate: VDate) => {
-    if (!currentUser) return vdate.user1 || vdate.user2;
-    
-    if (vdate.user_id_1 === currentUser.id) {
-      return vdate.user2;
-    }
-    return vdate.user1;
+  const statusColors: Record<string, string> = {
+    pending: 'bg-yellow-100 text-yellow-800',
+    confirmed: 'bg-green-100 text-green-800',
+    cancelled: 'bg-red-100 text-red-800',
+    completed: 'bg-blue-100 text-blue-800'
   };
 
-  // If in active call, show video call component
-  if (activeCall) {
-    const otherUser = getOtherUser(activeCall.vdate);
-    return (
-      <div className="min-h-screen bg-gray-900 p-4">
-        <VideoCall
-          roomName={activeCall.roomName}
-          userName={currentUser?.profile?.full_name || 'User'}
-          otherUserName={otherUser?.full_name}
-          onEnd={handleEndCall}
-        />
-      </div>
-    );
-  }
+  const statusLabels: Record<string, string> = {
+    pending: 'Awaiting Confirmation',
+    confirmed: 'Confirmed',
+    cancelled: 'Cancelled',
+    completed: 'Completed'
+  };
 
-  // Feedback Modal
   if (feedbackModal) {
-    const otherUser = getOtherUser(feedbackModal.vdate);
+    const vdate = vdateHistory.find(v => v.id === feedbackModal.vdateId);
+    const otherUser = vdate ? getOtherUser(vdate) : null;
+
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Rate Your V-Date</span>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => setFeedbackModal(null)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </CardTitle>
+            <CardTitle className="text-center">Rate your V-Date</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="text-center">
-              <img 
-                src={otherUser?.profile_photo_url || '/placeholder.svg'} 
-                alt={otherUser?.full_name || 'User'} 
-                className="w-20 h-20 rounded-full mx-auto mb-2 object-cover"
-              />
-              <p className="font-medium">{otherUser?.full_name || 'Your Match'}</p>
+              <Avatar className="w-20 h-20 mx-auto mb-2">
+                <AvatarImage src={otherUser?.profile_picture_url || otherUser?.profile_photo_url} />
+                <AvatarFallback>{(otherUser?.display_name || otherUser?.full_name || 'U')[0]}</AvatarFallback>
+              </Avatar>
+              <p className="font-medium">{otherUser?.display_name || otherUser?.full_name || 'Your Match'}</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2 text-center">
+              <label className="block text-sm font-medium mb-2 text-center text-black">
                 How was your experience?
               </label>
               <div className="flex justify-center gap-2">
@@ -291,7 +187,7 @@ export default function VDates() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className="block text-sm font-medium mb-2 text-black">
                 Share your thoughts (optional)
               </label>
               <textarea
@@ -313,6 +209,7 @@ export default function VDates() {
               <Button 
                 variant="outline"
                 onClick={() => setFeedbackModal(null)}
+                className="text-black"
               >
                 Skip
               </Button>
@@ -323,14 +220,13 @@ export default function VDates() {
     );
   }
 
-
   const renderContent = () => {
     switch (activeSection) {
       case 'schedule':
         return (
           <Card className="mt-8">
             <CardHeader>
-              <CardTitle>Schedule New V-Date</CardTitle>
+              <CardTitle className="text-black">Schedule New V-Date</CardTitle>
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -338,7 +234,7 @@ export default function VDates() {
               ) : connectedUsers.length === 0 ? (
                 <div className="text-center py-8">
                   <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-gray-600">No connections available to schedule V-Dates with.</p>
+                  <p className="text-gray-600 font-medium">No connections available to schedule V-Dates with.</p>
                   <p className="text-sm text-gray-500 mt-2">
                     Accept interests from other users to create connections first.
                   </p>
@@ -346,7 +242,7 @@ export default function VDates() {
               ) : (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Select Connection</label>
+                    <label className="block text-sm font-medium mb-2 text-black">Select Connection</label>
                     <select 
                       className="w-full p-2 border rounded-lg"
                       value={selectedUser}
@@ -362,7 +258,7 @@ export default function VDates() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Date & Time</label>
+                    <label className="block text-sm font-medium mb-2 text-black">Date & Time</label>
                     <input 
                       type="datetime-local" 
                       className="w-full p-2 border rounded-lg"
@@ -376,7 +272,7 @@ export default function VDates() {
                     </p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Duration</label>
+                    <label className="block text-sm font-medium mb-2 text-black">Duration</label>
                     <select 
                       className="w-full p-2 border rounded-lg"
                       value={duration}
@@ -415,7 +311,7 @@ export default function VDates() {
         return (
           <Card className="mt-8">
             <CardHeader>
-              <CardTitle>Upcoming V-Dates</CardTitle>
+              <CardTitle className="text-black">Upcoming V-Dates</CardTitle>
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -439,44 +335,55 @@ export default function VDates() {
                     const scheduledDate = new Date(vdate.scheduled_time);
                     const now = new Date();
                     const minutesUntil = (scheduledDate.getTime() - now.getTime()) / (1000 * 60);
-                    const canJoin = minutesUntil <= 5 && minutesUntil > -vdate.duration;
+                    const canJoin = minutesUntil <= 5 && minutesUntil > - (vdate.duration || 30);
 
                     return (
                       <div key={vdate.id} className="flex items-center gap-4 p-4 border rounded-lg hover:shadow-md transition-shadow">
-                        <img 
-                          src={otherUser?.profile_photo_url || '/placeholder.svg'} 
-                          alt={otherUser?.full_name || 'User'} 
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
+                        <Avatar className="w-12 h-12">
+                          <AvatarImage src={otherUser?.profile_picture_url || otherUser?.profile_photo_url} />
+                          <AvatarFallback>{(otherUser?.display_name || otherUser?.full_name || 'U')[0]}</AvatarFallback>
+                        </Avatar>
                         <div className="flex-1">
-                          <h4 className="font-semibold">{otherUser?.full_name || 'Unknown User'}</h4>
+                          <h4 className="font-semibold text-black">{otherUser?.display_name || otherUser?.full_name || 'Unknown User'}</h4>
                           <p className="text-sm text-gray-600">
-                            {scheduledDate.toLocaleDateString()} at {scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {vdate.duration} min
+                            {scheduledDate.toLocaleDateString()} at {scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {(vdate as any).duration || 30} min
                           </p>
                           {canJoin ? (
                             <p className="text-xs text-green-600 mt-1 font-medium">
                               Ready to join now!
                             </p>
-                          ) : minutesUntil > 0 ? (
-                            <p className="text-xs text-gray-500 mt-1">
-                              Available to join 5 minutes before scheduled time
+                          ) : (
+                            <p className="text-xs text-blue-600 mt-1">
+                              {minutesUntil > 60 
+                                ? `Starts in ${Math.floor(minutesUntil / 60)}h ${Math.floor(minutesUntil % 60)}m`
+                                : `Starts in ${Math.floor(minutesUntil)} minutes`}
                             </p>
-                          ) : null}
+                          )}
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col gap-2">
                           <Button 
-                            size="sm" 
-                            className={`text-white ${canJoin ? 'bg-green-600 hover:bg-green-700 animate-pulse' : 'bg-gray-400'}`}
-                            onClick={() => handleJoinVDate(vdate)}
+                            size="sm"
                             disabled={!canJoin}
+                            className={`${canJoin ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-300'} text-white`}
+                            onClick={() => handleJoinVDate(vdate.id)}
                           >
-                            <Video className="h-4 w-4 mr-2" />
-                            {canJoin ? 'Join Now' : 'Join'}
+                            Join Call
                           </Button>
                           <Button 
+                            variant="ghost" 
                             size="sm" 
-                            variant="outline"
-                            onClick={() => handleCancelVDate(vdate.id)}
+                            className="text-gray-500 hover:text-red-600"
+                            onClick={async () => {
+                              if (window.confirm('Are you sure you want to cancel this V-Date?')) {
+                                try {
+                                  await vdatesService.cancelVDate(vdate.id);
+                                  toast.success('V-Date cancelled');
+                                  fetchData();
+                                } catch (error: any) {
+                                  toast.error(error.message || 'Failed to cancel');
+                                }
+                              }
+                            }}
                           >
                             Cancel
                           </Button>
@@ -497,62 +404,60 @@ export default function VDates() {
         return (
           <Card className="mt-8">
             <CardHeader>
-              <CardTitle>V-Date History</CardTitle>
+              <CardTitle className="text-black">V-Date History</CardTitle>
             </CardHeader>
             <CardContent>
               {loading ? (
                 <div className="text-center py-8">Loading...</div>
-              ) : pastVDates.length === 0 ? (
+              ) : vdateHistory.length === 0 ? (
                 <div className="text-center py-8">
-                  <Clock className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-gray-600">No V-Date history yet.</p>
-                  <p className="text-sm text-gray-500 mt-2">Your completed V-Dates will appear here.</p>
+                  <Video className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <p className="text-gray-600">No past V-Dates found.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {pastVDates.map((vdate) => {
+                  {vdateHistory.map((vdate) => {
                     const otherUser = getOtherUser(vdate);
                     const scheduledDate = new Date(vdate.scheduled_time);
-                    const rating = vdate.rating_1 || vdate.rating_2;
-                    
-                    const statusColors: Record<string, string> = {
-                      completed: 'text-green-600 bg-green-50',
-                      missed: 'text-red-600 bg-red-50',
-                      cancelled: 'text-gray-600 bg-gray-50'
-                    };
-
-                    const statusLabels: Record<string, string> = {
-                      completed: 'Completed',
-                      missed: 'Missed',
-                      cancelled: 'Cancelled'
-                    };
+                    const rating = vdate.viewer_rating || vdate.participant_rating;
 
                     return (
                       <div key={vdate.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                        <img 
-                          src={otherUser?.profile_photo_url || '/placeholder.svg'} 
-                          alt={otherUser?.full_name || 'User'} 
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
+                        <Avatar className="w-12 h-12">
+                          <AvatarImage src={otherUser?.profile_picture_url || otherUser?.profile_photo_url} />
+                          <AvatarFallback>{(otherUser?.display_name || otherUser?.full_name || 'U')[0]}</AvatarFallback>
+                        </Avatar>
                         <div className="flex-1">
-                          <h4 className="font-semibold">{otherUser?.full_name || 'Unknown User'}</h4>
+                          <h4 className="font-semibold text-black">{otherUser?.display_name || otherUser?.full_name || 'Unknown User'}</h4>
                           <p className="text-sm text-gray-600">
-                            {scheduledDate.toLocaleDateString()} • {vdate.duration} min
+                            {scheduledDate.toLocaleDateString()} • {(vdate as any).duration || 30} min
                           </p>
                           {rating && (
                             <div className="flex items-center gap-1 mt-1">
                               {[...Array(5)].map((_, i) => (
                                 <Star 
                                   key={i} 
-                                  className={`h-4 w-4 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                                  className={`h-3 w-3 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
                                 />
                               ))}
                             </div>
                           )}
                         </div>
-                        <span className={`text-sm font-medium px-3 py-1 rounded-full ${statusColors[vdate.status] || ''}`}>
-                          {statusLabels[vdate.status] || vdate.status}
-                        </span>
+                        <div className="flex flex-col items-end gap-2">
+                          <span className={`text-xs font-medium px-2 py-1 rounded-full ${statusColors[vdate.status] || ''}`}>
+                            {statusLabels[vdate.status] || vdate.status}
+                          </span>
+                          {!rating && vdate.status === 'completed' && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="text-xs text-black"
+                              onClick={() => setFeedbackModal({ vdateId: vdate.id, rating: 0, feedback: '' })}
+                            >
+                              Leave Feedback
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -590,7 +495,7 @@ export default function VDates() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card className="flex flex-col h-full">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-black">
+                <CardTitle className="flex items-center gap-2 text-black font-semibold">
                   <Calendar className="h-5 w-5" style={{ color: '#E30613' }} />
                   Schedule V-Date
                 </CardTitle>
@@ -615,7 +520,7 @@ export default function VDates() {
 
             <Card className="flex flex-col h-full">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-black">
+                <CardTitle className="flex items-center gap-2 text-black font-semibold">
                   <Clock className="h-5 w-5" style={{ color: '#E30613' }} />
                   Upcoming V-Dates
                   {upcomingVDates.length > 0 && (
@@ -645,7 +550,7 @@ export default function VDates() {
 
             <Card className="flex flex-col h-full">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-black">
+                <CardTitle className="flex items-center gap-2 text-black font-semibold">
                   <Video className="h-5 w-5" style={{ color: '#E30613' }} />
                   V-Date History
                 </CardTitle>
@@ -734,3 +639,5 @@ export default function VDates() {
     </>
   );
 }
+
+export default VDates;

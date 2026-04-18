@@ -1,35 +1,15 @@
-import { supabase } from '@/lib/supabase';
-import { Database } from '@/types/supabase';
-
-export interface Match {
-  id: string;
-  user1_id: string;
-  user2_id: string;
-  compatibility_score: number;
-  status: 'pending' | 'viewed' | 'interested';
-  created_at: string;
-  updated_at: string;
-  profile?: any;
-}
-
-export interface CompatibilityFactors {
-  age: number;
-  height: number;
-  location: number;
-  education: number;
-  occupation: number;
-  gotra: number;
-  horoscope: number;
-}
+import { supabase, apiCall, APIResponse } from './base';
+import { UserProfile, Match, CompatibilityFactors, ProfileRow, isProfileRow } from '@/types';
+import { mapToUserProfile } from '@/utils/profileUtils';
 
 class MatchingService {
   // Calculate compatibility score between two users
-  calculateCompatibility(user: any, candidate: any): { score: number; factors: CompatibilityFactors } {
+  calculateCompatibility(user: ProfileRow, candidate: ProfileRow): { score: number; factors: CompatibilityFactors } {
     // TRADITIONAL SAGOTRA VETO: Strict requirement in Brahmin marriages
     if (user.gotra && candidate.gotra && user.gotra === candidate.gotra) {
       return { 
         score: 0, 
-        factors: { age: 0, height: 0, location: 0, education: 0, occupation: 0, gotra: 0, horoscope: 0 } 
+        factors: { age: 0, height: 0, location: 0, education: 0, occupation: 0, gotra: 0, horoscope: 0, values: 0, lifestyle: 0, caste: 0, religion: 0 } 
       };
     }
 
@@ -40,7 +20,11 @@ class MatchingService {
       education: this.calculateEducationScore(user, candidate),
       occupation: this.calculateOccupationScore(user, candidate),
       gotra: 1.0, // Different gotras are compatible
-      horoscope: this.calculateHoroscopeScore(user, candidate)
+      horoscope: this.calculateHoroscopeScore(user, candidate),
+      caste: 1.0,
+      religion: 1.0,
+      lifestyle: 1.0,
+      values: 1.0
     };
 
     const weightedScore = (
@@ -56,7 +40,7 @@ class MatchingService {
     return { score: Math.round(weightedScore * 100), factors };
   }
 
-  private calculateAgeScore(user: any, candidate: any): number {
+  private calculateAgeScore(user: ProfileRow, candidate: ProfileRow): number {
     if (!user.date_of_birth || !candidate.date_of_birth) return 0.5;
     
     const userAge = this.calculateAge(user.date_of_birth);
@@ -78,117 +62,170 @@ class MatchingService {
     return age;
   }
 
-  private calculateHeightScore(user: any, candidate: any): number {
-    if (!user.height || !candidate.height) return 0.5;
+  private calculateHeightScore(user: ProfileRow, candidate: ProfileRow): number {
+    const mappedUser: any = user;
+    const mappedCandidate: any = candidate;
     
-    const heightDiff = Math.abs(user.height - candidate.height);
+    if (!mappedUser.height || !mappedCandidate.height) return 0.5;
+    
+    const heightDiff = Math.abs(mappedUser.height - mappedCandidate.height);
     if (heightDiff <= 5) return 1.0;
     if (heightDiff <= 10) return 0.8;
     return 0.4;
   }
 
-  private calculateLocationScore(user: any, candidate: any): number {
-    if (user.city === candidate.city) return 1.0;
-    if (user.state === candidate.state) return 0.7;
+  private calculateLocationScore(user: ProfileRow, candidate: ProfileRow): number {
+    const mappedUser: any = user;
+    const mappedCandidate: any = candidate;
+    if (mappedUser.city && mappedCandidate.city && mappedUser.city === mappedCandidate.city) return 1.0;
+    if (mappedUser.state && mappedCandidate.state && mappedUser.state === mappedCandidate.state) return 0.7;
     return 0.2;
   }
 
-  private calculateEducationScore(user: any, candidate: any): number {
+  private calculateEducationScore(user: ProfileRow, candidate: ProfileRow): number {
     if (!user.education_level || !candidate.education_level) return 0.5;
     if (user.education_level === candidate.education_level) return 1.0;
     return 0.5;
   }
 
-  private calculateOccupationScore(user: any, candidate: any): number {
+  private calculateOccupationScore(user: ProfileRow, candidate: ProfileRow): number {
     if (user.occupation === candidate.occupation) return 1.0;
     return 0.5;
   }
 
-  private calculateGotraScore(user: any, candidate: any): number {
+  private calculateGotraScore(user: ProfileRow, candidate: ProfileRow): number {
     if (user.gotra === candidate.gotra) return 0.0;
     return 1.0;
   }
 
-  private calculateHoroscopeScore(user: any, candidate: any): number {
-    if (!user.rashi || !candidate.rashi) return 0.5;
+  private calculateHoroscopeScore(user: ProfileRow, candidate: ProfileRow): number {
+    const userRashi = this.extractRashi(user.horoscope);
+    const candidateRashi = this.extractRashi(candidate.horoscope);
+    
+    if (!userRashi || !candidateRashi) return 0.5;
     
     // Simplified compatibility based on Rashi
-    if (user.rashi === candidate.rashi) return 1.0;
+    if (userRashi === candidateRashi) return 1.0;
     return 0.5;
   }
 
-  // Get matches for a user
-  async getMatches(userId: string, limit: number = 20): Promise<Match[]> {
-    const { data, error } = await supabase
-      .from('matches')
-      .select(`
-        *,
-        profile:profiles!matches_user2_id_fkey(*)
-      `)
-      .eq('user1_id', userId)
-      .order('compatibility_score', { ascending: false })
-      .limit(limit);
-
-    if (error) throw error;
-    return data as any[];
+  private extractRashi(horoscope: string | Record<string, unknown> | undefined): string | null {
+    if (!horoscope) return null;
+    
+    if (typeof horoscope === 'string') {
+      try {
+        const parsed = JSON.parse(horoscope) as Record<string, unknown>;
+        return typeof parsed.rashi === 'string' ? parsed.rashi : null;
+      } catch {
+        return null;
+      }
+    }
+    
+    if (typeof horoscope === 'object' && horoscope !== null && 'rashi' in horoscope) {
+      return typeof horoscope.rashi === 'string' ? (horoscope.rashi as string) : null;
+    }
+    
+    return null;
   }
 
-  // Calculate and store matches for a user - PRODUCTION OPTIMIZED
-  async calculateMatches(userId: string): Promise<void> {
-    const { data: userProfile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
+  // Get matches for a user
+  async getMatches(userId: string, limit: number = 20): Promise<APIResponse<Match[]>> {
+    return apiCall(async () => {
+      const { data, error } = await (supabase as any)
+        .from('matches')
+        .select(`
+          *,
+          profile:profiles!matches_user2_id_fkey(*)
+        `)
+        .eq('user1_id', userId)
+        .order('compatibility_score', { ascending: false })
+        .limit(limit);
 
-    if (!userProfile) return;
+      if (error) throw error;
+      
+      const matches = (data || []).map((match: any) => ({
+        ...match,
+        user_profile: match.profile ? mapToUserProfile(match.profile) : undefined
+      }));
 
-    // PRODUCTION SCALABILITY: Limit candidates to recent/relevant ones
-    const { data: candidates } = await supabase
-      .from('profiles')
-      .select('*')
-      .neq('user_id', userId)
-      .neq('gender', userProfile.gender)
-      .order('last_active', { ascending: false })
-      .limit(100); // Only process top 100 most active potential matches
+      return { data: matches as Match[], error: null };
+    });
+  }
 
-    if (!candidates) return;
+  // Calculate and store matches for a user
+  async calculateMatches(userId: string): Promise<APIResponse<void>> {
+    return apiCall(async () => {
+      const { data: userProfile, error: profileError } = await (supabase as any)
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
 
-    const matches = candidates
-      .map(candidate => {
-        const { score } = this.calculateCompatibility(userProfile, candidate);
-        return {
-          user1_id: userId,
-          user2_id: candidate.user_id,
-          compatibility_score: score,
-          status: 'pending' as const
-        };
-      })
-      .filter(m => m.compatibility_score > 60); // Higher threshold for quality
+      if (profileError) throw profileError;
+      if (!userProfile) return { data: null, error: null };
 
-    if (matches.length > 0) {
-      await supabase.from('matches').upsert(matches, {
-        onConflict: 'user1_id,user2_id'
-      });
-    }
+      const { data: candidates, error: candidateError } = await (supabase as any)
+        .from('profiles')
+        .select('*')
+        .neq('user_id', userId)
+        .neq('gender', (userProfile as any).gender)
+        .order('last_active', { ascending: false })
+        .limit(100);
+
+      if (candidateError) throw candidateError;
+      if (!candidates) return { data: null, error: null };
+
+      const matches = candidates
+        .map((candidate: any) => {
+          const { score } = this.calculateCompatibility(userProfile as any, candidate as any);
+          return {
+            user1_id: userId,
+            user2_id: candidate.user_id,
+            compatibility_score: score,
+            status: 'pending' as const
+          };
+        })
+        .filter((m: any) => m.compatibility_score > 60);
+
+      if (matches.length > 0) {
+        const { error: upsertError } = await (supabase as any).from('matches').upsert(matches, {
+          onConflict: 'user1_id,user2_id'
+        });
+        if (upsertError) throw upsertError;
+      }
+
+      return { data: undefined, error: null };
+    });
   }
 
   // Get match score between two users
-  async getMatchScore(user1Id: string, user2Id: string): Promise<number> {
-    const { data } = await supabase
-      .from('matches')
-      .select('compatibility_score')
-      .or(`and(user1_id.eq.${user1Id},user2_id.eq.${user2Id}),and(user1_id.eq.${user2Id},user2_id.eq.${user1Id})`)
-      .single();
+  async getMatchScore(user1Id: string, user2Id: string): Promise<APIResponse<number>> {
+    return apiCall(async () => {
+      const { data, error } = await (supabase as any)
+        .from('matches')
+        .select('compatibility_score')
+        .or(`and(user1_id.eq.${user1Id},user2_id.eq.${user2Id}),and(user1_id.eq.${user2Id},user2_id.eq.${user1Id})`)
+        .maybeSingle();
 
-    return data?.compatibility_score || 0;
+      if (error && error.code !== 'PGRST116') throw error;
+      return { data: data?.compatibility_score || 0, error: null };
+    });
   }
 
   // Get recommended matches
-  async getRecommendations(userId: string, limit: number = 10): Promise<any[]> {
-    const matches = await this.getMatches(userId, limit);
-    return matches.map(m => m.profile).filter(Boolean);
+  async getRecommendations(userId: string, limit: number = 10): Promise<APIResponse<UserProfile[]>> {
+    return apiCall(async () => {
+      const result = await this.getMatches(userId, limit);
+      if (result.error) throw result.error;
+      
+      const profiles = (result.data || [])
+        .map(m => m.user_profile)
+        .filter((profile): profile is UserProfile => profile !== undefined);
+        
+      return { data: profiles, error: null };
+    });
   }
 }
 
 export const matchingService = new MatchingService();
+export { MatchingService };

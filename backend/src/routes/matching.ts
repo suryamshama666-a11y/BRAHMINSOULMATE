@@ -5,24 +5,9 @@ import { interestLimiter } from '../middleware/rateLimiter';
 import { redis } from '../config/redis';
 import * as Sentry from '@sentry/node';
 import { logger } from '../utils/logger';
+import { MatchProfile, HoroscopeData } from '../types/domain';
 
 const router = express.Router();
-
-// Profile type for matching
-interface MatchProfile {
-  id: string;
-  age?: number;
-  height?: number;
-  city?: string;
-  state?: string;
-  country?: string;
-  education_level?: number;
-  gotra?: string;
-  rashi?: string;
-  horoscope?: any;
-  gender?: string;
-  manglik_status?: string;
-}
 
 // Calculate compatibility score (0-100)
 function calculateCompatibility(profile1: MatchProfile, profile2: MatchProfile): number {
@@ -53,8 +38,10 @@ function calculateCompatibility(profile1: MatchProfile, profile2: MatchProfile):
 
   // Education compatibility (15 points)
   if (profile1.education_level && profile2.education_level) {
-    if (profile1.education_level === profile2.education_level) score += 15;
-    else if (Math.abs(profile1.education_level - profile2.education_level) <= 1) score += 10;
+    const edu1 = typeof profile1.education_level === 'string' ? parseInt(profile1.education_level) : profile1.education_level;
+    const edu2 = typeof profile2.education_level === 'string' ? parseInt(profile2.education_level) : profile2.education_level;
+    if (edu1 === edu2) score += 15;
+    else if (Math.abs(edu1 - edu2) <= 1) score += 10;
     else score += 5;
     totalPossible += 15;
   }
@@ -145,12 +132,15 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
 
     // 4. Compatibility Calc
     const matchesWithScores = profiles.map(profile => {
-      const p = profile as any;
-      const rashi = p.horoscope?.rashi || p.rashi;
+      const horoscopeData = profile.horoscope as HoroscopeData | undefined;
+      const rashi = horoscopeData?.rashi || (profile as any).rashi;
+      const userHoroscope = userProfile.horoscope as HoroscopeData | undefined;
+      const userRashi = userHoroscope?.rashi || (userProfile as any).rashi;
+      
       return {
         ...profile,
         compatibility_score: calculateCompatibility(
-          { ...userProfile, rashi: (userProfile as any).horoscope?.rashi } as MatchProfile, 
+          { ...userProfile, rashi: userRashi } as MatchProfile, 
           { ...profile, rashi } as MatchProfile
         )
       };

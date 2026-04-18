@@ -3,6 +3,7 @@ import axios from 'axios';
 import { authMiddleware } from '../middleware/auth';
 import { supabase } from '../config/supabase';
 import { logger } from '../utils/logger';
+import { HoroscopeDetails } from '../types/domain';
 
 const router = express.Router();
 
@@ -36,13 +37,13 @@ router.post('/match', authMiddleware, async (req, res) => {
     // Fetch horoscope details for both users
     const { data: profiles, error: profileError } = await supabase
       .from('horoscope_details')
-      .select('user_id, birth_date, birth_time, birth_place')
+      .select('user_id, birth_date, birth_time, birth_place, latitude, longitude')
       .in('user_id', [userId, partnerId]);
 
     if (profileError) throw profileError;
 
-    const userHoroscope = profiles.find(p => p.user_id === userId);
-    const partnerHoroscope = profiles.find(p => p.user_id === partnerId);
+    const userHoroscope = profiles?.find(p => p.user_id === userId) as HoroscopeDetails | undefined;
+    const partnerHoroscope = profiles?.find(p => p.user_id === partnerId) as HoroscopeDetails | undefined;
 
     if (!userHoroscope || !partnerHoroscope) {
       return res.status(404).json({ 
@@ -84,16 +85,16 @@ router.post('/match', authMiddleware, async (req, res) => {
       m_year: new Date(userHoroscope.birth_date).getFullYear(),
       m_hour: parseInt(userHoroscope.birth_time.split(':')[0]),
       m_min: parseInt(userHoroscope.birth_time.split(':')[1]),
-      m_lat: (userHoroscope as any).latitude || 19.0760, // Fallback to Mumbai if missing
-      m_lon: (userHoroscope as any).longitude || 72.8777,
+      m_lat: userHoroscope.latitude || 19.0760, // Fallback to Mumbai if missing
+      m_lon: userHoroscope.longitude || 72.8777,
       m_tzone: 5.5,
       f_day: new Date(partnerHoroscope.birth_date).getDate(),
       f_month: new Date(partnerHoroscope.birth_date).getMonth() + 1,
       f_year: new Date(partnerHoroscope.birth_date).getFullYear(),
       f_hour: parseInt(partnerHoroscope.birth_time.split(':')[0]),
       f_min: parseInt(partnerHoroscope.birth_time.split(':')[1]),
-      f_lat: (partnerHoroscope as any).latitude || 19.0760,
-      f_lon: (partnerHoroscope as any).longitude || 72.8777,
+      f_lat: partnerHoroscope.latitude || 19.0760,
+      f_lon: partnerHoroscope.longitude || 72.8777,
       f_tzone: 5.5,
     };
 
@@ -104,7 +105,7 @@ router.post('/match', authMiddleware, async (req, res) => {
     // We create or reuse a breaker for this endpoint
     // In a real app we'd define this outside the route, but this works for demonstration
     // and is better than no breaker
-    const fetchHoroscope = async (params: any) => {
+    const fetchHoroscope = async (params: Record<string, unknown>) => {
       const response = await axios.get(ASTRO_API_URL, { params });
       return response.data;
     };
@@ -130,7 +131,7 @@ router.post('/match', authMiddleware, async (req, res) => {
       };
     });
 
-    const responseData = await astroBreaker.fire(params) as Record<string, any>;
+    const responseData = await astroBreaker.fire(params) as Record<string, unknown>;
     
     res.json({
       success: true,

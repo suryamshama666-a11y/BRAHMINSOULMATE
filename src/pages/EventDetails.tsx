@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 export default function EventDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [event, setEvent] = useState<Event | null>(null);
+  const [event, setEvent] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const { toast } = useToast();
@@ -154,7 +154,7 @@ export default function EventDetails() {
               </h1>
 
               <div className="prose max-w-none">
-                {event.description.split('\n').map((paragraph, idx) => (
+                {event.description.split('\n').map((paragraph: string, idx: number) => (
                   <p key={idx} className="text-gray-600 mb-2">{paragraph}</p>
                 ))}
               </div>

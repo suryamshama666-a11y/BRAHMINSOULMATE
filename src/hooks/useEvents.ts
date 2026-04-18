@@ -10,12 +10,18 @@ export interface Event {
   description?: string;
   event_date: string;
   location?: string;
-  creator_id: string;
+  organizer_id: string;
   max_participants?: number;
-  current_participants: number;
-  is_private: boolean;
+  current_participants?: number;
+  is_private?: boolean;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
+  event_type?: string;
+  is_virtual?: boolean;
+  meeting_url?: string | null;
+  registration_fee?: number;
+  banner_image_url?: string | null;
+  deleted_at?: string | null;
 }
 
 const fetchEventsData = async (): Promise<Event[]> => {
@@ -26,7 +32,26 @@ const fetchEventsData = async (): Promise<Event[]> => {
     .order('event_date', { ascending: true });
 
   if (error) throw error;
-  return data || [];
+  // Map database rows to Event interface
+  return (data || []).map(row => ({
+    id: row.id,
+    title: row.title,
+    description: row.description ?? undefined,
+    event_date: row.event_date,
+    location: row.location ?? undefined,
+    organizer_id: row.organizer_id,
+    max_participants: row.max_participants ?? undefined,
+    current_participants: 0, // Default value since column doesn't exist in DB
+    is_private: false, // Default value since column doesn't exist in DB
+    created_at: row.created_at,
+    updated_at: undefined, // Column doesn't exist in DB
+    event_type: row.event_type,
+    is_virtual: row.is_virtual,
+    meeting_url: row.meeting_url,
+    registration_fee: row.registration_fee,
+    banner_image_url: row.banner_image_url,
+    deleted_at: row.deleted_at
+  }));
 };
 
 export const useEvents = () => {
@@ -42,15 +67,23 @@ export const useEvents = () => {
   const fetchEvents = () => refetch();
 
   const createMutation = useMutation({
-    mutationFn: async (eventData: Omit<Event, 'id' | 'creator_id' | 'current_participants' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (eventData: Omit<Event, 'id' | 'organizer_id' | 'created_at' | 'updated_at'>) => {
       if (!user) throw new Error('User not authenticated');
 
       const { data, error } = await supabase
         .from('events')
         .insert({
-          ...eventData,
-          creator_id: user.id,
-          current_participants: 1
+          title: eventData.title,
+          description: eventData.description ?? null,
+          event_date: eventData.event_date,
+          location: eventData.location ?? null,
+          organizer_id: user.id,
+          max_participants: eventData.max_participants ?? null,
+          is_private: eventData.is_private ?? false,
+          event_type: eventData.event_type ?? 'community',
+          is_virtual: eventData.is_virtual ?? false,
+          meeting_url: eventData.meeting_url ?? null,
+          registration_fee: 0
         })
         .select()
         .single();
@@ -58,12 +91,12 @@ export const useEvents = () => {
       if (error) throw error;
 
       // Auto-join creator to event
-      await supabase
-        .from('event_participants')
+      await (supabase as any)
+        .from('event_registrations')
         .insert({
           event_id: data.id,
           user_id: user.id,
-          status: 'attending'
+          attended: false
         });
 
       return data;
@@ -72,7 +105,7 @@ export const useEvents = () => {
       toast.success('Event created successfully!');
       queryClient.invalidateQueries({ queryKey: ['events'] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Error creating event:', error);
       toast.error('Failed to create event');
     }
@@ -83,48 +116,35 @@ export const useEvents = () => {
       if (!user) throw new Error('User not authenticated');
 
       // Check if already joined
-      const { data: existingParticipant } = await supabase
-        .from('event_participants')
+      const { data: existingParticipant } = await (supabase as any)
+        .from('event_registrations')
         .select('id')
         .eq('event_id', eventId)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (existingParticipant) {
         throw new Error('Already registered');
       }
 
       // Join event
-      const { error } = await supabase
-        .from('event_participants')
+      const { error } = await (supabase as any)
+        .from('event_registrations')
         .insert({
           event_id: eventId,
           user_id: user.id,
-          status: 'attending'
+          attended: false
         });
 
       if (error) throw error;
-
-      // Update participant count
-      const { data: currentEvent } = await supabase
-        .from('events')
-        .select('current_participants')
-        .eq('id', eventId)
-        .single();
-
-      if (currentEvent) {
-        await supabase
-          .from('events')
-          .update({ current_participants: currentEvent.current_participants + 1 })
-          .eq('id', eventId);
-      }
     },
     onSuccess: () => {
       toast.success('Successfully joined the event!');
       queryClient.invalidateQueries({ queryKey: ['events'] });
     },
-    onError: (error: any) => {
-      if (error.message === 'Already registered') {
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      if (message === 'Already registered') {
         toast.error('You are already registered for this event');
       } else {
         console.error('Error joining event:', error);
@@ -137,39 +157,25 @@ export const useEvents = () => {
     mutationFn: async (eventId: string) => {
       if (!user) throw new Error('User not authenticated');
 
-      const { error } = await supabase
-        .from('event_participants')
+      const { error } = await (supabase as any)
+        .from('event_registrations')
         .delete()
         .eq('event_id', eventId)
         .eq('user_id', user.id);
 
       if (error) throw error;
-
-      // Update participant count
-      const { data: currentEvent } = await supabase
-        .from('events')
-        .select('current_participants')
-        .eq('id', eventId)
-        .single();
-
-      if (currentEvent) {
-        await supabase
-          .from('events')
-          .update({ current_participants: Math.max(currentEvent.current_participants - 1, 0) })
-          .eq('id', eventId);
-      }
     },
     onSuccess: () => {
       toast.success('Successfully left the event');
       queryClient.invalidateQueries({ queryKey: ['events'] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Error leaving event:', error);
       toast.error('Failed to leave event');
     }
   });
 
-  const createEvent = async (eventData: Omit<Event, 'id' | 'creator_id' | 'current_participants' | 'created_at' | 'updated_at'>) => {
+  const createEvent = async (eventData: Omit<Event, 'id' | 'organizer_id' | 'created_at' | 'updated_at'>) => {
     if (!user) {
       toast.error('Please login to create events');
       return { success: false };
@@ -178,8 +184,9 @@ export const useEvents = () => {
     try {
       const data = await createMutation.mutateAsync(eventData);
       return { success: true, event: data };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: message };
     }
   };
 
@@ -192,8 +199,9 @@ export const useEvents = () => {
     try {
       await joinMutation.mutateAsync(eventId);
       return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: message };
     }
   };
 
@@ -206,8 +214,9 @@ export const useEvents = () => {
     try {
       await leaveMutation.mutateAsync(eventId);
       return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: message };
     }
   };
 

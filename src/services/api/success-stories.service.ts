@@ -1,19 +1,16 @@
 import { supabase } from '@/lib/supabase';
+import { extractStorageFilePath } from '@/config/storage';
 
 export interface SuccessStory {
   id: string;
-  user_id_1?: string;
-  user_id_2?: string;
-  user1_id?: string;
-  user2_id?: string;
-  title?: string;
-  story?: string;
+  user1_id: string;
+  user2_id: string;
+  title: string;
+  story: string;
   marriage_date?: string;
   image_url?: string;
-  images?: string[];
-  status?: 'pending' | 'approved' | 'rejected';
-  approved?: boolean;
-  created_at?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
   approved_at?: string;
   user1?: any;
   user2?: any;
@@ -21,7 +18,6 @@ export interface SuccessStory {
 
 class SuccessStoriesService {
   private readonly BUCKET_NAME = 'success-stories';
-  private readonly successStories = supabase.from('success_stories' as any) as any;
 
   // Submit success story
   async submitStory(storyData: {
@@ -42,7 +38,8 @@ class SuccessStoriesService {
     }
 
     // Create success story
-    const { data, error } = await this.successStories
+    const { data, error } = await (supabase as any)
+      .from('success_stories')
       .insert({
         user1_id: user.id,
         user2_id: storyData.partnerId,
@@ -66,7 +63,7 @@ class SuccessStoriesService {
     // Notify admins
     await this.notifyAdmins(data.id);
 
-    return this.toSuccessStory(data);
+    return data as SuccessStory;
   }
 
   // Upload story image
@@ -74,30 +71,14 @@ class SuccessStoriesService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    // Validate file
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-    if (!allowedTypes.includes(file.type)) {
-      throw new Error('Only JPG and PNG images are allowed');
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      throw new Error('Image size must be less than 5MB');
-    }
-
-    // Upload to storage
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+    const fileName = `${user.id}/${Date.now()}.${file.name.split('.').pop()}`;
 
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from(this.BUCKET_NAME)
-      .upload(fileName, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
+      .upload(fileName, file);
 
     if (uploadError) throw uploadError;
 
-    // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from(this.BUCKET_NAME)
       .getPublicUrl(uploadData.path);
@@ -108,12 +89,9 @@ class SuccessStoriesService {
   // Delete image
   private async deleteImage(imageUrl: string): Promise<void> {
     try {
-      const urlParts = imageUrl.split('/');
-      const filePath = urlParts.slice(-2).join('/');
-      
-      await supabase.storage
-        .from(this.BUCKET_NAME)
-        .remove([filePath]);
+      const filePath = extractStorageFilePath(imageUrl);
+      if (!filePath) return;
+      await supabase.storage.from(this.BUCKET_NAME).remove([filePath]);
     } catch (error) {
       console.error('Failed to delete image:', error);
     }
@@ -121,28 +99,19 @@ class SuccessStoriesService {
 
   // Get approved success stories
   async getApprovedStories(limit: number = 20): Promise<SuccessStory[]> {
-    const { data, error } = await this.successStories
+    const { data, error } = await (supabase as any)
+      .from('success_stories')
       .select(`
         *,
-        user1:user1_id (
-          user_id,
-          first_name,
-          last_name,
-          profile_picture_url
-        ),
-        user2:user2_id (
-          user_id,
-          first_name,
-          last_name,
-          profile_picture_url
-        )
+        user1:user1_id (user_id, first_name, last_name, profile_picture_url),
+        user2:user2_id (user_id, first_name, last_name, profile_picture_url)
       `)
       .eq('status', 'approved')
       .order('approved_at', { ascending: false })
       .limit(limit);
 
     if (error) throw error;
-    return (data || []).map((story: any) => this.toSuccessStory(story));
+    return (data || []) as SuccessStory[];
   }
 
   // Get my success stories
@@ -150,27 +119,18 @@ class SuccessStoriesService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const { data, error } = await this.successStories
+    const { data, error } = await (supabase as any)
+      .from('success_stories')
       .select(`
         *,
-        user1:user1_id (
-          user_id,
-          first_name,
-          last_name,
-          profile_picture_url
-        ),
-        user2:user2_id (
-          user_id,
-          first_name,
-          last_name,
-          profile_picture_url
-        )
+        user1:user1_id (user_id, first_name, last_name, profile_picture_url),
+        user2:user2_id (user_id, first_name, last_name, profile_picture_url)
       `)
       .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return (data || []).map((story: any) => this.toSuccessStory(story));
+    return (data || []) as SuccessStory[];
   }
 
   // Admin: Get pending stories
@@ -178,96 +138,49 @@ class SuccessStoriesService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    // Check if user is admin
-    const { data: profile } = await supabase
+    const { data: profile } = await (supabase as any)
       .from('profiles')
       .select('role')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (profile?.role !== 'admin') {
-      throw new Error('Unauthorized: Admin access required');
-    }
+    if (profile?.role !== 'admin') throw new Error('Admin access required');
 
-    const { data, error } = await this.successStories
+    const { data, error } = await (supabase as any)
+      .from('success_stories')
       .select(`
         *,
-        user1:user1_id (
-          user_id,
-          first_name,
-          last_name,
-          email,
-          profile_picture_url
-        ),
-        user2:user2_id (
-          user_id,
-          first_name,
-          last_name,
-          email,
-          profile_picture_url
-        )
+        user1:user1_id (*),
+        user2:user2_id (*)
       `)
       .eq('status', 'pending')
       .order('created_at', { ascending: true });
 
     if (error) throw error;
-    return (data || []).map((story: any) => this.toSuccessStory(story));
+    return (data || []) as SuccessStory[];
   }
 
   // Admin: Approve story
   async approveStory(storyId: string): Promise<void> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
-
-    // Get story
-    const { data: story, error: fetchError } = await this.successStories
-      .select('*')
-      .eq('id', storyId)
-      .single();
-
-    if (fetchError) throw fetchError;
-    if (!story) throw new Error('Story not found');
-
-    // Update status
-    const { error: updateError } = await this.successStories
+    const { error } = await (supabase as any)
+      .from('success_stories')
       .update({
         status: 'approved',
         approved_at: new Date().toISOString()
       })
       .eq('id', storyId);
 
-    if (updateError) throw updateError;
-
-    // Send congratulations to both users
-    await this.sendApprovalNotifications(this.toSuccessStory(story));
+    if (error) throw error;
   }
 
   // Admin: Reject story
-  async rejectStory(storyId: string, reason: string): Promise<void> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
-
-    // Get story
-    const { data: story, error: fetchError } = await this.successStories
-      .select('*')
-      .eq('id', storyId)
-      .single();
-
-    if (fetchError) throw fetchError;
-    if (!story) throw new Error('Story not found');
-
-    // Update status
-    const { error: updateError } = await this.successStories
+  async rejectStory(storyId: string): Promise<void> {
+    const { error } = await (supabase as any)
+      .from('success_stories')
       .update({ status: 'rejected' })
       .eq('id', storyId);
 
-    if (updateError) throw updateError;
-
-    // Notify submitter
-    const normalizedStory = this.toSuccessStory(story);
-    if (normalizedStory.user_id_1) {
-      await this.sendRejectionNotification(normalizedStory.user_id_1, reason);
-    }
+    if (error) throw error;
   }
 
   // Delete story
@@ -275,41 +188,26 @@ class SuccessStoriesService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    // Get story
-    const { data: story, error: fetchError } = await this.successStories
-      .select('*')
-      .eq('id', storyId)
-      .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-      .single();
-
-    if (fetchError) throw fetchError;
-    if (!story) throw new Error('Story not found');
-
-    // Delete image if exists
-    const normalizedStory = this.toSuccessStory(story);
-    if (normalizedStory.image_url) {
-      await this.deleteImage(normalizedStory.image_url);
-    }
-
-    // Delete story
-    const { error: deleteError } = await this.successStories
+    const { error } = await (supabase as any)
+      .from('success_stories')
       .delete()
-      .eq('id', storyId);
+      .eq('id', storyId)
+      .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
 
-    if (deleteError) throw deleteError;
+    if (error) throw error;
   }
 
-  // Notify admins of new story
+  // Notify admins
   private async notifyAdmins(storyId: string): Promise<void> {
     try {
-      const { data: admins } = await supabase
+      const { data: admins } = await (supabase as any)
         .from('profiles')
         .select('user_id')
         .eq('role', 'admin');
 
-      if (!admins || admins.length === 0) return;
+      if (!admins) return;
 
-      const notifications = admins.map(admin => ({
+      const notifications = admins.map((admin: any) => ({
         user_id: admin.user_id,
         type: 'success_story_submitted',
         title: 'New Success Story',
@@ -318,70 +216,10 @@ class SuccessStoriesService {
         read: false
       }));
 
-      await supabase.from('notifications').insert(notifications);
+      await (supabase as any).from('notifications').insert(notifications);
     } catch (error) {
       console.error('Failed to notify admins:', error);
     }
-  }
-
-  // Send approval notifications
-  private async sendApprovalNotifications(story: SuccessStory): Promise<void> {
-    try {
-      if (!story.user_id_1 || !story.user_id_2) {
-        return;
-      }
-      const notifications = [
-        {
-          user_id: story.user_id_1,
-          type: 'success_story_approved',
-          title: 'Success Story Approved!',
-          message: 'Congratulations! Your success story has been featured on our platform.',
-          action_url: `/success-stories/${story.id}`,
-          read: false
-        },
-        {
-          user_id: story.user_id_2,
-          type: 'success_story_approved',
-          title: 'Success Story Featured!',
-          message: 'Your success story has been featured on Brahmin Soulmate Connect.',
-          action_url: `/success-stories/${story.id}`,
-          read: false
-        }
-      ];
-
-      await supabase.from('notifications').insert(notifications);
-    } catch (error) {
-      console.error('Failed to send approval notifications:', error);
-    }
-  }
-
-  // Send rejection notification
-  private async sendRejectionNotification(userId: string, reason: string): Promise<void> {
-    try {
-      await supabase.from('notifications').insert({
-        user_id: userId,
-        type: 'success_story_rejected',
-        title: 'Success Story Not Approved',
-        message: `Your success story was not approved. Reason: ${reason}`,
-        read: false
-      });
-    } catch (error) {
-      console.error('Failed to send rejection notification:', error);
-    }
-  }
-
-  private toSuccessStory(data: any): SuccessStory {
-    const userId1 = data?.user_id_1 ?? data?.user1_id;
-    const userId2 = data?.user_id_2 ?? data?.user2_id;
-    const status = data?.status ?? (data?.approved ? 'approved' : 'pending');
-    const imageUrl = data?.image_url ?? (Array.isArray(data?.images) ? data.images[0] : undefined);
-    return {
-      ...data,
-      user_id_1: userId1,
-      user_id_2: userId2,
-      status,
-      image_url: imageUrl
-    };
   }
 }
 

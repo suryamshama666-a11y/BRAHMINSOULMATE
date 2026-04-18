@@ -1,15 +1,17 @@
-// Stub for useMessageReactions hook
-import type { ReactionSummary } from '@/types/index';
+import { MessageReaction } from '@/types';
 
 export const useMessageReactions = () => {
-  const reactions: Record<string, ReactionSummary[]> = {};
+  // Use the standard MessageReaction type from our domain types
+  const reactions: Record<string, MessageReaction[]> = {};
   
   const addReaction = async (messageId: string, emoji: string) => {
-    console.log('Adding reaction:', messageId, emoji);
+    // TODO: Implement message reaction functionality using MessagesService
+    console.log('Add reaction:', messageId, emoji);
   };
   
   const removeReaction = async (messageId: string, emoji: string) => {
-    console.log('Removing reaction:', messageId, emoji);
+    // TODO: Implement message reaction removal using MessagesService
+    console.log('Remove reaction:', messageId, emoji);
   };
   
   return {
@@ -18,5 +20,3 @@ export const useMessageReactions = () => {
     removeReaction,
   };
 };
-
-export type { ReactionSummary };

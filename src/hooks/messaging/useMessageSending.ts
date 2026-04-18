@@ -31,6 +31,7 @@ export const useMessageSending = () => {
       if (error) throw error;
       
       const newMessage: RealTimeMessage = {
+        id: data.id,
         sender_id: data.sender_id,
         receiver_id: data.receiver_id,
         content: data.content,
@@ -48,12 +49,13 @@ export const useMessageSending = () => {
   };
 
   const markAsRead = async (messageId: string) => {
+    if (!user) return;
     try {
       const { error } = await supabase
         .from('messages')
         .update({ read_at: new Date().toISOString() })
         .eq('id', messageId)
-        .eq('receiver_id', user?.id);
+        .eq('receiver_id', user.id);
 
       if (error) throw error;
     } catch (error) {

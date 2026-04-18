@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { messagesService } from '@/services/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Message } from '@/types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,7 +59,8 @@ export const ChatWindow = ({ partnerId, partnerName, partnerImage }: ChatWindowP
   const { data: messages = [] } = useQuery({
     queryKey: ['conversation', partnerId],
     queryFn: async () => {
-      return await messagesService.getConversation(partnerId);
+      const response = await messagesService.getConversation(partnerId);
+      return response.data || [];
     },
     refetchInterval: 3000
   });
@@ -80,14 +82,14 @@ export const ChatWindow = ({ partnerId, partnerName, partnerImage }: ChatWindowP
 
   // Mark messages as read
   useEffect(() => {
-    if (messages.length > 0) {
+    if (Array.isArray(messages) && messages.length > 0) {
       messagesService.markAsRead(partnerId);
     }
   }, [messages, partnerId]);
 
   // Subscribe to real-time messages
   useEffect(() => {
-    const unsubscribe = messagesService.subscribeToMessages((message) => {
+    const unsubscribe = messagesService.subscribeToMessages((message: Message) => {
       if (message.sender_id === partnerId) {
         queryClient.invalidateQueries({ queryKey: ['conversation', partnerId] });
         queryClient.invalidateQueries({ queryKey: ['conversations'] });
@@ -99,7 +101,7 @@ export const ChatWindow = ({ partnerId, partnerName, partnerImage }: ChatWindowP
 
   // Subscribe to typing indicators
   useEffect(() => {
-    const unsubscribe = messagesService.subscribeToTyping(partnerId, (typing) => {
+    const unsubscribe = messagesService.subscribeToTyping(partnerId, (typing: boolean) => {
       setIsTyping(typing);
     });
 

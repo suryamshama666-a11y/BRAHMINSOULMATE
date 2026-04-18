@@ -384,8 +384,6 @@ export function useMessages(conversationId?: string) {
       if (!user) throw new MessageError('Not authenticated');
       
       try {
-        // Use raw SQL or check if table exists in types
-        // For now, we'll use a type assertion to bypass the type check
         const { error } = await (supabase as any)
           .from('message_reactions')
           .upsert({ 
@@ -419,8 +417,6 @@ export function useMessages(conversationId?: string) {
       if (!user) throw new MessageError('Not authenticated');
       
       try {
-        // Use raw SQL or check if table exists in types
-        // For now, we'll use a type assertion to bypass the type check
         const { error } = await (supabase as any)
           .from('message_reactions')
           .delete()

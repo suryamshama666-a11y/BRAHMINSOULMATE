@@ -6,6 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { useAuth } from '@/hooks/useAuth';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import SimpleNavbar from '@/components/SimpleNavbar';
+import Navbar from '@/components/Navbar';
 import { DevModeIndicator } from '@/components/DevModeIndicator';
 import { CollapsibleChatWidget } from '@/components/CollapsibleChatWidget';
 import { CookieConsent } from '@/components/CookieConsent';
@@ -25,8 +26,7 @@ const PageLoader = () => (
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 
-// Lazy loaded pages
-const LazyOriginalNavbar = React.lazy(() => import('@/components/OriginalNavbar'));
+// Lazy loaded pages (removed OriginalNavbar - using Navbar instead)
 
 // Auth pages loaded together to prevent flash when navigating between them
 const authPagesPromise = Promise.all([
@@ -134,11 +134,7 @@ const AppContent = () => {
 
   return (
     <>
-      {isSimpleNavbar ? <SimpleNavbar /> : (
-        <Suspense fallback={null}>
-          <LazyOriginalNavbar />
-        </Suspense>
-      )}
+      {isSimpleNavbar ? <SimpleNavbar /> : <Navbar />}
       <Suspense fallback={<PageLoader />}>
               <Routes>
               {/* Public Routes */}
@@ -218,7 +214,7 @@ const AppWithAuth = () => {
   useEffect(() => {
     if (user) {
       TransactionRecovery.resumePendingTransactions().catch(err => {
-        console.error('FAILED TO RESUME TRANSACTIONS:', err);
+        logger.error('Failed to resume pending transactions', err);
       });
     }
   }, [user]);

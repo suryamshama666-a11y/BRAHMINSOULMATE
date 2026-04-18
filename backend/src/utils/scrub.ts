@@ -1,7 +1,7 @@
 /**
  * Scrubs sensitive PII from objects to be sent to logs/Sentry
  */
-export const scrubPII = (data: any): any => {
+export const scrubPII = (data: unknown): unknown => {
   if (!data || typeof data !== 'object') return data;
 
   const sensitiveFields = [
@@ -14,9 +14,9 @@ export const scrubPII = (data: any): any => {
 
   for (const key in scrubbed) {
     if (sensitiveFields.includes(key.toLowerCase())) {
-      scrubbed[key] = '[REDACTED]';
-    } else if (typeof scrubbed[key] === 'object') {
-      scrubbed[key] = scrubPII(scrubbed[key]);
+      (scrubbed as Record<string, unknown>)[key] = '[REDACTED]';
+    } else if (typeof (scrubbed as Record<string, unknown>)[key] === 'object') {
+      (scrubbed as Record<string, unknown>)[key] = scrubPII((scrubbed as Record<string, unknown>)[key]);
     }
   }
 

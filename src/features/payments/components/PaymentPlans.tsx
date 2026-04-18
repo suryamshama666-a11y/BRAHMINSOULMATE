@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Check, Star, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-import { PaymentService, PAYMENT_PLANS, PaymentPlan } from '@/services/paymentService';
+import { paymentsService, SubscriptionPlan } from '@/services/api/payments.service';
 import { useNavigate } from 'react-router-dom';
 
 interface PaymentPlansProps {
@@ -16,7 +16,7 @@ export default function PaymentPlans({ category: _category = 'all' }: PaymentPla
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const navigate = useNavigate();
   
-  const handleSubscribe = async (plan: PaymentPlan) => {
+  const handleSubscribe = async (plan: SubscriptionPlan) => {
     if (!user) {
       toast.error("Please login to subscribe to a plan");
       navigate('/login');
@@ -25,35 +25,42 @@ export default function PaymentPlans({ category: _category = 'all' }: PaymentPla
     
     setLoadingPlan(plan.id);
     try {
-      // 1. Create order on backend
-      const orderData = await PaymentService.createOrder(plan.id, user.id);
+      const orderData = await paymentsService.createOrder(plan.id);
       
-      // 2. Open Razorpay checkout
-      await PaymentService.openCheckout(
-        orderData,
-        async (response) => {
-          // Success Handler
-          const verified = await PaymentService.verifyPayment(
-            response.razorpay_order_id,
-            response.razorpay_payment_id,
-            response.razorpay_signature
-          );
-          
-          if (verified) {
-            toast.success(`Welcome to ${plan.name}! Your subscription is now active.`);
-            navigate('/dashboard');
-          } else {
-            toast.error("Payment verification failed. Please contact support.");
+      // Open Razorpay checkout
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        order_id: orderData.id,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        handler: async (response: any) => {
+          try {
+            const verified = await paymentsService.verifyPayment({
+              orderId: response.razorpay_order_id,
+              paymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature,
+              planId: plan.id
+            });
+            
+            if (verified.success) {
+              toast.success(`Welcome to ${plan.name}! Your subscription is now active.`);
+              navigate('/dashboard');
+            } else {
+              toast.error("Payment verification failed. Please contact support.");
+            }
+          } catch (error: any) {
+            toast.error(error.message || "Payment verification failed");
+          } finally {
+            setLoadingPlan(null);
           }
-          setLoadingPlan(null);
         },
-        (error) => {
-          // Error Handler
-          console.error('Payment error:', error);
-          toast.error(error.message || "Payment failed or cancelled");
-          setLoadingPlan(null);
+        prefill: {
+          email: user.email
         }
-      );
+      };
+      
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
     } catch (error: any) {
       console.error('Subscription error:', error);
       toast.error(error.message || "Failed to initiate payment");
@@ -65,9 +72,7 @@ export default function PaymentPlans({ category: _category = 'all' }: PaymentPla
     return `₹${(priceInPaise / 100).toLocaleString('en-IN')}`;
   };
 
-  // Filter plans based on category if needed
-  // For now, all plans are shown as they all include features from all categories
-  const displayedPlans = PAYMENT_PLANS;
+  const displayedPlans = paymentsService.getPlans();
 
   return (
     <div className="w-full">

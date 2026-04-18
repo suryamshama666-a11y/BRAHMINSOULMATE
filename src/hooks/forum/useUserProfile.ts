@@ -42,7 +42,7 @@ export const useUserProfile = (userId: string) => {
             id: data.id,
             first_name: nameParts[0],
             last_name: nameParts.slice(1).join(' '),
-            profile_picture_url: data.profile_picture,
+            profile_picture_url: data.profile_picture || undefined,
             display_name: data.name || 'Anonymous User'
           });
         }
